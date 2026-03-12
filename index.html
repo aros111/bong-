@@ -455,10 +455,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
    SETTINGS VIEW
 ════════════════════════════════════════════════════ */
 .stpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
-.stpl{border:1px solid var(--br);border-radius:var(--r8);padding:10px;cursor:pointer;
-  background:var(--s2);text-align:center;font-size:11px;font-weight:300;
-  color:var(--txt3);transition:all .2s}
-.stpl.on{border-color:var(--gold);border-width:2px;color:var(--gold);background:var(--s3);font-weight:400}
+.stpl{border:2px solid var(--br);border-radius:var(--r8);padding:10px;cursor:pointer;
+  background:var(--s2);text-align:center;font-size:12px;font-weight:300;
+  color:var(--txt2);transition:all .2s;user-select:none;-webkit-user-select:none;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.stpl.on{border-color:var(--gold) !important;color:var(--gold) !important;background:rgba(186,142,67,.12) !important;font-weight:500}
 .stamp-prev{display:flex;justify-content:center;background:var(--s2);
   border:1px solid var(--br);border-radius:var(--r12);padding:16px;margin-bottom:12px}
 .csw{width:24px;height:24px;border-radius:6px;cursor:pointer;
@@ -817,7 +818,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 
 <!-- ── PRIVAT ── -->
 <div class="view" id="v-priv">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+  <!-- Kopfzeile: Gesamt + Buttons -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div>
       <div style="font-size:22px;font-weight:200;color:var(--silv)" id="privTotalDisp">0,00 €</div>
       <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="privCountDisp">0 Belege</div>
@@ -835,6 +837,30 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       </button>
     </div>
   </div>
+
+  <!-- Optimierungspotential -->
+  <div id="privOptCard" style="display:none;background:rgba(136,153,170,.06);border:1px solid rgba(136,153,170,.18);
+    border-radius:var(--r12);padding:11px 14px;margin-bottom:12px;
+    display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px">Einsparpotential (geschätzt)</div>
+      <div style="font-size:18px;font-weight:200;color:var(--gold)" id="privOptBetrag">0,00 €</div>
+    </div>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.2">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+    </svg>
+  </div>
+
+  <!-- Kreisdiagramm Kategorien -->
+  <div id="privChartWrap" style="display:none;background:var(--s2);border:1px solid var(--br);
+    border-radius:var(--r12);padding:14px;margin-bottom:12px">
+    <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px">Ausgaben nach Kategorie</div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <svg id="privPieChart" width="110" height="110" viewBox="0 0 110 110"></svg>
+      <div id="privPieLegend" style="flex:1;min-width:120px;font-size:11px;font-weight:300;line-height:2"></div>
+    </div>
+  </div>
+
   <!-- KI-Analyse Ergebnis -->
   <div id="privAnalyseCard" style="display:none;background:rgba(136,153,170,.06);border:1px solid rgba(136,153,170,.15);
     border-radius:var(--r12);padding:14px;margin-bottom:14px;font-size:13px;font-weight:300;
@@ -960,6 +986,83 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       <button class="btn btn-gold btn-sm" style="flex:1;justify-content:center" onclick="saveSchnell()">Speichern</button>
       <button class="btn btn-g btn-sm" onclick="closeSchnell()">Abbrechen</button>
     </div>
+  </div>
+</div>
+
+<!-- ── VERPFLEGUNGSPAUSCHALE / FAHRTKOSTEN ── -->
+<div class="view" id="v-verpfl">
+  <div style="font-size:16px;font-weight:300;color:var(--txt);margin-bottom:4px">Verpflegungspauschale</div>
+  <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">§ 4 Abs. 5 EStG · Inland 8 € / 14 € / 28 €</div>
+
+  <!-- Betriebsstätte -->
+  <div class="card card-sm" style="margin-bottom:10px">
+    <div class="stitle">Betriebsstätte (Heimatort)</div>
+    <div style="display:flex;gap:8px">
+      <input class="inp" id="bsAdresse" type="text" placeholder="z.B. Musterstraße 1, 80331 München" style="flex:1;font-size:12px">
+      <button class="btn btn-g btn-sm" onclick="saveBetriebsstaette()">OK</button>
+    </div>
+    <p id="bsHint" style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Einmal hinterlegen – wird für Abstandsberechnung gespeichert.</p>
+  </div>
+
+  <!-- Aktueller Besuch -->
+  <div class="card card-sm" style="margin-bottom:10px">
+    <div class="stitle">Kundenbesuch erfassen</div>
+
+    <div id="verpflActiveCard" style="display:none;background:rgba(74,128,192,.07);border:1px solid rgba(74,128,192,.2);
+      border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:300;color:var(--blu);margin-bottom:4px">⏱️ Besuch läuft …</div>
+      <div style="font-size:12px;font-weight:300;color:var(--txt)" id="verpflActiveInfo">–</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <button id="btnAnkunft" class="btn btn-g" onclick="verpflAnkunft()" style="font-size:12px;justify-content:center;flex-direction:column;gap:2px;padding:12px 8px">
+        <span style="font-size:18px">📍</span>
+        <span>Ich bin hier</span>
+        <span style="font-size:10px;color:var(--txt3)">Standort erfassen</span>
+      </button>
+      <button id="btnAbfahrt" class="btn btn-g" onclick="verpflAbfahrt()" style="font-size:12px;justify-content:center;flex-direction:column;gap:2px;padding:12px 8px" disabled>
+        <span style="font-size:18px">🏁</span>
+        <span>Fertig / Abfahrt</span>
+        <span style="font-size:10px;color:var(--txt3)">Besuch abschließen</span>
+      </button>
+    </div>
+
+    <div id="verpflStandortInfo" style="display:none;background:var(--s2);border:1px solid var(--br);
+      border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
+      color:var(--txt2);line-height:1.6;margin-bottom:10px" id="verpflGeoInfo"></div>
+  </div>
+
+  <!-- Tagesübersicht -->
+  <div class="card card-sm" style="margin-bottom:10px">
+    <div class="stitle">Heutige Pauschale</div>
+    <div id="verpflTagesCard">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
+          <div style="font-size:20px;font-weight:200;color:var(--txt)" id="verpflStunden">0h</div>
+          <div style="font-size:10px;font-weight:300;color:var(--txt3)">Abwesend</div>
+        </div>
+        <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
+          <div style="font-size:20px;font-weight:200;color:var(--gold)" id="verpflPauschale">0 €</div>
+          <div style="font-size:10px;font-weight:300;color:var(--txt3)">Pauschale</div>
+        </div>
+        <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
+          <div style="font-size:20px;font-weight:200;color:var(--txt)" id="verpflKm">– km</div>
+          <div style="font-size:10px;font-weight:300;color:var(--txt3)">Entfernung</div>
+        </div>
+      </div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.5">
+        Staffel: ab 8h = 8 € · ab 14h = 14 € · 24h (Übernachtung) = 28 €
+      </div>
+    </div>
+  </div>
+
+  <!-- Monatsübersicht gespeicherte Fahrten -->
+  <div class="card card-sm">
+    <div class="stitle" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Fahrten dieses Monats</span>
+      <span id="verpflMonatsSumme" style="color:var(--gold);font-size:12px">0 €</span>
+    </div>
+    <div id="verpflFahrtenList"><div class="empty" style="padding:16px 0"><p>Noch keine Fahrten erfasst.</p></div></div>
   </div>
 </div>
 
@@ -1157,6 +1260,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   </button>
   <button class="ni" onclick="showView('konto')" data-v="konto" id="navKonto">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>Konto
+  </button>
+  <button class="ni" onclick="showView('verpfl')" data-v="verpfl" id="navVerpfl" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Fahrt
   </button>
 </nav>
 
@@ -1468,7 +1574,9 @@ function setMode(m){
   document.getElementById('navMwst').style.display=isBiz?'':'none';
   document.getElementById('navSteuer').style.display=isBiz?'':'none';
   document.getElementById('navPriv').style.display=isBiz?'none':'';
-  // Konto immer sichtbar
+  // Konto + Fahrt nur im Business-Modus sichtbar
+  const navV=document.getElementById('navVerpfl');
+  if(navV) navV.style.display=isBiz?'':'none';
   // Scanner-Default je nach Modus
   if(m==='priv') setScanType('priv');
   else setScanType('er');
@@ -1508,6 +1616,7 @@ function showView(v){
   if(v==='belege')renderBelege();
   if(v==='priv')renderPrivatBelege();
   if(v==='konto')initKontoView();
+  if(v==='verpfl'){initVerpflView();}
   if(v==='mwst')renderMwst();
   if(v==='steuer')calcSteuer();
   if(v==='quartal')initQuartal();
@@ -1892,9 +2001,11 @@ async function renderHome(){
   await renderGarantieWaechter(all);
   await renderAboDetektiv(all);
 
-  // Recent list
-  // WHY: Privat-Belege erscheinen NIRGENDWO im Business-Bereich – nur im Privat-Tab
-  const sorted=[...all].filter(b=>b.type!=='priv').sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).slice(0,6);
+  // Recent list – WHY: Je nach Modus nur passende Belege zeigen
+  const sortedAll=[...all].sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+  const sorted=appMode==='priv'
+    ? sortedAll.filter(b=>b.type==='priv').slice(0,6)
+    : sortedAll.filter(b=>b.type!=='priv').slice(0,6);
   const rl=document.getElementById('recentList');
   if(!sorted.length){rl.innerHTML='<div class="empty"><p>Noch keine Belege.<br>Tippe auf den Scanner-Button.</p></div>';return;}
   rl.innerHTML=sorted.map(b=>{
@@ -2620,6 +2731,13 @@ async function saveBeleg(){
 // ════════════════════════════════════════════════════════
 // ██ MODUL: BELEGE LIST
 // ════════════════════════════════════════════════════════
+// WHY: Artikel-Zeile für Belege-Listen – kompakt, max 3 Items
+function renderItemsLine(items){
+  if(!items||!items.length) return '';
+  const names=items.slice(0,3).map(i=>eh(i.name||'–')).join(' · ');
+  const mehr=items.length>3?` +${items.length-3}`:'';
+  return `<div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${names}${mehr}</div>`;
+}
 async function renderBelege(){
   const all=await dba();
   const q=(document.getElementById('srch').value||'').toLowerCase();
@@ -2629,6 +2747,7 @@ async function renderBelege(){
   it.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
   const l=document.getElementById('bList');
   if(!it.length){l.innerHTML='<div class="empty"><div class="ico">🧾</div><p>Keine Belege gefunden.</p></div>';return;}
+  renderPrivatChart(it);
   l.innerHTML=it.map(b=>`<div class="bc" onclick="showDetail(${b.id})">
     <div class="bc-bar" style="background:${b.type==='er'?'var(--blu)':'var(--ylw)'}"></div>
     <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
@@ -2636,6 +2755,7 @@ async function renderBelege(){
       <div class="bc-sh">${eh(b.shop||'Unbekannt')}</div>
       <div class="bc-me"><span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type==='er'?'Eingang':'Ausgang'}</span>${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}${b.garantieBis?'<span style="font-size:9px;color:var(--grn)">🛡️</span>':''}${b.isDigitalScreen?'<span style="font-size:9px;color:var(--silv)">🖥️</span>':''}</div>
       <div class="bc-nr">${eh(b.belegNr||'')}</div>
+      ${renderItemsLine(b.items)}
     </div>
     <div class="bc-r">
       <div class="bc-am ${b.type}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
@@ -2666,7 +2786,8 @@ async function renderPrivatBelege(){
 
   const l=document.getElementById('pList');
   if(!it.length){
-    l.innerHTML='<div class="empty"><div class="ico">🏠</div><p>Noch keine privaten Belege.<br>Im Scanner den Tab "🏠 Privat" wählen.</p></div>';
+    l.innerHTML='<div class="empty"><div class="ico">🏠</div><p>Noch keine privaten Belege.<br>Im Privat-Modus scannen oder Schnelleingabe nutzen.</p></div>';
+    renderPrivatChart([]);
     return;
   }
   l.innerHTML=it.map(b=>`<div class="bc" onclick="showDetail(${b.id})">
@@ -2675,6 +2796,7 @@ async function renderPrivatBelege(){
     <div class="bc-inf">
       <div class="bc-sh">${eh(b.shop||'Unbekannt')}</div>
       <div class="bc-me"><span class="badge" style="background:rgba(136,153,170,.12);color:var(--silv)">🏠 Privat</span> ${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
+      ${renderItemsLine(b.items)}
     </div>
     <div class="bc-r">
       <div class="bc-am" style="color:var(--silv)">${fm(b.brutto||0)} ${cfg().currency}</div>
@@ -3008,16 +3130,26 @@ function loadStamp(){stamp.firma=localStorage.getItem('sf')||'';stamp.frei=local
 function loadStampUI(){
   loadStamp();document.getElementById('sFirma').value=stamp.firma;document.getElementById('sFrei').value=stamp.frei;
   document.getElementById('cPick').value=stamp.color;document.querySelectorAll('.csw').forEach(s=>s.classList.toggle('on',s.dataset.c===stamp.color));
-  [0,1,2].forEach(i=>{const el=document.getElementById('tpl'+i);if(el)el.classList.toggle('on',i===stampTpl);});refreshStamp();
+  pickTpl(stampTpl); // WHY: pickTpl setzt inline styles explizit – toggle allein nicht zuverlässig
 }
 function pickTpl(i){
-  stampTpl=i;
-  localStorage.setItem('stpl',i);
-  // WHY: Direkt per ID ansprechen statt Reihenfolge im DOM annehmen
-  [0,1,2].forEach(j=>{
+  stampTpl=parseInt(i);
+  localStorage.setItem('stpl',String(stampTpl));
+  // Alle entfernen, dann aktiven setzen – kein toggle-Zustandsproblem
+  for(let j=0;j<3;j++){
     const el=document.getElementById('tpl'+j);
-    if(el) el.classList.toggle('on', j===i);
-  });
+    if(!el) continue;
+    el.classList.remove('on');
+    el.style.borderColor='';el.style.color='';el.style.background='';el.style.fontWeight='';
+  }
+  const active=document.getElementById('tpl'+stampTpl);
+  if(active){
+    active.classList.add('on');
+    active.style.borderColor='var(--gold)';
+    active.style.color='var(--gold)';
+    active.style.background='rgba(186,142,67,.12)';
+    active.style.fontWeight='500';
+  }
   refreshStamp();
 }
 function pickCol(el){document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));el.classList.add('on');stamp.color=el.dataset.c;document.getElementById('cPick').value=stamp.color;refreshStamp();}
@@ -3458,6 +3590,250 @@ async function saveSchnell(){
     renderPrivatBelege();
     renderHome();
   }catch(e){toast('Fehler: '+e.message,'er');}
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PRIVAT KREISDIAGRAMM + OPTIMIERUNGSPOTENTIAL
+// WHY: Nutzer soll sofort sehen wo das Geld hingeht
+// und wie viel theoretisch gespart werden könnte.
+// ════════════════════════════════════════════════════════
+
+// Farben für Kategorien – konsistent
+const KATFARBEN={
+  'Lebensmittel':'#4a9e6b','Restaurant':'#c07030','Elektronik':'#4a80c0',
+  'Kleidung':'#9b59b6','Tanken':'#e74c3c','Haushalt':'#27ae60',
+  'Gesundheit':'#1abc9c','Freizeit':'#f39c12','Reise':'#3498db','Sonstiges':'#7f8c8d'
+};
+
+// Kategorien wo Einsparpotential realistisch ist (in %)
+const KATSPARPOT={'Restaurant':0.30,'Kleidung':0.25,'Elektronik':0.20,'Freizeit':0.25,'Reise':0.15,'Sonstiges':0.10};
+
+function renderPrivatChart(belege){
+  const wrap=document.getElementById('privChartWrap');
+  const optCard=document.getElementById('privOptCard');
+  if(!belege||!belege.length){wrap.style.display='none';optCard.style.display='none';return;}
+
+  // Summen nach Kategorie
+  const byCat={};
+  belege.forEach(b=>{const k=b.cat||'Sonstiges';byCat[k]=(byCat[k]||0)+(b.brutto||0);});
+  const total=Object.values(byCat).reduce((s,v)=>s+v,0);
+  if(!total){wrap.style.display='none';optCard.style.display='none';return;}
+
+  // Einsparpotential berechnen
+  let sparPot=0;
+  Object.entries(byCat).forEach(([k,v])=>{if(KATSPARPOT[k])sparPot+=v*KATSPARPOT[k];});
+  document.getElementById('privOptBetrag').textContent=fm(sparPot)+' €';
+  optCard.style.display='flex';
+
+  // SVG Tortendiagramm zeichnen
+  const svg=document.getElementById('privPieChart');
+  const cx=55,cy=55,r=48,ri=24; // Donut
+  let startAngle=-Math.PI/2;
+  const entries=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  let paths='';
+  entries.forEach(([kat,val])=>{
+    const angle=(val/total)*Math.PI*2;
+    const endAngle=startAngle+angle;
+    const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
+    const x2=cx+r*Math.cos(endAngle),y2=cy+r*Math.sin(endAngle);
+    const ix1=cx+ri*Math.cos(startAngle),iy1=cy+ri*Math.sin(startAngle);
+    const ix2=cx+ri*Math.cos(endAngle),iy2=cy+ri*Math.sin(endAngle);
+    const large=angle>Math.PI?1:0;
+    const col=KATFARBEN[kat]||'#7f8c8d';
+    paths+=`<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ri},${ri} 0 ${large},0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z" fill="${col}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    startAngle=endAngle;
+  });
+  svg.innerHTML=paths;
+  wrap.style.display='block';
+
+  // Legende
+  const leg=document.getElementById('privPieLegend');
+  leg.innerHTML=entries.map(([kat,val])=>{
+    const pct=Math.round(val/total*100);
+    const col=KATFARBEN[kat]||'#7f8c8d';
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></div>
+      <span style="color:var(--txt2)">${kat}</span>
+      <span style="color:var(--txt3);margin-left:auto">${pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: VERPFLEGUNGSPAUSCHALE & FAHRTENERFASSUNG
+// WHY: Freelancer können pro Außentermin Verpflegungspauschale
+// absetzen. Geo nur auf Knopfdruck (kein Background-Tracking).
+// Reverse Geocoding via OpenStreetMap Nominatim (kostenlos).
+// ════════════════════════════════════════════════════════
+
+let verpflBesuch=null; // aktiver Besuch {start, lat, lon, adresse}
+const VERPFL_KEY='bsp_verpfl_fahrten';
+
+// Pauschale nach Stunden (§4 Abs.5 EStG Inland 2024)
+function calcPauschale(h){
+  if(h>=24) return 28;
+  if(h>=14) return 14;
+  if(h>=8)  return 8;
+  return 0;
+}
+
+// Luftlinienabstand in km (Haversine)
+function haversineKm(lat1,lon1,lat2,lon2){
+  const R=6371,dLat=(lat2-lat1)*Math.PI/180,dLon=(lon2-lon1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function saveBetriebsstaette(){
+  const v=document.getElementById('bsAdresse').value.trim();
+  if(!v){toast('Adresse eingeben','er');return;}
+  localStorage.setItem('bsp_bs',v);
+  document.getElementById('bsHint').textContent='✓ Gespeichert als Betriebsstätte.';
+  toast('Betriebsstätte gespeichert','ok');
+}
+
+async function verpflAnkunft(){
+  const btn=document.getElementById('btnAnkunft');
+  btn.disabled=true;btn.textContent='⏳ Standort …';
+
+  navigator.geolocation.getCurrentPosition(async pos=>{
+    const {latitude:lat,longitude:lon}=pos.coords;
+
+    // Reverse Geocoding via Nominatim (kein API Key nötig)
+    let adresse='Unbekannter Standort';
+    try{
+      const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=de`,
+        {headers:{'User-Agent':'BelegScanPro/1.0'}});
+      const d=await r.json();
+      const a=d.address||{};
+      adresse=[a.road,a.house_number,a.postcode,a.city||a.town||a.village].filter(Boolean).join(' ');
+    }catch(e){}
+
+    verpflBesuch={start:Date.now(),lat,lon,adresse};
+
+    // Entfernung zur Betriebsstätte
+    let kmText='–';
+    const bsGespeichert=localStorage.getItem('bsp_bs_coords');
+    if(bsGespeichert){
+      try{
+        const {lat:bLat,lon:bLon}=JSON.parse(bsGespeichert);
+        kmText=haversineKm(lat,lon,bLat,bLon).toFixed(1)+' km';
+      }catch(_){}
+    }
+
+    // Anzeige
+    const info=document.getElementById('verpflStandortInfo');
+    info.style.display='block';
+    info.innerHTML=`<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">📍 Aktueller Standort</div>
+      <div style="font-weight:300;color:var(--txt)">${eh(adresse)}</div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:4px">Entfernung Betriebsstätte: ${kmText} (Luftlinie)</div>`;
+
+    document.getElementById('verpflActiveCard').style.display='block';
+    document.getElementById('verpflActiveInfo').textContent=`Seit ${new Date(verpflBesuch.start).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} Uhr · ${eh(adresse)}`;
+
+    btn.disabled=false;
+    btn.innerHTML='<span style="font-size:18px">📍</span><span>Ich bin hier</span><span style="font-size:10px;color:var(--txt3)">Standort aktualisieren</span>';
+    document.getElementById('btnAbfahrt').disabled=false;
+    updVerpflTages();
+    toast('Standort erfasst: '+adresse.substring(0,40),'ok');
+
+  }, err=>{
+    btn.disabled=false;btn.innerHTML='<span style="font-size:18px">📍</span><span>Ich bin hier</span><span style="font-size:10px;color:var(--txt3)">Standort erfassen</span>';
+    toast('Standort-Zugriff verweigert – Bitte in Einstellungen erlauben','er');
+  },{enableHighAccuracy:false,timeout:10000,maximumAge:30000});
+}
+
+async function verpflAbfahrt(){
+  if(!verpflBesuch){toast('Zuerst Ankunft erfassen','wr');return;}
+  const endTime=Date.now();
+  const h=(endTime-verpflBesuch.start)/3600000;
+  const pauschale=calcPauschale(h);
+
+  const fahrt={
+    id:Date.now(),
+    datum:new Date().toISOString().split('T')[0],
+    adresse:verpflBesuch.adresse,
+    lat:verpflBesuch.lat,lon:verpflBesuch.lon,
+    startTs:verpflBesuch.start,endTs:endTime,
+    h:Math.round(h*10)/10,
+    pauschale
+  };
+
+  // Speichern
+  const existing=JSON.parse(localStorage.getItem(VERPFL_KEY)||'[]');
+  existing.unshift(fahrt);
+  localStorage.setItem(VERPFL_KEY,JSON.stringify(existing.slice(0,200))); // max 200
+
+  verpflBesuch=null;
+  document.getElementById('verpflActiveCard').style.display='none';
+  document.getElementById('verpflStandortInfo').style.display='none';
+  document.getElementById('btnAbfahrt').disabled=true;
+
+  updVerpflTages();
+  renderVerpflFahrten();
+  toast(`Besuch erfasst · ${Math.round(h*10)/10}h · Pauschale: ${pauschale} €`,'ok');
+}
+
+function updVerpflTages(){
+  if(!verpflBesuch){
+    document.getElementById('verpflStunden').textContent='0h';
+    document.getElementById('verpflPauschale').textContent='0 €';
+    return;
+  }
+  const h=(Date.now()-verpflBesuch.start)/3600000;
+  document.getElementById('verpflStunden').textContent=Math.round(h*10)/10+'h';
+  document.getElementById('verpflPauschale').textContent=calcPauschale(h)+' €';
+  document.getElementById('verpflKm').textContent='– km'; // Geo nur auf Knopfdruck
+}
+
+function renderVerpflFahrten(){
+  const fahrten=JSON.parse(localStorage.getItem(VERPFL_KEY)||'[]');
+  const now=new Date();
+  const monat=String(now.getMonth()+1).padStart(2,'0');
+  const jahr=now.getFullYear();
+  const dieserMonat=fahrten.filter(f=>(f.datum||'').startsWith(`${jahr}-${monat}`));
+
+  const summe=dieserMonat.reduce((s,f)=>s+(f.pauschale||0),0);
+  document.getElementById('verpflMonatsSumme').textContent=summe+' €';
+
+  const l=document.getElementById('verpflFahrtenList');
+  if(!dieserMonat.length){
+    l.innerHTML='<div class="empty" style="padding:16px 0"><p>Keine Fahrten diesen Monat.</p></div>';
+    return;
+  }
+  l.innerHTML=dieserMonat.map(f=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;
+      padding:9px 0;border-bottom:1px solid var(--br);font-size:12px;font-weight:300">
+      <div>
+        <div style="color:var(--txt)">${fd(f.datum)}</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px">${eh(f.adresse||'–')} · ${f.h}h</div>
+      </div>
+      <div style="color:var(--gold);font-size:13px">${f.pauschale} €</div>
+    </div>`).join('');
+}
+
+async function geocodeBetriebsstaette(){
+  const adresse=localStorage.getItem('bsp_bs');
+  if(!adresse)return;
+  try{
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(adresse)}&format=json&limit=1`,
+      {headers:{'User-Agent':'BelegScanPro/1.0'}});
+    const d=await r.json();
+    if(d&&d[0]){
+      localStorage.setItem('bsp_bs_coords',JSON.stringify({lat:parseFloat(d[0].lat),lon:parseFloat(d[0].lon)}));
+    }
+  }catch(e){}
+}
+
+function initVerpflView(){
+  const bs=localStorage.getItem('bsp_bs');
+  if(bs){
+    document.getElementById('bsAdresse').value=bs;
+    document.getElementById('bsHint').textContent='✓ Gespeichert. Tippe OK um zu aktualisieren.';
+    geocodeBetriebsstaette(); // Koordinaten im Hintergrund holen
+  }
+  renderVerpflFahrten();
+  updVerpflTages();
 }
 
 function fd(d){if(!d)return'–';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
