@@ -1,5 +1,5 @@
 // BelegScan Pro – Service Worker v8
-const V = 'bsp-v12';
+const V = 'bsp-v8';
 const ASSETS = [
   './', './index.html',
   'https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=DM+Mono:wght@300&display=swap',
