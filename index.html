@@ -482,7 +482,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .seg-btn{flex:1;padding:9px;border:none;border-radius:100px;background:transparent;
   color:var(--txt3);font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:300;
   cursor:pointer;transition:all .2s}
-.seg-btn.on{background:var(--s3);color:var(--txt);border:1px solid var(--br)}
+.seg-btn.priv-btn{color:var(--silv)}.seg-btn.priv-btn.on{background:rgba(136,153,170,.12);color:var(--silv)}.seg-btn.on{background:var(--s3);color:var(--txt);border:1px solid var(--br)}
 .vf{position:relative;background:#000;border-radius:18px;overflow:hidden;
   min-height:220px;display:flex;align-items:center;justify-content:center;margin-bottom:0}
 #camStream{width:100%;max-height:310px;object-fit:cover;display:none}
@@ -804,7 +804,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   </div>
 </div>
 
-<!-- ── BELEGE ── -->
+<!-- ── BELEGE (Business only) ── -->
 <div class="view" id="v-belege">
   <div class="filter-row">
     <input class="inp" id="srch" type="text" placeholder="Suchen …" oninput="renderBelege()" style="flex:1;min-width:80px;font-size:12px;padding:8px 12px">
@@ -815,7 +815,156 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   <div id="bList"></div>
 </div>
 
+<!-- ── PRIVAT ── -->
+<div class="view" id="v-priv">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div>
+      <div style="font-size:22px;font-weight:200;color:var(--silv)" id="privTotalDisp">0,00 €</div>
+      <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="privCountDisp">0 Belege</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-sm" onclick="openSchnell()"
+        style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:12px;display:flex;align-items:center;gap:5px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Schnell
+      </button>
+      <button class="btn btn-sm" onclick="analysePrivatMonat()"
+        style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:12px;display:flex;align-items:center;gap:5px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        KI-Analyse
+      </button>
+    </div>
+  </div>
+  <!-- KI-Analyse Ergebnis -->
+  <div id="privAnalyseCard" style="display:none;background:rgba(136,153,170,.06);border:1px solid rgba(136,153,170,.15);
+    border-radius:var(--r12);padding:14px;margin-bottom:14px;font-size:13px;font-weight:300;
+    color:var(--txt2);line-height:1.7;white-space:pre-wrap"></div>
+  <div class="filter-row" style="margin-bottom:12px">
+    <select class="sel" id="pftC" onchange="renderPrivatBelege()"><option value="">Alle Kategorien</option><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Freizeit</option><option>Reise</option><option>Sonstiges</option></select>
+    <select class="sel" id="pftM" onchange="renderPrivatBelege()">
+      <option value="">Alle Monate</option>
+      <option value="01">Januar</option><option value="02">Februar</option><option value="03">März</option>
+      <option value="04">April</option><option value="05">Mai</option><option value="06">Juni</option>
+      <option value="07">Juli</option><option value="08">August</option><option value="09">September</option>
+      <option value="10">Oktober</option><option value="11">November</option><option value="12">Dezember</option>
+    </select>
+  </div>
+  <div id="pList"></div>
+</div>
+
+<!-- ── KONTO-ABGLEICH ── -->
+<div class="view" id="v-konto">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div>
+      <div style="font-size:16px;font-weight:300;color:var(--txt)">Kontoauszug-Abgleich</div>
+      <div style="font-size:11px;font-weight:300;color:var(--txt3)">Screenshot oder Foto deines Kontoauszugs</div>
+    </div>
+  </div>
+
+  <!-- Upload-Bereich -->
+  <input type="file" id="kontoFile" accept="image/*" onchange="loadKontoFile(this)" style="display:none">
+  <input type="file" id="kontoFileGal" accept="image/*" capture="environment" onchange="loadKontoFile(this)" style="display:none">
+  <button onclick="document.getElementById('kontoFileGal').click()"
+    style="width:100%;background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r16);
+    padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;
+    cursor:pointer;margin-bottom:10px">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.2">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <path d="M2 10h20"/>
+      <path d="M6 15h4M14 15h4"/>
+    </svg>
+    <span style="font-size:13px;font-weight:300;color:var(--txt)">Kontoauszug fotografieren</span>
+    <span style="font-size:11px;color:var(--txt3)">Banking-App Screenshot oder Papierdruck</span>
+  </button>
+  <button onclick="document.getElementById('kontoFile').click()"
+    style="width:100%;background:transparent;border:1px solid var(--br);border-radius:var(--r12);
+    padding:11px 16px;display:flex;align-items:center;justify-content:center;gap:8px;
+    cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300;margin-bottom:16px">
+    Aus Galerie wählen
+  </button>
+
+  <!-- Progress -->
+  <div id="kontoProg" style="display:none;margin-bottom:14px">
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px;font-family:'DM Mono',monospace" id="kontoLog">Bereit …</div>
+    <div style="background:var(--s3);border-radius:4px;height:3px">
+      <div id="kontoFill" style="background:var(--silv);height:3px;border-radius:4px;width:0%;transition:width .3s"></div>
+    </div>
+  </div>
+
+  <!-- Erkannte Buchungen -->
+  <div id="kontoResultWrap" style="display:none">
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;letter-spacing:.4px;text-transform:uppercase" id="kontoSummaryLbl"></div>
+
+    <!-- Abgeglichene Buchungen -->
+    <div id="kontoMatchedWrap" style="display:none;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:300;color:var(--grn);margin-bottom:8px;letter-spacing:.3px">✅ ABGEGLICHEN</div>
+      <div id="kontoMatchedList"></div>
+    </div>
+
+    <!-- Unbekannte Buchungen – KI-Vorschlag + Bestätigung -->
+    <div id="kontoUnknownWrap" style="display:none;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:300;color:var(--orn);margin-bottom:8px;letter-spacing:.3px">❓ KEIN BELEG GEFUNDEN</div>
+      <div id="kontoUnknownList"></div>
+    </div>
+
+    <!-- Ignorierte -->
+    <div id="kontoIgnoredWrap" style="display:none">
+      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px;letter-spacing:.3px">— IGNORIERT</div>
+      <div id="kontoIgnoredList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCHNELLEINGABE SHEET (Privat, kein Foto) ── -->
+<div class="ovl" id="schnellOvl" onclick="closeSchnellOuter(event)">
+  <div class="sheet">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeSchnell()">✕</button>
+    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:4px">⚡ Schnelleingabe</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:16px">Ohne Foto – tippen oder sprechen</div>
+
+    <!-- Spracheingabe -->
+    <div id="sprachWrap" style="margin-bottom:14px">
+      <button id="micBtn" onclick="toggleMic()"
+        style="width:100%;background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);
+        padding:14px;display:flex;align-items:center;justify-content:center;gap:10px;
+        cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300;transition:all .2s">
+        <svg id="micIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+        </svg>
+        <span id="micLbl">🎤 Sprechen</span>
+      </button>
+      <div id="micTranscript" style="display:none;background:var(--s2);border:1px solid var(--br2);
+        border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
+        color:var(--txt2);margin-top:8px;min-height:36px;line-height:1.5"></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">— oder manuell —</div>
+
+    <!-- Manuelle Felder -->
+    <div class="res-fields">
+      <div class="field"><label>Händler / Beschreibung</label><input id="sShop" type="text" placeholder="z.B. Eiswagen am See"></div>
+      <div class="field"><label>Betrag</label><input id="sBrutto" type="text" placeholder="0.00" inputmode="decimal"></div>
+      <div class="field"><label>Datum</label><input id="sDate" type="date"></div>
+      <div class="field"><label>Kategorie</label><select id="sCat">
+        <option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option>
+        <option>Kleidung</option><option>Tanken</option><option>Haushalt</option>
+        <option>Gesundheit</option><option>Freizeit</option><option>Reise</option>
+        <option>Sonstiges</option></select></div>
+      <div class="field"><label>Zahlung</label><select id="sPay">
+        <option>Bar</option><option>Karte</option><option>Online</option></select></div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-gold btn-sm" style="flex:1;justify-content:center" onclick="saveSchnell()">Speichern</button>
+      <button class="btn btn-g btn-sm" onclick="closeSchnell()">Abbrechen</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── MwSt ── -->
+
 <div class="view" id="v-mwst">
   <div class="tabs">
     <button class="tab on" onclick="setPeriod('month',this)">Monat</button>
@@ -982,7 +1131,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   <button class="ni on" onclick="showView('home')" data-v="home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Start
   </button>
-  <button class="ni" onclick="showView('belege')" data-v="belege">
+  <button class="ni" onclick="showView('belege')" data-v="belege" id="navBelege">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Belege
   </button>
   <div class="ni-sw">
@@ -990,11 +1139,17 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
     </button>
   </div>
-  <button class="ni" onclick="showView('mwst')" data-v="mwst">
+  <button class="ni" id="navPriv" onclick="showView('priv')" data-v="priv" style="display:none">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Privat
+  </button>
+  <button class="ni" onclick="showView('mwst')" data-v="mwst" id="navMwst">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>MwSt
   </button>
-  <button class="ni" onclick="showView('steuer')" data-v="steuer">
+  <button class="ni" onclick="showView('steuer')" data-v="steuer" id="navSteuer">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Steuer
+  </button>
+  <button class="ni" onclick="showView('konto')" data-v="konto" id="navKonto">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>Konto
   </button>
 </nav>
 
@@ -1088,9 +1243,14 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   <div class="sheet" style="max-height:95vh">
     <div class="sh"></div>
     <button class="sc-btn" onclick="closeScanner()">✕</button>
-    <div class="seg">
-      <button class="seg-btn on" id="ttER" onclick="setScanType('er')">Eingangsrechnung</button>
-      <button class="seg-btn" id="ttAR" onclick="setScanType('ar')">Ausgangsrechnung</button>
+    <!-- WHY: Kein Privat-Tab hier – der Modus kommt vom Toggle auf der Startseite -->
+    <div id="bizSeg" class="seg" style="grid-template-columns:1fr 1fr">
+      <button class="seg-btn on" id="ttER" onclick="setScanType('er')">📥 Eingangsrechnung</button>
+      <button class="seg-btn" id="ttAR" onclick="setScanType('ar')">📤 Ausgangsrechnung</button>
+    </div>
+    <!-- Privat-Modus Banner: zeigt aktuellen Modus, kein manuelles Umschalten -->
+    <div id="privScanHint" style="display:none;background:rgba(136,153,170,.07);border:1px solid rgba(136,153,170,.18);border-radius:10px;padding:9px 12px;font-size:11px;font-weight:300;color:var(--silv);line-height:1.55;margin-bottom:4px">
+      🏠 Privat-Modus aktiv · Keine Belegnummer · Nur Gesamtbetrag · Erscheint nur im Privat-Tab
     </div>
 
     <!-- Vorschau: wird sichtbar sobald ein Bild gewählt wurde -->
@@ -1158,7 +1318,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       <div id="scanModeBanner" style="margin-bottom:12px;padding:9px 12px;border-radius:8px;
         font-size:11px;font-weight:300;line-height:1.5;display:none"></div>
       <p style="font-size:13px;font-weight:300;color:var(--txt2);margin-bottom:13px">Daten prüfen und ggf. korrigieren:</p>
-      <div class="res-fields">
+      <!-- Business-Felder (er/ar) -->
+      <div class="res-fields" id="bizFields">
         <div class="field"><label>Händler / Aussteller</label><input id="rShop" type="text" placeholder="–"></div>
         <div class="field"><label>Datum</label><input id="rDate" type="date"></div>
         <div class="field"><label>Netto</label><input id="rNet" type="text" placeholder="0.00"></div>
@@ -1167,6 +1328,18 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
         <div class="field"><label>MwSt-Satz</label><select id="rRate"></select></div>
         <div class="field"><label>Kategorie</label><select id="rCat"><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select></div>
         <div class="field"><label>Zahlung</label><select id="rPay"><option>Karte</option><option>Bar</option><option>Überweisung</option><option>Online</option></select></div>
+      </div>
+      <!-- Privat-Felder (priv) – nur Gesamtbetrag + Kategorie, keine MwSt -->
+      <div class="res-fields" id="privFields" style="display:none">
+        <div class="field"><label>Händler / Geschäft</label><input id="pShop" type="text" placeholder="–"></div>
+        <div class="field"><label>Datum</label><input id="pDate" type="date"></div>
+        <div class="field"><label>Gesamtbetrag</label><input id="pBrutto" type="text" placeholder="0.00"></div>
+        <div class="field"><label>Kategorie</label><select id="pCat">
+          <option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option>
+          <option>Kleidung</option><option>Tanken</option><option>Haushalt</option>
+          <option>Gesundheit</option><option>Freizeit</option><option>Reise</option>
+          <option>Sonstiges</option></select></div>
+        <div class="field"><label>Zahlung</label><select id="pPay"><option>Karte</option><option>Bar</option><option>Online</option></select></div>
       </div>
       <div id="itemsSec" style="display:none;margin-bottom:12px">
         <p class="stitle" style="margin-bottom:8px">Erkannte Positionen</p>
@@ -1280,8 +1453,18 @@ function setMode(m){
   document.getElementById('modePriv').className='mode-btn'+(m==='priv'?' on priv':'');
   document.getElementById('bizContent').style.display=m==='biz'?'block':'none';
   document.getElementById('privContent').style.display=m==='priv'?'block':'none';
-  // Ring-Farbe wechseln: Gold = Business, Silber = Privat
   document.getElementById('ringF').style.stroke=m==='biz'?'var(--gold)':'var(--silv)';
+  // WHY: Im Privat-Modus MwSt+Steuer-Tab ausblenden, Privat-Tab einblenden
+  // Konto-Tab ist immer sichtbar (zeigt alle Buchungen, egal ob priv/biz)
+  const isBiz=m==='biz';
+  document.getElementById('navBelege').style.display=isBiz?'':'none';
+  document.getElementById('navMwst').style.display=isBiz?'':'none';
+  document.getElementById('navSteuer').style.display=isBiz?'':'none';
+  document.getElementById('navPriv').style.display=isBiz?'none':'';
+  // Konto immer sichtbar
+  // Scanner-Default je nach Modus
+  if(m==='priv') setScanType('priv');
+  else setScanType('er');
   renderHome();
 }
 
@@ -1310,10 +1493,14 @@ function checkOnboarding(){if(!profile.done){document.getElementById('onboarding
 // ════════════════════════════════════════════════════════
 function showView(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
-  document.getElementById('v-'+v).classList.add('on');
+  const vEl=document.getElementById('v-'+v);
+  if(!vEl)return;
+  vEl.classList.add('on');
   document.querySelectorAll('.ni[data-v]').forEach(el=>el.classList.toggle('on',el.dataset.v===v));
   if(v==='home')renderHome();
   if(v==='belege')renderBelege();
+  if(v==='priv')renderPrivatBelege();
+  if(v==='konto')initKontoView();
   if(v==='mwst')renderMwst();
   if(v==='steuer')calcSteuer();
   if(v==='quartal')initQuartal();
@@ -1696,20 +1883,28 @@ async function renderHome(){
   await renderAboDetektiv(all);
 
   // Recent list
-  const sorted=[...all].sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).slice(0,6);
+  // WHY: Privat-Belege erscheinen NIRGENDWO im Business-Bereich – nur im Privat-Tab
+  const sorted=[...all].filter(b=>b.type!=='priv').sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).slice(0,6);
   const rl=document.getElementById('recentList');
   if(!sorted.length){rl.innerHTML='<div class="empty"><p>Noch keine Belege.<br>Tippe auf den Scanner-Button.</p></div>';return;}
-  rl.innerHTML=sorted.map(b=>`<div class="ri" onclick="showDetail(${b.id})">
-    <div class="ri-bar" style="background:${b.type==='er'?'var(--blu)':'var(--ylw)'}"></div>
+  rl.innerHTML=sorted.map(b=>{
+    const isPriv=b.type==='priv';
+    const barCol=isPriv?'var(--silv)':b.type==='er'?'var(--blu)':'var(--ylw)';
+    const amCol=isPriv?'var(--silv)':b.type==='er'?'var(--blu)':'var(--ylw)';
+    const badge=isPriv?'<span class="badge" style="background:rgba(136,153,170,.15);color:var(--silv)">🏠</span>'
+      :`<span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type.toUpperCase()}</span>`;
+    const nrSpan=isPriv?'':`<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--txt3)">${eh(b.belegNr||'')}</span>`;
+    return `<div class="ri" onclick="showDetail(${b.id})">
+    <div class="ri-bar" style="background:${barCol}"></div>
     <div class="ri-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
     <div class="ri-inf">
       <div class="ri-sh">${eh(b.shop||'Unbekannt')}</div>
-      <div class="ri-me"><span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type.toUpperCase()}</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--txt3)">${eh(b.belegNr||'')}</span>${b.garantieBis?`<span style="font-size:10px;color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">🛡️ ${fd(b.garantieBis)}</span>`:''}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
+      <div class="ri-me">${badge}${nrSpan}${b.garantieBis?`<span style="font-size:10px;color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">🛡️ ${fd(b.garantieBis)}</span>`:''}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
     </div>
     <div class="ri-r">
-      <div class="ri-am" style="color:${b.type==='er'?'var(--blu)':'var(--ylw)'}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
+      <div class="ri-am" style="color:${amCol}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
       <div class="ri-dt">${fd(b.date)}</div>
-    </div></div>`).join('');
+    </div></div>`;}).join('');
 }
 
 // ════════════════════════════════════════════════════════
@@ -1898,10 +2093,24 @@ function renderInsightBanner(abos,potential){
 // Monitore, Dashboards und Screens sauber. Der erweiterte Prompt
 // extrahiert zusätzlich Garantie-relevante und Abo-Signale.
 // ════════════════════════════════════════════════════════
-function openScanner(){document.getElementById('scanOvl').classList.add('on');setScanType('er');}
+function openScanner(){document.getElementById('scanOvl').classList.add('on');setScanType(appMode==='priv'?'priv':'er');}
 function closeScanner(){document.getElementById('scanOvl').classList.remove('on');stopCam();}
 function closeScanOuter(e){if(e.target===document.getElementById('scanOvl'))closeScanner();}
-function setScanType(t){scanType=t;['er','ar'].forEach(x=>{document.getElementById('tt'+x.toUpperCase()).className='seg-btn'+(t===x?' on':'');});}
+function setScanType(t){
+  scanType=t;
+  // WHY: Nur ER/AR Buttons toggeln – kein PRIV-Button mehr im Scanner
+  ['er','ar'].forEach(x=>{
+    const el=document.getElementById('tt'+x.toUpperCase());
+    if(el) el.className='seg-btn'+(t===x?' on':'');
+  });
+  const isPriv=t==='priv';
+  // Seg-Buttons und Privat-Hinweis je nach Modus ein/ausblenden
+  const seg=document.getElementById('bizSeg');
+  if(seg) seg.style.display=isPriv?'none':'grid';
+  document.getElementById('bizFields').style.display=isPriv?'none':'grid';
+  document.getElementById('privFields').style.display=isPriv?'grid':'none';
+  document.getElementById('privScanHint').style.display=isPriv?'block':'none';
+}
 
 async function startCam(){
   try{
@@ -2238,6 +2447,17 @@ WICHTIGE REGELN:
 
 function showRes(r){
   if(!r)return;
+  // WHY: Bei Privat-Scan nur Privat-Felder befüllen
+  if(scanType==='priv'){
+    document.getElementById('pShop').value=r.shop||'';
+    document.getElementById('pDate').value=r.date||new Date().toISOString().split('T')[0];
+    document.getElementById('pBrutto').value=r.brutto!=null?r.brutto.toFixed(2):'';
+    if(r.category)document.getElementById('pCat').value=r.category;
+    if(r.payment)document.getElementById('pPay').value=r.payment;
+    const rib=document.getElementById('retryKiBtn');if(rib)rib.style.display='none';
+    document.getElementById('resWrap').classList.add('on');
+    return;
+  }
   document.getElementById('rShop').value=r.shop||'';
   document.getElementById('rDate').value=r.date||new Date().toISOString().split('T')[0];
   document.getElementById('rNet').value=r.net!=null?r.net.toFixed(2):'';
@@ -2267,6 +2487,14 @@ function showRes(r){
 // Wird aufgerufen wenn kein Key da ist oder KI fehlschlägt.
 // "KI erneut starten" Button erscheint sobald Key gesetzt wurde.
 function showManualForm(){
+  // WHY: Bei Privat nur Privat-Felder clearen
+  if(scanType==='priv'){
+    document.getElementById('pShop').value='';
+    document.getElementById('pDate').value=new Date().toISOString().split('T')[0];
+    document.getElementById('pBrutto').value='';
+    document.getElementById('resWrap').classList.add('on');
+    return;
+  }
   document.getElementById('rShop').value='';
   document.getElementById('rDate').value=new Date().toISOString().split('T')[0];
   document.getElementById('rNet').value='';
@@ -2315,16 +2543,42 @@ function retryKi(){
 // ██ MODUL: BELEG SPEICHERN
 // ════════════════════════════════════════════════════════
 async function saveBeleg(){
+  // ── PRIVAT-BELEG: komplett andere Logik ──
+  if(scanType==='priv'){
+    const item={
+      type:'priv',
+      belegNr:null,  // WHY: Privat-Belege bekommen KEINE Nummer
+      shop:document.getElementById('pShop').value||'Unbekannt',
+      date:document.getElementById('pDate').value||new Date().toISOString().split('T')[0],
+      brutto:parseFloat(document.getElementById('pBrutto').value)||0,
+      net:null, mwst:null, mwstRate:null,  // WHY: MwSt irrelevant bei Privat
+      cat:document.getElementById('pCat').value,
+      payment:document.getElementById('pPay').value,
+      items:curRes?.items||[],
+      image:capThumb||capB64,
+      savedAt:Date.now(),
+      istAbo:curRes?.istAbo||false,
+      garantieBis:null,
+      isDigitalScreen:curRes?.isDigitalScreen||false,
+      screenType:curRes?.screenType||null
+    };
+    try{
+      await dbadd(item);
+      toast('Privat-Beleg gespeichert ✓','ok');
+      closeScanner();resetScan();renderHome();
+    }catch(e){toast('Fehler: '+e.message,'er');}
+    return;
+  }
+
+  // ── BUSINESS-BELEG (er/ar): bisherige Logik ──
   const brutto=parseFloat(document.getElementById('rBrutto').value)||0;
   const mwst=parseFloat(document.getElementById('rMwst').value)||0;
   const net=parseFloat(document.getElementById('rNet').value)||0;
   let nr;
-  // WHY: Bei AR von Monitor erkannte externe Rechnungsnummer verwenden
   if(scanType==='ar'&&curRes?.belegNrExtern){
     nr=curRes.belegNrExtern;arC++;localStorage.setItem('arc',arC);
   }else{nr=nextNr(scanType);}
 
-  // WHY: Garantiedatum berechnen und speichern wenn Elektrogerät erkannt
   let garantieBis=null;
   if(curRes?.garantieMonate&&document.getElementById('rDate').value){
     const kauf=new Date(document.getElementById('rDate').value+'T00:00:00');
@@ -2339,7 +2593,6 @@ async function saveBeleg(){
     mwstRate:parseFloat(document.getElementById('rRate').value)||cfg().mwstH,
     cat:document.getElementById('rCat').value,payment:document.getElementById('rPay').value,
     items:curRes?.items||[],image:capThumb||capB64,savedAt:Date.now(),
-    // WHY: Neue Intelligenz-Felder – aus OCR-Daten abgeleitet, kein manuelles Ausfüllen nötig
     istAbo:curRes?.istAbo||false,
     garantieBis,
     isDigitalScreen:curRes?.isDigitalScreen||false,
@@ -2349,19 +2602,8 @@ async function saveBeleg(){
     await dbadd(item);
     toast(nr+' gespeichert ✓','ok');
     closeScanner();resetScan();updCounters();renderHome();
-
-    // WHY: Bong-Trigger bei relevanten Meilensteinen
-    // 10. Scan = erste große Zeiteinsparung sichtbar
-    if(kiScanCount === 10){
-      triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
-    }
-    // Hoher Betrag = mögliche große Steuererstattung
-    if(brutto >= 500 && scanType === 'er'){
-      const vstRueck = (item.mwst||0);
-      if(vstRueck >= 50){
-        triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');
-      }
-    }
+    if(kiScanCount===10) triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
+    if(brutto>=500&&scanType==='er'){const vstRueck=(item.mwst||0);if(vstRueck>=50)triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');}
   }catch(e){toast('Fehler: '+e.message,'er');}
 }
 
@@ -2372,7 +2614,8 @@ async function renderBelege(){
   const all=await dba();
   const q=(document.getElementById('srch').value||'').toLowerCase();
   const tf=document.getElementById('ftT').value,cf=document.getElementById('ftC').value;
-  let it=all.filter(b=>(!q||b.shop.toLowerCase().includes(q)||(b.belegNr||'').toLowerCase().includes(q))&&(!tf||b.type===tf)&&(!cf||b.cat===cf));
+  // WHY: Privat-Belege (type='priv') gehören NICHT in die Business-Liste
+  let it=all.filter(b=>b.type!=='priv'&&(!q||b.shop.toLowerCase().includes(q)||(b.belegNr||'').toLowerCase().includes(q))&&(!tf||b.type===tf)&&(!cf||b.cat===cf));
   it.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
   const l=document.getElementById('bList');
   if(!it.length){l.innerHTML='<div class="empty"><div class="ico">🧾</div><p>Keine Belege gefunden.</p></div>';return;}
@@ -2391,37 +2634,147 @@ async function renderBelege(){
 }
 
 // ════════════════════════════════════════════════════════
+// ██ MODUL: PRIVAT-BELEGE LIST + KI-ANALYSE
+// WHY: Komplett getrennt von Business. Nur Gesamtbetrag,
+// keine Belegnummer, keine MwSt. KI-Analyse optional auf Knopfdruck.
+// ════════════════════════════════════════════════════════
+async function renderPrivatBelege(){
+  const all=await dba();
+  // WHY: Nur Privat-Belege (type='priv')
+  const cf=document.getElementById('pftC')?.value||'';
+  const mf=document.getElementById('pftM')?.value||'';
+  let it=all.filter(b=>b.type==='priv');
+  if(cf) it=it.filter(b=>b.cat===cf);
+  if(mf) it=it.filter(b=>(b.date||'').substring(5,7)===mf);
+  it.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
+
+  // Summe + Zähler
+  const total=it.reduce((s,b)=>s+(b.brutto||0),0);
+  const td=document.getElementById('privTotalDisp'),cd=document.getElementById('privCountDisp');
+  if(td)td.textContent=fm(total)+' '+cfg().currency;
+  if(cd)cd.textContent=it.length+' Beleg'+(it.length!==1?'e':'');
+
+  const l=document.getElementById('pList');
+  if(!it.length){
+    l.innerHTML='<div class="empty"><div class="ico">🏠</div><p>Noch keine privaten Belege.<br>Im Scanner den Tab "🏠 Privat" wählen.</p></div>';
+    return;
+  }
+  l.innerHTML=it.map(b=>`<div class="bc" onclick="showDetail(${b.id})">
+    <div class="bc-bar" style="background:var(--silv)"></div>
+    <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
+    <div class="bc-inf">
+      <div class="bc-sh">${eh(b.shop||'Unbekannt')}</div>
+      <div class="bc-me"><span class="badge" style="background:rgba(136,153,170,.12);color:var(--silv)">🏠 Privat</span> ${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
+    </div>
+    <div class="bc-r">
+      <div class="bc-am" style="color:var(--silv)">${fm(b.brutto||0)} ${cfg().currency}</div>
+      <div class="bc-dt">${fd(b.date)}</div>
+    </div></div>`).join('');
+}
+
+// WHY: Auf Knopfdruck – analysiert IMMER den aktuellen Monat.
+// Der Nutzer bekommt eine klare Monatsübersicht ohne manuellen Filter.
+async function analysePrivatMonat(){
+  apiKey=localStorage.getItem('cak')||apiKey||'';
+  if(!apiKey){toast('Bitte erst API Key in Settings hinterlegen','er');openApiSheet();return;}
+
+  const now=new Date();
+  const monat=String(now.getMonth()+1).padStart(2,'0');
+  const jahr=now.getFullYear();
+  const monatName=now.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+
+  const all=await dba();
+  // WHY: Immer aktueller Monat – kein manueller Filter
+  const it=all.filter(b=>b.type==='priv'&&(b.date||'').startsWith(`${jahr}-${monat}`));
+
+  if(!it.length){toast(`Keine privaten Belege für ${monatName}`,'wr');return;}
+
+  const card=document.getElementById('privAnalyseCard');
+  card.style.display='block';
+  card.textContent=`⏳ Analysiere ${it.length} Belege aus ${monatName} …`;
+
+  const summary=it.map(b=>`- ${fd(b.date)}: ${b.shop||'?'} | ${b.cat||'?'} | ${fm(b.brutto||0)} € | Artikel: ${(b.items||[]).map(i=>i.name).join(', ')||'–'}`).join('\n');
+  const total=it.reduce((s,b)=>s+(b.brutto||0),0);
+  const byCat={};it.forEach(b=>{byCat[b.cat||'?']=(byCat[b.cat||'?']||0)+(b.brutto||0);});
+  const catSummary=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`${c}: ${fm(v)} €`).join(', ');
+
+  const prompt=`Du bist ein persönlicher Finanzassistent für Privatausgaben im deutschsprachigen Raum.\n\nAnalysiere meine privaten Ausgaben für ${monatName} und gib konkrete Tipps auf Deutsch:\n\nMONAT: ${monatName}\nGESAMTAUSGABEN: ${fm(total)} €\nNACH KATEGORIE: ${catSummary}\n\nBELEGE DIESES MONATS:\n${summary}\n\nDEINE ANALYSE:\n1. 🏷️ TOP-AUSGABEN: Was kostet am meisten – ist das angemessen?\n2. 💡 SPARPOTENTIAL: Wo könnte ich konkret sparen? Keine allgemeinen Tipps.\n3. 🥗 LEBENSMITTEL & GESUNDHEIT (falls Belege vorhanden): Sind die Produkte ausgewogen? Was fehlt oder ist zu viel?\n4. 🔄 MUSTER: Wiederkehrende Ausgaben oder mögliche Abos die ich kündigen könnte?\n5. ⭐ MEIN TIPP FÜR NÄCHSTEN MONAT: Die eine konkrete Maßnahme mit dem größten Effekt.\n\nAntworte direkt und praktisch auf Deutsch. Maximal 250 Wörter.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:700,messages:[{role:'user',content:prompt}]})
+    });
+    const respText=await resp.text().catch(()=>'');
+    if(!resp.ok){card.textContent='❌ API Fehler '+resp.status;return;}
+    let data;try{data=JSON.parse(respText);}catch(e){card.textContent='❌ Netzwerkfehler – nochmal versuchen';return;}
+    const text=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'Keine Antwort';
+    card.innerHTML=`<div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">${monatName} · ${fm(total)} € · ${it.length} Belege</div><div style="white-space:pre-wrap">${eh(text)}</div>`;
+  }catch(e){
+    card.textContent='❌ '+e.message;
+  }
+}
+
+// ════════════════════════════════════════════════════════
 // ██ MODUL: DETAIL SHEET
 // ════════════════════════════════════════════════════════
 async function showDetail(id){
   const all=await dba();const b=all.find(x=>x.id===id);if(!b)return;
-  curDet=b;const isER=b.type==='er';
-  const garantieInfo=b.garantieBis?`<div class="drow"><span class="dk">🛡️ Garantie bis</span><span class="dv" style="color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">${fd(b.garantieBis)}</span></div>`:'';
-  const aboInfo=b.istAbo?`<div class="drow"><span class="dk">Status</span><span class="dv"><span class="badge b-priv">Abo / wiederkehrend</span></span></div>`:'';
-  const screenInfo=b.isDigitalScreen?`<div class="drow"><span class="dk">Quelle</span><span class="dv" style="color:var(--silv)">🖥️ Digital Screen ${b.screenType?'('+b.screenType+')':''}</span></div>`:'';
-  document.getElementById('detContent').innerHTML=`
-    ${b.image?`<img src="${b.image}" alt="" class="det-img">`:''}
-    <div class="det-title">${eh(b.shop||'Unbekannt')}</div>
-    <div class="det-sub"><span class="badge ${isER?'b-er':'b-ar'}">${isER?'Eingangsrechnung':'Ausgangsrechnung'}</span><span class="mono" style="font-size:11px;color:var(--txt3)">${eh(b.belegNr||'')}</span></div>
-    <div class="drow"><span class="dk">Datum</span><span class="dv">${fd(b.date)}</span></div>
-    <div class="drow"><span class="dk">Netto</span><span class="dv">${b.net!=null?fm(b.net)+' '+cfg().currency:'–'}</span></div>
-    <div class="drow"><span class="dk">${cfg().steuerLabel} (${b.mwstRate||cfg().mwstH}%)</span><span class="dv">${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:'–'}</span></div>
-    <div class="drow"><span class="dk">Brutto</span><span class="dv">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</span></div>
-    <div class="drow"><span class="dk">Zahlungsart</span><span class="dv">${eh(b.payment||'–')}</span></div>
-    <div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'–')}</span></div>
-    ${garantieInfo}${aboInfo}${screenInfo}
-    <div class="drow"><span class="dk">Erfasst</span><span class="dv">${new Date(b.savedAt||0).toLocaleString('de-DE')}</span></div>
-    ${b.items&&b.items.length?`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`:''}
-    <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap">
+  curDet=b;
+  const isPriv=b.type==='priv';
+  const isER=b.type==='er';
+
+  let html='';
+  if(b.image) html+=`<img src="${b.image}" alt="" class="det-img">`;
+  html+=`<div class="det-title">${eh(b.shop||'Unbekannt')}</div>`;
+
+  if(isPriv){
+    // WHY: Privat-Detail – keine Belegnummer, keine MwSt, kein Stempel
+    html+=`<div class="det-sub"><span class="badge" style="background:rgba(136,153,170,.12);color:var(--silv)">🏠 Privat-Ausgabe</span></div>`;
+    html+=`<div class="drow"><span class="dk">Datum</span><span class="dv">${fd(b.date)}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Betrag</span><span class="dv" style="color:var(--silv)">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'–')}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Zahlung</span><span class="dv">${eh(b.payment||'–')}</span></div>`;
+    if(b.istAbo) html+=`<div class="drow"><span class="dk">Status</span><span class="dv"><span class="badge b-priv">Abo / wiederkehrend</span></span></div>`;
+    if(b.items&&b.items.length) html+=`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`;
+    html+=`<div class="drow"><span class="dk">Erfasst</span><span class="dv">${new Date(b.savedAt||0).toLocaleString('de-DE')}</span></div>`;
+    html+=`<div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-red btn-sm" onclick="delBeleg(${b.id})">Löschen</button></div>`;
+  } else {
+    // Business-Detail (er/ar)
+    const garantieInfo=b.garantieBis?`<div class="drow"><span class="dk">🛡️ Garantie bis</span><span class="dv" style="color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">${fd(b.garantieBis)}</span></div>`:'';
+    const aboInfo=b.istAbo?`<div class="drow"><span class="dk">Status</span><span class="dv"><span class="badge b-priv">Abo / wiederkehrend</span></span></div>`:'';
+    const screenInfo=b.isDigitalScreen?`<div class="drow"><span class="dk">Quelle</span><span class="dv" style="color:var(--silv)">🖥️ Digital Screen ${b.screenType?'('+b.screenType+')':''}</span></div>`:'';
+    html+=`<div class="det-sub"><span class="badge ${isER?'b-er':'b-ar'}">${isER?'Eingangsrechnung':'Ausgangsrechnung'}</span><span class="mono" style="font-size:11px;color:var(--txt3)">${eh(b.belegNr||'')}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Datum</span><span class="dv">${fd(b.date)}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Netto</span><span class="dv">${b.net!=null?fm(b.net)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">${cfg().steuerLabel} (${b.mwstRate||cfg().mwstH}%)</span><span class="dv">${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Brutto</span><span class="dv">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Zahlungsart</span><span class="dv">${eh(b.payment||'–')}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'–')}</span></div>`;
+    html+=garantieInfo+aboInfo+screenInfo;
+    html+=`<div class="drow"><span class="dk">Erfasst</span><span class="dv">${new Date(b.savedAt||0).toLocaleString('de-DE')}</span></div>`;
+    if(b.items&&b.items.length) html+=`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`;
+    html+=`<div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap">
       ${b.image?`<button class="btn btn-blu btn-sm" onclick="exportStamped()">PDF mit Stempel</button>`:''}
       ${b.image?`<button class="btn btn-g btn-sm" onclick="exportSinglePDF()">PDF speichern</button>`:''}
       <button class="btn btn-red btn-sm" onclick="delBeleg(${b.id})">Löschen</button>
     </div>`;
+  }
+
+  document.getElementById('detContent').innerHTML=html;
   document.getElementById('detOvl').classList.add('on');
 }
 function closeDet(){document.getElementById('detOvl').classList.remove('on');}
 function closeDetOuter(e){if(e.target===document.getElementById('detOvl'))closeDet();}
-async function delBeleg(id){if(!confirm('Beleg löschen?'))return;await dbdel(id);closeDet();renderBelege();renderHome();toast('Gelöscht','ok');}
+async function delBeleg(id){
+  if(!confirm('Beleg löschen?'))return;
+  const all=await dba();const b=all.find(x=>x.id===id);
+  await dbdel(id);closeDet();
+  // WHY: Je nach Beleg-Typ den richtigen Tab aktualisieren
+  if(b&&b.type==='priv')renderPrivatBelege();else renderBelege();
+  renderHome();toast('Gelöscht','ok');
+}
 async function exportSinglePDF(){if(!curDet?.image){toast('Kein Bild','wr');return;}await exportBelegPDF(curDet,false);}
 
 // ════════════════════════════════════════════════════════
@@ -2725,6 +3078,353 @@ function resetCounters(){if(!confirm('Zähler zurücksetzen?'))return;erC=0;arC=
 // ════════════════════════════════════════════════════════
 // ██ UTILS
 // ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// ██ MODUL: KONTOAUSZUG-ABGLEICH
+// WHY: Nutzer fotografiert Kontoauszug → KI liest Buchungen →
+// Abgleich gegen alle Belege (priv+biz) → unbekannte Buchungen
+// werden mit KI-Vorschlag angezeigt, Nutzer entscheidet.
+// ════════════════════════════════════════════════════════
+let kontoTransaktionen = []; // gelesene Buchungen aus letztem Scan
+
+function initKontoView(){
+  // Nichts zu tun beim ersten Aufruf – Scan startet per Button
+}
+
+function setKontoLog(m,p){
+  document.getElementById('kontoLog').textContent=m;
+  if(p!==undefined) document.getElementById('kontoFill').style.width=p+'%';
+}
+
+async function loadKontoFile(inp){
+  const f=inp.files[0];if(!f)return;
+  apiKey=localStorage.getItem('cak')||apiKey||'';
+  if(!apiKey){toast('Bitte erst API Key hinterlegen','er');openApiSheet();return;}
+
+  document.getElementById('kontoProg').style.display='block';
+  document.getElementById('kontoResultWrap').style.display='none';
+  setKontoLog('🗜️ Bild wird komprimiert …',10);
+
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const raw=e.target.result;
+      const compressed=await compressImage(raw,1024,0.82);
+      setKontoLog('🤖 KI liest Buchungen …',40);
+
+      const mt=compressed.startsWith('data:image/png')?'image/png':'image/jpeg';
+      const imgData=compressed.split(',')[1];
+
+      const prompt=`Du bist ein präziser Kontoauszug-Scanner für deutsche Bankkonten.
+
+Lies ALLE sichtbaren Kontobuchungen/Transaktionen aus diesem Kontoauszug oder Banking-Screenshot.
+
+ANTWORTE NUR mit einem JSON-Array, ohne Erklärung, ohne Markdown:
+[
+  {
+    "datum": "YYYY-MM-DD",
+    "betrag": -29.99,
+    "beschreibung": "REWE SAGT DANKE",
+    "typ": "ausgabe"
+  }
+]
+
+REGELN:
+- betrag: negative Zahl für Ausgaben, positive für Eingänge
+- datum: immer YYYY-MM-DD Format
+- beschreibung: exakt wie auf dem Auszug steht
+- typ: "ausgabe" oder "eingang"
+- Nur echte Buchungen, keine Salden oder Summen
+- Wenn Datum nicht lesbar: heutiges Datum verwenden`;
+
+      const resp=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:imgData}},{type:'text',text:prompt}]}]})
+      });
+
+      setKontoLog('📋 Buchungen werden verarbeitet …',75);
+      const respText=await resp.text().catch(()=>'');
+      if(!resp.ok){setKontoLog('❌ API Fehler '+resp.status,100);return;}
+      let data;try{data=JSON.parse(respText);}catch(e){setKontoLog('❌ Netzwerkfehler',100);return;}
+      const rawText=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'';
+
+      // JSON aus Antwort extrahieren
+      let transaktionen=null;
+      try{transaktionen=JSON.parse(rawText.trim());}catch(_){}
+      if(!transaktionen){const m=rawText.match(/\[[\s\S]*\]/);if(m)try{transaktionen=JSON.parse(m[0]);}catch(_){}}
+      if(!transaktionen||!transaktionen.length){setKontoLog('❌ Keine Buchungen erkannt – bitte deutlicheres Foto',100);return;}
+
+      kontoTransaktionen=transaktionen;
+      setKontoLog(`✓ ${transaktionen.length} Buchungen erkannt – gleiche ab …`,90);
+      await matchKontoTransaktionen(transaktionen);
+      setKontoLog(`✓ Abgleich abgeschlossen`,100);
+      setTimeout(()=>document.getElementById('kontoProg').style.display='none',1500);
+
+    }catch(e){
+      setKontoLog('❌ '+e.message,100);
+    }
+    // Input zurücksetzen
+    try{inp.value='';}catch(_){}
+  };
+  reader.readAsDataURL(f);
+}
+
+async function matchKontoTransaktionen(transaktionen){
+  const all=await dba();
+  const matched=[], unknown=[];
+
+  for(const t of transaktionen){
+    if(t.typ==='eingang') continue; // Eingänge separat behandeln
+    const betrag=Math.abs(t.betrag);
+    const tDatum=new Date((t.datum||new Date().toISOString().split('T')[0])+'T00:00:00');
+
+    // Matching: Betrag ±0.50€ UND Datum ±3 Tage
+    const match=all.find(b=>{
+      if(!b.brutto||!b.date)return false;
+      const bBetrag=Math.abs(b.brutto);
+      const bDatum=new Date(b.date+'T00:00:00');
+      const betragsMatch=Math.abs(bBetrag-betrag)<=0.50;
+      const datumsDiff=Math.abs((tDatum-bDatum)/(1000*60*60*24));
+      return betragsMatch&&datumsDiff<=3;
+    });
+
+    if(match){
+      matched.push({transaktion:t, beleg:match});
+    } else {
+      // KI-Vorschlag basierend auf Beschreibung
+      const vorschlag=guessKategorie(t.beschreibung);
+      unknown.push({transaktion:t, vorschlag, status:'offen'});
+    }
+  }
+
+  renderKontoErgebnis(matched, unknown, transaktionen.length);
+}
+
+// WHY: Einfaches Keyword-Matching für Kategorie-Vorschlag ohne extra API-Call
+function guessKategorie(beschreibung){
+  const d=(beschreibung||'').toLowerCase();
+  if(/rewe|edeka|aldi|lidl|penny|netto|kaufland|dm |rossmann|müller|norma|lebensmittel/.test(d)) return {kat:'Lebensmittel',typ:'priv'};
+  if(/netflix|spotify|amazon prime|dazn|disney|youtube|apple|google play|software|hosting|domain/.test(d)) return {kat:'Software',typ:'biz'};
+  if(/shell|esso|aral|bp |total|tankstelle|tanken/.test(d)) return {kat:'Tanken',typ:'biz'};
+  if(/restaurant|mcdonald|burger|pizza|lieferando|uber eats|gaststätte|café|bistro/.test(d)) return {kat:'Restaurant',typ:'priv'};
+  if(/amazon|zalando|otto |zara|h&m|kleidung|fashion/.test(d)) return {kat:'Kleidung',typ:'priv'};
+  if(/arzt|apotheke|krankenhaus|health|gesundheit|praxis/.test(d)) return {kat:'Gesundheit',typ:'priv'};
+  if(/ikea|möbel|bauhaus|hornbach|obi |haushalt/.test(d)) return {kat:'Haushalt',typ:'priv'};
+  return {kat:'Sonstiges',typ:'priv'};
+}
+
+function renderKontoErgebnis(matched, unknown, total){
+  document.getElementById('kontoResultWrap').style.display='block';
+  document.getElementById('kontoSummaryLbl').textContent=
+    `${total} Buchungen gescannt · ${matched.length} abgeglichen · ${unknown.length} ohne Beleg`;
+
+  // Abgeglichene
+  const mWrap=document.getElementById('kontoMatchedWrap');
+  const mList=document.getElementById('kontoMatchedList');
+  if(matched.length){
+    mWrap.style.display='block';
+    mList.innerHTML=matched.map(({transaktion:t,beleg:b})=>`
+      <div style="background:var(--s2);border:1px solid rgba(58,175,112,.2);border-radius:var(--r8);
+        padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:12px;font-weight:300;color:var(--txt)">${eh(t.beschreibung||'')}</div>
+          <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Beleg: ${eh(b.shop||'')} ${eh(b.belegNr||'')}</div>
+        </div>
+        <div style="font-size:13px;font-weight:300;color:var(--grn)">${fm(Math.abs(t.betrag))} €</div>
+      </div>`).join('');
+  } else { mWrap.style.display='none'; }
+
+  // Unbekannte
+  const uWrap=document.getElementById('kontoUnknownWrap');
+  const uList=document.getElementById('kontoUnknownList');
+  if(unknown.length){
+    uWrap.style.display='block';
+    uList.innerHTML=unknown.map((item,i)=>{
+      const t=item.transaktion;
+      const v=item.vorschlag;
+      return `<div id="unk${i}" style="background:var(--s2);border:1px solid rgba(192,112,48,.25);
+        border-radius:var(--r8);padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-size:12px;font-weight:300;color:var(--txt)">${eh(t.beschreibung||'')}</div>
+            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · KI-Vorschlag: ${v.kat} (${v.typ==='biz'?'Business':'Privat'})</div>
+          </div>
+          <div style="font-size:13px;font-weight:300;color:var(--orn)">${fm(Math.abs(t.betrag))} €</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:11px"
+            onclick="erfasseKontoBuchung(${i},'priv')">🏠 Als Privat erfassen</button>
+          <button class="btn btn-sm" style="background:rgba(74,128,192,.1);border:1px solid rgba(74,128,192,.25);color:var(--blu);font-size:11px"
+            onclick="erfasseKontoBuchung(${i},'biz')">💼 Als Business erfassen</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--br);color:var(--txt3);font-size:11px"
+            onclick="ignoriereKontoBuchung(${i})">Ignorieren</button>
+        </div>
+      </div>`;
+    }).join('');
+  } else { uWrap.style.display='none'; }
+}
+
+// Unbekannte Buchung als Beleg erfassen
+async function erfasseKontoBuchung(idx, typ){
+  const uList=document.getElementById('kontoUnknownList');
+  const items=uList.querySelectorAll('[id^=unk]');
+  const unknown=[];
+  // Rebuild unknown list from DOM data attributes
+  document.querySelectorAll('[id^=unk]').forEach((el,i)=>{
+    if(!el.dataset.dismissed) unknown.push(i);
+  });
+
+  // Kontoauszug-Transaktionen sind in kontoTransaktionen gespeichert
+  // idx bezieht sich auf die unbekannten Transaktionen
+  const allUnk=[];
+  const all=await dba();
+  for(const t of kontoTransaktionen){
+    if(t.typ==='eingang') continue;
+    const betrag=Math.abs(t.betrag);
+    const tDatum=new Date((t.datum||new Date().toISOString().split('T')[0])+'T00:00:00');
+    const match=all.find(b=>{
+      if(!b.brutto||!b.date)return false;
+      return Math.abs(Math.abs(b.brutto)-betrag)<=0.50&&Math.abs((tDatum-new Date(b.date+'T00:00:00'))/(1000*60*60*24))<=3;
+    });
+    if(!match) allUnk.push(t);
+  }
+
+  if(idx>=allUnk.length) return;
+  const t=allUnk[idx];
+  const v=guessKategorie(t.beschreibung);
+
+  const item={
+    type: typ==='priv'?'priv':'er',
+    belegNr: typ==='priv'?null:nextNr('er'),
+    shop: t.beschreibung||'Unbekannt',
+    date: t.datum||new Date().toISOString().split('T')[0],
+    brutto: Math.abs(t.betrag),
+    net: typ==='priv'?null:Math.round(Math.abs(t.betrag)/1.19*100)/100,
+    mwst: typ==='priv'?null:Math.round((Math.abs(t.betrag)-Math.abs(t.betrag)/1.19)*100)/100,
+    mwstRate: typ==='priv'?null:19,
+    cat: v.kat, payment:'Karte',
+    items:[], image:null, savedAt:Date.now(),
+    istAbo:false, garantieBis:null,
+    isDigitalScreen:false, screenType:null
+  };
+
+  try{
+    await dbadd(item);
+    toast(`Erfasst als ${typ==='priv'?'Privat':'Business'} ✓`,'ok');
+    // Zeile ausblenden
+    const el=document.getElementById('unk'+idx);
+    if(el){el.style.opacity='0.3';el.style.pointerEvents='none';el.querySelector('[style*="orn"]').textContent='✓ Erfasst';}
+  }catch(e){toast('Fehler: '+e.message,'er');}
+}
+
+function ignoriereKontoBuchung(idx){
+  const el=document.getElementById('unk'+idx);
+  if(el){el.style.opacity='0.3';el.style.pointerEvents='none';}
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: SCHNELLEINGABE (Privat ohne Foto)
+// WHY: Kleine Bar-Ausgaben, Eis, Trinkgeld etc. haben keine Quittung.
+// Spracheingabe über Web Speech API (nativ in iOS Safari).
+// ════════════════════════════════════════════════════════
+let micActive=false, recognition=null;
+
+function openSchnell(){
+  document.getElementById('sDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('sShop').value='';
+  document.getElementById('sBrutto').value='';
+  document.getElementById('micTranscript').style.display='none';
+  document.getElementById('micTranscript').textContent='';
+  document.getElementById('schnellOvl').classList.add('on');
+}
+function closeSchnell(){document.getElementById('schnellOvl').classList.remove('on');stopMic();}
+function closeSchnellOuter(e){if(e.target===document.getElementById('schnellOvl'))closeSchnell();}
+
+function toggleMic(){
+  if(micActive) stopMic();
+  else startMic();
+}
+
+function startMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){toast('Spracheingabe nicht unterstützt','er');return;}
+  recognition=new SR();
+  recognition.lang='de-DE';
+  recognition.continuous=false;
+  recognition.interimResults=true;
+  recognition.onstart=()=>{
+    micActive=true;
+    document.getElementById('micBtn').style.background='rgba(192,64,64,.15)';
+    document.getElementById('micBtn').style.borderColor='rgba(192,64,64,.4)';
+    document.getElementById('micBtn').style.color='var(--red)';
+    document.getElementById('micLbl').textContent='🔴 Aufnahme läuft …';
+    document.getElementById('micTranscript').style.display='block';
+    document.getElementById('micTranscript').textContent='…';
+  };
+  recognition.onresult=e=>{
+    const transcript=Array.from(e.results).map(r=>r[0].transcript).join('');
+    document.getElementById('micTranscript').textContent=transcript;
+    if(e.results[e.results.length-1].isFinal) parseSprachEingabe(transcript);
+  };
+  recognition.onerror=()=>stopMic();
+  recognition.onend=()=>stopMic();
+  recognition.start();
+}
+
+function stopMic(){
+  micActive=false;
+  if(recognition) try{recognition.stop();}catch(_){}
+  recognition=null;
+  document.getElementById('micBtn').style.background='';
+  document.getElementById('micBtn').style.borderColor='';
+  document.getElementById('micBtn').style.color='';
+  document.getElementById('micLbl').textContent='🎤 Sprechen';
+}
+
+// WHY: Einfaches NLP – erkennt Betrag und Kategorie aus Freitext
+// z.B. "Eis 2,50 Lebensmittel" oder "Kaffee 3 Euro bar"
+function parseSprachEingabe(text){
+  const t=text.toLowerCase();
+
+  // Betrag extrahieren: "2,50" "3 euro" "1.80"
+  const betragMatch=t.match(/(\d+[.,]\d{1,2}|\d+)\s*(?:euro|€|eur)?/);
+  if(betragMatch){
+    const betrag=parseFloat(betragMatch[1].replace(',','.'));
+    if(betrag>0) document.getElementById('sBrutto').value=betrag.toFixed(2);
+  }
+
+  // Kategorie erkennen
+  const v=guessKategorie(text);
+  document.getElementById('sCat').value=v.kat;
+
+  // Shop-Name: alles vor dem Betrag
+  const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|€|eur)?/i,'').replace(/\s+/g,' ').trim();
+  if(shopRaw) document.getElementById('sShop').value=shopRaw.charAt(0).toUpperCase()+shopRaw.slice(1);
+}
+
+async function saveSchnell(){
+  const shop=document.getElementById('sShop').value.trim()||'Schnelleingabe';
+  const brutto=parseFloat(document.getElementById('sBrutto').value)||0;
+  if(!brutto){toast('Bitte Betrag eingeben','er');return;}
+  const item={
+    type:'priv',belegNr:null,
+    shop,
+    date:document.getElementById('sDate').value||new Date().toISOString().split('T')[0],
+    brutto,net:null,mwst:null,mwstRate:null,
+    cat:document.getElementById('sCat').value,
+    payment:document.getElementById('sPay').value,
+    items:[],image:null,savedAt:Date.now(),
+    istAbo:false,garantieBis:null,isDigitalScreen:false,screenType:null
+  };
+  try{
+    await dbadd(item);
+    toast(shop+' ('+fm(brutto)+' €) gespeichert ✓','ok');
+    closeSchnell();
+    renderPrivatBelege();
+    renderHome();
+  }catch(e){toast('Fehler: '+e.message,'er');}
+}
+
 function fd(d){if(!d)return'–';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
 function fm(n){return(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmK(n){if(Math.abs(n)>=1000)return(n/1000).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1})+'k';return(n||0).toLocaleString('de-DE');}
