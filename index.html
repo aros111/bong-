@@ -881,63 +881,62 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 
 <!-- ── KONTO-ABGLEICH ── -->
 <div class="view" id="v-konto">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div>
       <div style="font-size:16px;font-weight:300;color:var(--txt)">Kontoauszug-Abgleich</div>
-      <div style="font-size:11px;font-weight:300;color:var(--txt3)">Screenshot oder Foto deines Kontoauszugs</div>
+      <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="kontoStatusLbl">Noch keine Buchungen geladen</div>
     </div>
+    <button class="btn btn-g btn-sm" onclick="kontoAllesLoeschen()" style="font-size:11px">Leeren</button>
   </div>
 
-  <!-- Upload-Bereich -->
-  <input type="file" id="kontoFile" accept="image/*" onchange="loadKontoFile(this)" style="display:none">
-  <input type="file" id="kontoFileGal" accept="image/*" capture="environment" onchange="loadKontoFile(this)" style="display:none">
-  <button onclick="document.getElementById('kontoFileGal').click()"
-    style="width:100%;background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r16);
-    padding:24px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;
-    cursor:pointer;margin-bottom:10px">
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.2">
-      <rect x="2" y="5" width="20" height="14" rx="2"/>
-      <path d="M2 10h20"/>
-      <path d="M6 15h4M14 15h4"/>
-    </svg>
-    <span style="font-size:13px;font-weight:300;color:var(--txt)">Kontoauszug fotografieren</span>
-    <span style="font-size:11px;color:var(--txt3)">Banking-App Screenshot oder Papierdruck</span>
-  </button>
-  <button onclick="document.getElementById('kontoFile').click()"
-    style="width:100%;background:transparent;border:1px solid var(--br);border-radius:var(--r12);
-    padding:11px 16px;display:flex;align-items:center;justify-content:center;gap:8px;
-    cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300;margin-bottom:16px">
-    Aus Galerie wählen
-  </button>
+  <!-- Multi-Upload -->
+  <input type="file" id="kontoFileMulti" accept="image/*" multiple onchange="kontoQueueAdd(this)" style="display:none">
+  <input type="file" id="kontoFileKam" accept="image/*" capture="environment" onchange="kontoQueueAdd(this)" style="display:none">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+    <button onclick="document.getElementById('kontoFileKam').click()"
+      style="background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r12);
+      padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span style="font-size:12px;font-weight:300;color:var(--txt)">Foto aufnehmen</span>
+    </button>
+    <button onclick="document.getElementById('kontoFileMulti').click()"
+      style="background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r12);
+      padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      <span style="font-size:12px;font-weight:300;color:var(--txt)">Mehrere auswählen</span>
+      <span style="font-size:10px;color:var(--txt3)">Galerie · mehrere möglich</span>
+    </button>
+  </div>
+
+  <!-- Queue-Anzeige -->
+  <div id="kontoQueue" style="display:none;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px">📋 Warteschlange</div>
+    <div id="kontoQueueList" style="font-size:12px;font-weight:300;color:var(--txt2)"></div>
+    <button class="btn btn-gold btn-sm" onclick="kontoQueueStart()" style="margin-top:8px;width:100%;justify-content:center" id="kontoQueueBtn">
+      Alle analysieren starten
+    </button>
+  </div>
 
   <!-- Progress -->
-  <div id="kontoProg" style="display:none;margin-bottom:14px">
+  <div id="kontoProg" style="display:none;margin-bottom:10px">
     <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px;font-family:'DM Mono',monospace" id="kontoLog">Bereit …</div>
     <div style="background:var(--s3);border-radius:4px;height:3px">
       <div id="kontoFill" style="background:var(--silv);height:3px;border-radius:4px;width:0%;transition:width .3s"></div>
     </div>
   </div>
 
-  <!-- Erkannte Buchungen -->
-  <div id="kontoResultWrap" style="display:none">
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;letter-spacing:.4px;text-transform:uppercase" id="kontoSummaryLbl"></div>
-
-    <!-- Abgeglichene Buchungen -->
-    <div id="kontoMatchedWrap" style="display:none;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:300;color:var(--grn);margin-bottom:8px;letter-spacing:.3px">✅ ABGEGLICHEN</div>
-      <div id="kontoMatchedList"></div>
-    </div>
-
-    <!-- Unbekannte Buchungen – KI-Vorschlag + Bestätigung -->
-    <div id="kontoUnknownWrap" style="display:none;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:300;color:var(--orn);margin-bottom:8px;letter-spacing:.3px">❓ KEIN BELEG GEFUNDEN</div>
+  <!-- Erkannte Buchungen – persistent, akkumuliert -->
+  <div id="kontoResultWrap">
+    <div id="kontoUnknownSec" style="display:none;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:300;color:var(--orn);margin-bottom:8px;letter-spacing:.3px;display:flex;justify-content:space-between">
+        <span>❓ KEIN BELEG GEFUNDEN</span>
+        <span id="kontoUnknownCount" style="color:var(--txt3)"></span>
+      </div>
       <div id="kontoUnknownList"></div>
     </div>
-
-    <!-- Ignorierte -->
-    <div id="kontoIgnoredWrap" style="display:none">
-      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px;letter-spacing:.3px">— IGNORIERT</div>
-      <div id="kontoIgnoredList"></div>
+    <div id="kontoMatchedSec" style="display:none;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:300;color:var(--grn);margin-bottom:8px;letter-spacing:.3px">✅ ABGEGLICHEN</div>
+      <div id="kontoMatchedList"></div>
     </div>
   </div>
 </div>
@@ -1191,6 +1190,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     </div>
     <button class="btn btn-red btn-sm" onclick="clearApiKeySettings()" style="margin-bottom:4px">Key löschen</button>
     <a href="https://console.anthropic.com" target="_blank" style="font-size:11px;color:var(--gold);text-decoration:none;display:inline-block;margin-top:6px">→ API Key erstellen</a>
+    <div style="margin-top:10px;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:9px 12px">
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">API-Verbrauch (geschätzt)</div>
+      <div style="font-size:12px;font-weight:300" id="apiCostDisp">–</div>
+      <button class="btn btn-g btn-sm" onclick="resetApiCost()" style="margin-top:6px;font-size:10px">Zurücksetzen</button>
+    </div>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Stempel</div>
@@ -1622,6 +1626,12 @@ function showView(v){
   if(v==='quartal')initQuartal();
   if(v==='settings'){loadStampUI();updCounters();updSettingsInfo();}
 }
+function resetApiCost(){
+  if(!confirm('API-Verbrauch zurücksetzen?')) return;
+  localStorage.removeItem('bsp_api_costs');
+  updApiCostDisplay();
+  toast('Verbrauch zurückgesetzt','ok');
+}
 function updSettingsInfo(){
   const c=cfg();
   document.getElementById('settLand').textContent=c.flag+' '+c.name;
@@ -1629,6 +1639,7 @@ function updSettingsInfo(){
   // WHY: Key immer ins Feld laden damit Nutzer ihn sehen/ändern kann
   const keyInp=document.getElementById('apiKey');
   if(keyInp) keyInp.value=localStorage.getItem('cak')||'';
+  updApiCostDisplay();
   const fmtEx={A:'ER-2026-0001',B:'2026-Q1-ER-0001',C:'2026-ER-0001'};
   document.getElementById('settFmt').textContent=fmtEx[profile.fmt]||'–';
   if(apiKey)document.getElementById('apiKey').value=apiKey;
@@ -2412,6 +2423,7 @@ async function processImg(b64){
   try{
     setLog('📤 Bild wird gesendet …'); setP(15);
     const res = await askClaude(b64);
+    trackApiCost('scan', b64.length);
     setP(95); setLog('✓ Analyse abgeschlossen.');
     incrKiScans();
     curRes = res;
@@ -2883,6 +2895,7 @@ async function analysePrivatMonat(){
       body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:700,messages:[{role:'user',content:prompt}]})
     });
     const respText=await resp.text().catch(()=>'');
+    trackApiCost('analyse');
     if(!resp.ok){card.textContent='❌ API Fehler '+resp.status;return;}
     let data;try{data=JSON.parse(respText);}catch(e){card.textContent='❌ Netzwerkfehler – nochmal versuchen';return;}
     const text=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'Keine Antwort';
@@ -3200,14 +3213,31 @@ function pickTpl(i){
 }
 function pickCol(el){document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));el.classList.add('on');stamp.color=el.dataset.c;document.getElementById('cPick').value=stamp.color;refreshStamp();}
 function freeCol(inp){stamp.color=inp.value;document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));refreshStamp();}
-function refreshStamp(){stamp.firma=document.getElementById('sFirma').value;stamp.frei=document.getElementById('sFrei').value;drawStamp(document.getElementById('stmpC'),stamp,'ER-2026-0001',stampTpl);}
+function refreshStamp(){stamp.firma=document.getElementById('sFirma').value;stamp.frei=document.getElementById('sFrei').value;const previewNr='ER-'+new Date().getFullYear()+'-Q'+Math.ceil((new Date().getMonth()+1)/3)+'-0001';drawStamp(document.getElementById('stmpC'),stamp,previewNr,0);}
 function saveStamp(){localStorage.setItem('sf',stamp.firma);localStorage.setItem('sfr',stamp.frei);localStorage.setItem('sc',stamp.color);toast('Stempel gespeichert','ok');}
+// WHY: Einheitlicher Stempel – kein Stil-Wechsel.
+// Format: EINGANGSRECHNUNG / Jahr · Quartal · Nummer / Firma / Datum
 function drawStamp(cv,cfg2,nr,tpl=0){
-  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,p=9,col=cfg2.color||'#b71c1c';
-  ctx.clearRect(0,0,W,H);ctx.save();ctx.fillStyle=col;
-  if(tpl===0){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(p,p,W-p*2,H-p*2);ctx.lineWidth=.6;ctx.strokeRect(p+3,p+3,W-p*2-6,H-p*2-6);ctx.textAlign='center';ctx.font=`bold 18px 'Courier New',monospace`;ctx.fillText(nr,W/2,p+28);if(cfg2.firma){ctx.font=`400 10px sans-serif`;ctx.fillText(cfg2.firma.substring(0,44),W/2,p+44);}if(cfg2.frei){ctx.font=`400 9px sans-serif`;ctx.fillText(cfg2.frei.substring(0,52),W/2,p+58);}ctx.font=`400 9px monospace`;ctx.fillText(new Date().toLocaleDateString('de-DE'),W/2,p+74);}
-  else if(tpl===1){ctx.fillRect(p,p,6,H-p*2);ctx.fillStyle=col+'15';ctx.fillRect(p+6,p,W-p*2-6,H-p*2);ctx.strokeStyle=col;ctx.lineWidth=.6;ctx.strokeRect(p,p,W-p*2,H-p*2);const lx=p+12;ctx.fillStyle=col;ctx.textAlign='left';ctx.font=`bold 16px monospace`;ctx.fillText(nr,lx,p+22);if(cfg2.firma){ctx.font=`400 10px sans-serif`;ctx.fillText(cfg2.firma.substring(0,40),lx,p+38);}if(cfg2.frei){ctx.font=`400 9px sans-serif`;ctx.fillText(cfg2.frei.substring(0,48),lx,p+52);}ctx.font=`400 9px monospace`;ctx.fillText(new Date().toLocaleDateString('de-DE'),lx,p+68);}
-  else{ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(p,p+1);ctx.lineTo(W-p,p+1);ctx.stroke();ctx.beginPath();ctx.moveTo(p,H-p-1);ctx.lineTo(W-p,H-p-1);ctx.stroke();ctx.textAlign='center';ctx.font=`bold 16px monospace`;ctx.fillText(nr,W/2,p+20);if(cfg2.firma){ctx.font=`400 10px sans-serif`;ctx.fillText(cfg2.firma.substring(0,44),W/2,p+36);}if(cfg2.frei){ctx.font=`400 9px sans-serif`;ctx.fillText(cfg2.frei.substring(0,52),W/2,p+50);}ctx.font=`400 9px monospace`;ctx.fillText(new Date().toLocaleDateString('de-DE'),W/2,p+66);}
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,p=10,col=cfg2.color||'#b71c1c';
+  ctx.clearRect(0,0,W,H);ctx.save();
+  // Doppelrahmen
+  ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.strokeRect(p,p,W-p*2,H-p*2);
+  ctx.lineWidth=0.7;ctx.strokeRect(p+4,p+4,W-p*2-8,H-p*2-8);
+  ctx.fillStyle=col;ctx.textAlign='center';
+  // Typ-Zeile
+  const typ=nr.startsWith('AR')||nr.startsWith('ar')?'AUSGANGSRECHNUNG':'EINGANGSRECHNUNG';
+  ctx.font=`bold 9px 'Inter',sans-serif`;ctx.letterSpacing='2px';
+  ctx.fillText(typ,W/2,p+17);
+  // Belegnummer groß
+  ctx.font=`bold 17px 'Courier New',monospace`;ctx.letterSpacing='0px';
+  ctx.fillText(nr,W/2,p+37);
+  // Trennlinie
+  ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(p+10,p+43);ctx.lineTo(W-p-10,p+43);ctx.stroke();
+  // Firma
+  if(cfg2.firma){ctx.font=`300 9px 'Inter',sans-serif`;ctx.fillText(cfg2.firma.substring(0,46),W/2,p+55);}
+  // Datum
+  ctx.font=`300 9px monospace`;ctx.fillText(new Date().toLocaleDateString('de-DE'),W/2,p+68);
+  if(cfg2.frei){ctx.font=`300 8px sans-serif`;ctx.fillText(cfg2.frei.substring(0,52),W/2,p+80);}
   ctx.restore();
 }
 
@@ -3297,242 +3327,253 @@ function resetCounters(){if(!confirm('Zähler zurücksetzen?'))return;erC=0;arC=
 // Abgleich gegen alle Belege (priv+biz) → unbekannte Buchungen
 // werden mit KI-Vorschlag angezeigt, Nutzer entscheidet.
 // ════════════════════════════════════════════════════════
-let kontoTransaktionen = []; // gelesene Buchungen aus letztem Scan
+// ════════════════════════════════════════════════════════
+// ██ MODUL: KONTOAUSZUG-ABGLEICH v2
+// WHY: Buchungen persistent in localStorage – bleiben auch
+// nach Tab-Wechsel erhalten. Multi-Upload-Queue verarbeitet
+// mehrere Fotos sequenziell. Status (offen/erfasst/ignoriert)
+// wird pro Buchung gespeichert.
+// ════════════════════════════════════════════════════════
+const KONTO_STORE = 'bsp_konto_v2';
+let kontoQueue = []; // Datei-Queue für Batch-Upload
+let kontoRunning = false;
+
+// Buchungen laden/speichern
+function kontoLoad(){ try{ return JSON.parse(localStorage.getItem(KONTO_STORE)||'[]'); }catch(_){ return []; } }
+function kontoSave(arr){ localStorage.setItem(KONTO_STORE, JSON.stringify(arr)); }
 
 function initKontoView(){
-  // Nichts zu tun beim ersten Aufruf – Scan startet per Button
+  renderKontoBuchungen();
+  updKontoStatus();
+}
+
+function updKontoStatus(){
+  const alle = kontoLoad();
+  const offen = alle.filter(t=>t.status==='offen').length;
+  const lbl = document.getElementById('kontoStatusLbl');
+  if(lbl) lbl.textContent = alle.length===0 ? 'Noch keine Buchungen geladen' : `${alle.length} Buchungen · ${offen} offen`;
 }
 
 function setKontoLog(m,p){
-  document.getElementById('kontoLog').textContent=m;
-  if(p!==undefined) document.getElementById('kontoFill').style.width=p+'%';
+  const el=document.getElementById('kontoLog'); if(el) el.textContent=m;
+  if(p!==undefined){ const f=document.getElementById('kontoFill'); if(f) f.style.width=p+'%'; }
 }
 
-async function loadKontoFile(inp){
-  const f=inp.files[0];if(!f)return;
+// ── Multi-Upload Queue ──
+function kontoQueueAdd(inp){
+  const files=Array.from(inp.files||[]);
+  if(!files.length) return;
+  kontoQueue.push(...files);
+  renderKontoQueue();
+  try{inp.value='';}catch(_){}
+}
+
+function renderKontoQueue(){
+  const wrap=document.getElementById('kontoQueue');
+  const list=document.getElementById('kontoQueueList');
+  if(!kontoQueue.length){ if(wrap) wrap.style.display='none'; return; }
+  if(wrap) wrap.style.display='block';
+  if(list) list.innerHTML=kontoQueue.map((f,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px"><span style="color:var(--txt3)">${i+1}.</span> <span>${f.name||'Foto '+(i+1)}</span></div>`).join('');
+}
+
+async function kontoQueueStart(){
   apiKey=localStorage.getItem('cak')||apiKey||'';
   if(!apiKey){toast('Bitte erst API Key hinterlegen','er');openApiSheet();return;}
+  if(kontoRunning){toast('Analyse läuft bereits …','wr');return;}
+  if(!kontoQueue.length){toast('Keine Dateien in der Warteschlange','wr');return;}
 
+  kontoRunning=true;
+  const btn=document.getElementById('kontoQueueBtn');
+  if(btn){btn.disabled=true;btn.textContent='⏳ Analysiere …';}
   document.getElementById('kontoProg').style.display='block';
-  document.getElementById('kontoResultWrap').style.display='none';
-  setKontoLog('🗜️ Bild wird komprimiert …',10);
 
-  const reader=new FileReader();
-  reader.onload=async e=>{
-    try{
-      const raw=e.target.result;
-      const compressed=await compressImage(raw,1024,0.82);
-      setKontoLog('🤖 KI liest Buchungen …',40);
+  const total=kontoQueue.length;
+  for(let i=0;i<total;i++){
+    const f=kontoQueue[i];
+    setKontoLog(`📷 Bild ${i+1} von ${total}: ${f.name||'Foto'}`,Math.round((i/total)*80));
+    await kontoAnalyseFile(f);
+  }
+  kontoQueue=[];
+  renderKontoQueue();
+  setKontoLog(`✓ Alle ${total} Bilder analysiert`,100);
+  setTimeout(()=>document.getElementById('kontoProg').style.display='none',1500);
+  kontoRunning=false;
+  if(btn){btn.disabled=false;btn.textContent='Alle analysieren starten';}
+  await kontoAbgleichAlle();
+  renderKontoBuchungen();
+  updKontoStatus();
+}
 
-      const mt=compressed.startsWith('data:image/png')?'image/png':'image/jpeg';
-      const imgData=compressed.split(',')[1];
+async function kontoAnalyseFile(file){
+  return new Promise(res=>{
+    const reader=new FileReader();
+    reader.onload=async e=>{
+      try{
+        const raw=e.target.result;
+        const compressed=await compressImage(raw,1024,0.82);
+        const mt=compressed.startsWith('data:image/png')?'image/png':'image/jpeg';
+        const imgData=compressed.split(',')[1];
 
-      const prompt=`Du bist ein präziser Kontoauszug-Scanner für deutsche Bankkonten.
+        const prompt=`Du bist ein präziser Kontoauszug-Scanner für deutsche Bankkonten.
 
 Lies ALLE sichtbaren Kontobuchungen/Transaktionen aus diesem Kontoauszug oder Banking-Screenshot.
 
 ANTWORTE NUR mit einem JSON-Array, ohne Erklärung, ohne Markdown:
-[
-  {
-    "datum": "YYYY-MM-DD",
-    "betrag": -29.99,
-    "beschreibung": "REWE SAGT DANKE",
-    "typ": "ausgabe"
-  }
-]
+[{"datum":"YYYY-MM-DD","betrag":-29.99,"beschreibung":"REWE SAGT DANKE","typ":"ausgabe"}]
 
 REGELN:
 - betrag: negative Zahl für Ausgaben, positive für Eingänge
 - datum: immer YYYY-MM-DD Format
-- beschreibung: exakt wie auf dem Auszug steht
+- beschreibung: exakt wie auf dem Auszug
 - typ: "ausgabe" oder "eingang"
-- Nur echte Buchungen, keine Salden oder Summen
-- Wenn Datum nicht lesbar: heutiges Datum verwenden`;
+- Nur echte Buchungen, keine Salden`;
 
-      const resp=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-        body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:imgData}},{type:'text',text:prompt}]}]})
-      });
+        trackApiCost('konto', imgData.length);
 
-      setKontoLog('📋 Buchungen werden verarbeitet …',75);
-      const respText=await resp.text().catch(()=>'');
-      if(!resp.ok){setKontoLog('❌ API Fehler '+resp.status,100);return;}
-      let data;try{data=JSON.parse(respText);}catch(e){setKontoLog('❌ Netzwerkfehler',100);return;}
-      const rawText=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'';
-
-      // JSON aus Antwort extrahieren
-      let transaktionen=null;
-      try{transaktionen=JSON.parse(rawText.trim());}catch(_){}
-      if(!transaktionen){const m=rawText.match(/\[[\s\S]*\]/);if(m)try{transaktionen=JSON.parse(m[0]);}catch(_){}}
-      if(!transaktionen||!transaktionen.length){setKontoLog('❌ Keine Buchungen erkannt – bitte deutlicheres Foto',100);return;}
-
-      kontoTransaktionen=transaktionen;
-      setKontoLog(`✓ ${transaktionen.length} Buchungen erkannt – gleiche ab …`,90);
-      await matchKontoTransaktionen(transaktionen);
-      setKontoLog(`✓ Abgleich abgeschlossen`,100);
-      setTimeout(()=>document.getElementById('kontoProg').style.display='none',1500);
-
-    }catch(e){
-      setKontoLog('❌ '+e.message,100);
-    }
-    // Input zurücksetzen
-    try{inp.value='';}catch(_){}
-  };
-  reader.readAsDataURL(f);
+        const resp=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+          body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:2000,messages:[{role:'user',content:[{type:'image',source:{type:'base64',media_type:mt,data:imgData}},{type:'text',text:prompt}]}]})
+        });
+        const txt=await resp.text().catch(()=>'');
+        if(!resp.ok){res();return;}
+        let data;try{data=JSON.parse(txt);}catch(_){res();return;}
+        const rawText=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'';
+        let neu=null;
+        try{neu=JSON.parse(rawText.trim());}catch(_){}
+        if(!neu){const m=rawText.match(/\[[\s\S]*\]/);if(m)try{neu=JSON.parse(m[0]);}catch(_){}}
+        if(neu&&neu.length){
+          // Zu bestehenden hinzufügen – Duplikate vermeiden (gleicher Betrag+Datum+Beschreibung)
+          const existing=kontoLoad();
+          let added=0;
+          for(const t of neu){
+            const dup=existing.find(e=>e.datum===t.datum&&e.betrag===t.betrag&&e.beschreibung===t.beschreibung);
+            if(!dup){ existing.push({...t, id:Date.now()+Math.random(), status:'offen', vorschlag:null}); added++; }
+          }
+          kontoSave(existing);
+          setKontoLog(`✓ +${added} neue Buchungen`,undefined);
+        }
+      }catch(e){console.error(e);}
+      res();
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
-async function matchKontoTransaktionen(transaktionen){
-  const all=await dba();
-  const matched=[], unknown=[];
-
-  for(const t of transaktionen){
-    if(t.typ==='eingang') continue; // Eingänge separat behandeln
+async function kontoAbgleichAlle(){
+  const alle=kontoLoad();
+  if(!alle.length) return;
+  const belege=await dba();
+  const updated=alle.map(t=>{
+    if(t.status!=='offen') return t;
+    if(t.typ==='eingang') return t;
     const betrag=Math.abs(t.betrag);
     const tDatum=new Date((t.datum||new Date().toISOString().split('T')[0])+'T00:00:00');
-
-    // Matching: Betrag ±0.50€ UND Datum ±3 Tage
-    const match=all.find(b=>{
+    const match=belege.find(b=>{
       if(!b.brutto||!b.date)return false;
-      const bBetrag=Math.abs(b.brutto);
-      const bDatum=new Date(b.date+'T00:00:00');
-      const betragsMatch=Math.abs(bBetrag-betrag)<=0.50;
-      const datumsDiff=Math.abs((tDatum-bDatum)/(1000*60*60*24));
-      return betragsMatch&&datumsDiff<=3;
+      return Math.abs(Math.abs(b.brutto)-betrag)<=0.50&&Math.abs((tDatum-new Date(b.date+'T00:00:00'))/(86400000))<=3;
     });
-
-    if(match){
-      matched.push({transaktion:t, beleg:match});
-    } else {
-      // KI-Vorschlag basierend auf Beschreibung
-      const vorschlag=guessKategorie(t.beschreibung);
-      unknown.push({transaktion:t, vorschlag, status:'offen'});
-    }
-  }
-
-  renderKontoErgebnis(matched, unknown, transaktionen.length);
+    if(match) return {...t, status:'abgeglichen', belegShop:match.shop, belegNr:match.belegNr};
+    return {...t, vorschlag:guessKategorie(t.beschreibung)};
+  });
+  kontoSave(updated);
 }
 
-// WHY: Einfaches Keyword-Matching für Kategorie-Vorschlag ohne extra API-Call
-function guessKategorie(beschreibung){
-  const d=(beschreibung||'').toLowerCase();
-  if(/rewe|edeka|aldi|lidl|penny|netto|kaufland|dm |rossmann|müller|norma|lebensmittel/.test(d)) return {kat:'Lebensmittel',typ:'priv'};
-  if(/netflix|spotify|amazon prime|dazn|disney|youtube|apple|google play|software|hosting|domain/.test(d)) return {kat:'Software',typ:'biz'};
-  if(/shell|esso|aral|bp |total|tankstelle|tanken/.test(d)) return {kat:'Tanken',typ:'biz'};
-  if(/restaurant|mcdonald|burger|pizza|lieferando|uber eats|gaststätte|café|bistro/.test(d)) return {kat:'Restaurant',typ:'priv'};
-  if(/amazon|zalando|otto |zara|h&m|kleidung|fashion/.test(d)) return {kat:'Kleidung',typ:'priv'};
-  if(/arzt|apotheke|krankenhaus|health|gesundheit|praxis/.test(d)) return {kat:'Gesundheit',typ:'priv'};
-  if(/ikea|möbel|bauhaus|hornbach|obi |haushalt/.test(d)) return {kat:'Haushalt',typ:'priv'};
-  return {kat:'Sonstiges',typ:'priv'};
-}
+function renderKontoBuchungen(){
+  const alle=kontoLoad();
+  const unbekannt=alle.filter(t=>t.status==='offen'&&t.typ!=='eingang');
+  const abgeglichen=alle.filter(t=>t.status==='abgeglichen');
 
-function renderKontoErgebnis(matched, unknown, total){
-  document.getElementById('kontoResultWrap').style.display='block';
-  document.getElementById('kontoSummaryLbl').textContent=
-    `${total} Buchungen gescannt · ${matched.length} abgeglichen · ${unknown.length} ohne Beleg`;
+  const uSec=document.getElementById('kontoUnknownSec');
+  const mSec=document.getElementById('kontoMatchedSec');
 
-  // Abgeglichene
-  const mWrap=document.getElementById('kontoMatchedWrap');
-  const mList=document.getElementById('kontoMatchedList');
-  if(matched.length){
-    mWrap.style.display='block';
-    mList.innerHTML=matched.map(({transaktion:t,beleg:b})=>`
-      <div style="background:var(--s2);border:1px solid rgba(58,175,112,.2);border-radius:var(--r8);
-        padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:12px;font-weight:300;color:var(--txt)">${eh(t.beschreibung||'')}</div>
-          <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Beleg: ${eh(b.shop||'')} ${eh(b.belegNr||'')}</div>
-        </div>
-        <div style="font-size:13px;font-weight:300;color:var(--grn)">${fm(Math.abs(t.betrag))} €</div>
-      </div>`).join('');
-  } else { mWrap.style.display='none'; }
-
-  // Unbekannte
-  const uWrap=document.getElementById('kontoUnknownWrap');
-  const uList=document.getElementById('kontoUnknownList');
-  if(unknown.length){
-    uWrap.style.display='block';
-    uList.innerHTML=unknown.map((item,i)=>{
-      const t=item.transaktion;
-      const v=item.vorschlag;
-      return `<div id="unk${i}" style="background:var(--s2);border:1px solid rgba(192,112,48,.25);
+  if(unbekannt.length){
+    uSec.style.display='block';
+    document.getElementById('kontoUnknownCount').textContent=unbekannt.length+' offen';
+    document.getElementById('kontoUnknownList').innerHTML=unbekannt.map(t=>{
+      const id=t.id;
+      const v=t.vorschlag||{kat:'Sonstiges',typ:'priv'};
+      return `<div id="ku_${id}" style="background:var(--s2);border:1px solid rgba(192,112,48,.25);
         border-radius:var(--r8);padding:10px 12px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <div>
-            <div style="font-size:12px;font-weight:300;color:var(--txt)">${eh(t.beschreibung||'')}</div>
-            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · KI-Vorschlag: ${v.kat} (${v.typ==='biz'?'Business':'Privat'})</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
+            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Vorschlag: ${v.kat} (${v.typ==='biz'?'Business':'Privat'})</div>
           </div>
-          <div style="font-size:13px;font-weight:300;color:var(--orn)">${fm(Math.abs(t.betrag))} €</div>
+          <div style="font-size:13px;font-weight:300;color:var(--orn);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-sm" style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:11px"
-            onclick="erfasseKontoBuchung(${i},'priv')">🏠 Als Privat erfassen</button>
-          <button class="btn btn-sm" style="background:rgba(74,128,192,.1);border:1px solid rgba(74,128,192,.25);color:var(--blu);font-size:11px"
-            onclick="erfasseKontoBuchung(${i},'biz')">💼 Als Business erfassen</button>
-          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--br);color:var(--txt3);font-size:11px"
-            onclick="ignoriereKontoBuchung(${i})">Ignorieren</button>
+          <button class="btn btn-sm" style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:11px" onclick="kontoErfasse('${id}','priv')">🏠 Privat</button>
+          <button class="btn btn-sm" style="background:rgba(74,128,192,.1);border:1px solid rgba(74,128,192,.25);color:var(--blu);font-size:11px" onclick="kontoErfasse('${id}','biz')">💼 Business</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--br);color:var(--txt3);font-size:11px" onclick="kontoIgnoriere('${id}')">— Ignorieren</button>
         </div>
       </div>`;
     }).join('');
-  } else { uWrap.style.display='none'; }
+  } else { uSec.style.display='none'; }
+
+  if(abgeglichen.length){
+    mSec.style.display='block';
+    document.getElementById('kontoMatchedList').innerHTML=abgeglichen.map(t=>`
+      <div style="background:var(--s2);border:1px solid rgba(58,175,112,.15);border-radius:var(--r8);
+        padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
+          <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Beleg: ${eh(t.belegShop||'')} ${eh(t.belegNr||'')}</div>
+        </div>
+        <div style="color:var(--grn);font-size:13px;margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
+      </div>`).join('');
+  } else { mSec.style.display='none'; }
 }
 
-// Unbekannte Buchung als Beleg erfassen
-async function erfasseKontoBuchung(idx, typ){
-  const uList=document.getElementById('kontoUnknownList');
-  const items=uList.querySelectorAll('[id^=unk]');
-  const unknown=[];
-  // Rebuild unknown list from DOM data attributes
-  document.querySelectorAll('[id^=unk]').forEach((el,i)=>{
-    if(!el.dataset.dismissed) unknown.push(i);
-  });
+async function kontoErfasse(id, typ){
+  const alle=kontoLoad();
+  const t=alle.find(x=>String(x.id)===String(id));
+  if(!t) return;
 
-  // Kontoauszug-Transaktionen sind in kontoTransaktionen gespeichert
-  // idx bezieht sich auf die unbekannten Transaktionen
-  const allUnk=[];
-  const all=await dba();
-  for(const t of kontoTransaktionen){
-    if(t.typ==='eingang') continue;
-    const betrag=Math.abs(t.betrag);
-    const tDatum=new Date((t.datum||new Date().toISOString().split('T')[0])+'T00:00:00');
-    const match=all.find(b=>{
-      if(!b.brutto||!b.date)return false;
-      return Math.abs(Math.abs(b.brutto)-betrag)<=0.50&&Math.abs((tDatum-new Date(b.date+'T00:00:00'))/(1000*60*60*24))<=3;
-    });
-    if(!match) allUnk.push(t);
-  }
-
-  if(idx>=allUnk.length) return;
-  const t=allUnk[idx];
-  const v=guessKategorie(t.beschreibung);
-
+  const v=t.vorschlag||{kat:'Sonstiges',typ:'priv'};
   const item={
     type: typ==='priv'?'priv':'er',
     belegNr: typ==='priv'?null:nextNr('er'),
-    shop: t.beschreibung||'Unbekannt',
+    shop: t.beschreibung||'Kontoauszug',
     date: t.datum||new Date().toISOString().split('T')[0],
     brutto: Math.abs(t.betrag),
     net: typ==='priv'?null:Math.round(Math.abs(t.betrag)/1.19*100)/100,
     mwst: typ==='priv'?null:Math.round((Math.abs(t.betrag)-Math.abs(t.betrag)/1.19)*100)/100,
     mwstRate: typ==='priv'?null:19,
-    cat: v.kat, payment:'Karte',
+    cat:v.kat, payment:'Karte',
     items:[], image:null, savedAt:Date.now(),
-    istAbo:false, garantieBis:null,
-    isDigitalScreen:false, screenType:null
+    istAbo:false, garantieBis:null, isDigitalScreen:false, screenType:null
   };
 
   try{
     await dbadd(item);
-    toast(`Erfasst als ${typ==='priv'?'Privat':'Business'} ✓`,'ok');
-    // Zeile ausblenden
-    const el=document.getElementById('unk'+idx);
-    if(el){el.style.opacity='0.3';el.style.pointerEvents='none';el.querySelector('[style*="orn"]').textContent='✓ Erfasst';}
+    // Status updaten
+    const updated=alle.map(x=>String(x.id)===String(id)?{...x,status:'erfasst_'+typ}:x);
+    kontoSave(updated);
+    toast('Erfasst als '+(typ==='priv'?'Privat':'Business')+' ✓','ok');
+    if(typ==='biz') renderMwst();
+    renderHome();
+    renderKontoBuchungen();
+    updKontoStatus();
+    // Erneut abgleichen damit neue Belege gematcht werden
+    setTimeout(async()=>{await kontoAbgleichAlle();renderKontoBuchungen();},300);
   }catch(e){toast('Fehler: '+e.message,'er');}
 }
 
-function ignoriereKontoBuchung(idx){
-  const el=document.getElementById('unk'+idx);
-  if(el){el.style.opacity='0.3';el.style.pointerEvents='none';}
+function kontoIgnoriere(id){
+  const alle=kontoLoad();
+  const updated=alle.map(x=>String(x.id)===String(id)?{...x,status:'ignoriert'}:x);
+  kontoSave(updated);
+  renderKontoBuchungen();
+  updKontoStatus();
+}
+
+function kontoAllesLoeschen(){
+  if(!confirm('Alle Kontoauszug-Daten löschen?')) return;
+  localStorage.removeItem(KONTO_STORE);
+  renderKontoBuchungen();
+  updKontoStatus();
+  toast('Kontoauszug-Daten gelöscht','ok');
 }
 
 // ════════════════════════════════════════════════════════
@@ -3940,6 +3981,41 @@ function initVerpflView(){
   }
   renderVerpflFahrten();
   updVerpflTages();
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: API-KOSTEN-TRACKER
+// WHY: Nutzer soll sehen wie viel API-Guthaben verbraucht wurde.
+// Sonnet 4.5: Input $3/1M Tokens, Output $15/1M Tokens (ca. Schätzung)
+// Bilder: ca. 1000-4000 Input-Tokens je nach Größe
+// ════════════════════════════════════════════════════════
+const API_COST_KEY='bsp_api_costs';
+// Preise in $ pro 1000 Tokens (claude-sonnet-4-5 Schätzung)
+const COST_IN=0.003, COST_OUT=0.015;
+
+function trackApiCost(typ, imgB64Len=0){
+  // Input-Token-Schätzung: Bild ca. imgLen/750 + Prompt ~300 Tokens
+  const imgTokens=imgB64Len>0?Math.round(imgB64Len/750):0;
+  const promptTokens=400;
+  const outputTokens=800; // Schätzung Output
+  const inputCost=(imgTokens+promptTokens)/1000*COST_IN;
+  const outputCost=outputTokens/1000*COST_OUT;
+  const callCost=inputCost+outputCost;
+
+  const data=JSON.parse(localStorage.getItem(API_COST_KEY)||'{"calls":0,"cost":0}');
+  data.calls++;
+  data.cost+=callCost;
+  data.last=new Date().toISOString();
+  localStorage.setItem(API_COST_KEY,JSON.stringify(data));
+  updApiCostDisplay();
+}
+
+function updApiCostDisplay(){
+  const data=JSON.parse(localStorage.getItem(API_COST_KEY)||'{"calls":0,"cost":0}');
+  const el=document.getElementById('apiCostDisp');
+  if(!el) return;
+  const costEur=data.cost*0.92; // $ → € Schätzung
+  el.innerHTML=`<span style="color:var(--txt)">${data.calls} KI-Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} € verbraucht</span>`;
 }
 
 function fd(d){if(!d)return'–';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
