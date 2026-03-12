@@ -458,7 +458,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .stpl{border:1px solid var(--br);border-radius:var(--r8);padding:10px;cursor:pointer;
   background:var(--s2);text-align:center;font-size:11px;font-weight:300;
   color:var(--txt3);transition:all .2s}
-.stpl.on{border-color:var(--br2);color:var(--txt);background:var(--s3)}
+.stpl.on{border-color:var(--gold);border-width:2px;color:var(--gold);background:var(--s3);font-weight:400}
 .stamp-prev{display:flex;justify-content:center;background:var(--s2);
   border:1px solid var(--br);border-radius:var(--r12);padding:16px;margin-bottom:12px}
 .csw{width:24px;height:24px;border-radius:6px;cursor:pointer;
@@ -1073,8 +1073,15 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">KI-Verbindung</div>
-    <div style="display:flex;gap:7px"><input class="inp" type="password" id="apiKey" placeholder="sk-ant-… Claude API Key" style="font-size:12px"><button class="btn btn-g btn-sm" onclick="saveApiKey()">OK</button></div>
-    <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:7px;line-height:1.6" id="apiStat">–</p>
+    <div style="margin-bottom:8px">
+      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px" id="apiStat">–</div>
+      <div style="display:flex;gap:7px">
+        <input class="inp" type="password" id="apiKey" placeholder="sk-ant-… Claude API Key" style="font-size:12px;flex:1">
+        <button class="btn btn-gold btn-sm" onclick="saveApiKey()">Speichern</button>
+      </div>
+      <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Key wird nur lokal gespeichert. Du kannst ihn jederzeit überschreiben oder löschen.</p>
+    </div>
+    <button class="btn btn-red btn-sm" onclick="clearApiKeySettings()" style="margin-bottom:4px">Key löschen</button>
     <a href="https://console.anthropic.com" target="_blank" style="font-size:11px;color:var(--gold);text-decoration:none;display:inline-block;margin-top:6px">→ API Key erstellen</a>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
@@ -1510,6 +1517,9 @@ function updSettingsInfo(){
   const c=cfg();
   document.getElementById('settLand').textContent=c.flag+' '+c.name;
   document.getElementById('settTyp').textContent=profile.typ==='ku'?'Kleinunternehmer §19':profile.typ==='gew'?'Gewerbetreibender':'Freiberufler';
+  // WHY: Key immer ins Feld laden damit Nutzer ihn sehen/ändern kann
+  const keyInp=document.getElementById('apiKey');
+  if(keyInp) keyInp.value=localStorage.getItem('cak')||'';
   const fmtEx={A:'ER-2026-0001',B:'2026-Q1-ER-0001',C:'2026-ER-0001'};
   document.getElementById('settFmt').textContent=fmtEx[profile.fmt]||'–';
   if(apiKey)document.getElementById('apiKey').value=apiKey;
@@ -2998,9 +3008,18 @@ function loadStamp(){stamp.firma=localStorage.getItem('sf')||'';stamp.frei=local
 function loadStampUI(){
   loadStamp();document.getElementById('sFirma').value=stamp.firma;document.getElementById('sFrei').value=stamp.frei;
   document.getElementById('cPick').value=stamp.color;document.querySelectorAll('.csw').forEach(s=>s.classList.toggle('on',s.dataset.c===stamp.color));
-  document.querySelectorAll('[id^=tpl]').forEach((el,i)=>el.classList.toggle('on',i===stampTpl));refreshStamp();
+  [0,1,2].forEach(i=>{const el=document.getElementById('tpl'+i);if(el)el.classList.toggle('on',i===stampTpl);});refreshStamp();
 }
-function pickTpl(i){stampTpl=i;localStorage.setItem('stpl',i);document.querySelectorAll('[id^=tpl]').forEach((el,j)=>el.classList.toggle('on',j===i));refreshStamp();}
+function pickTpl(i){
+  stampTpl=i;
+  localStorage.setItem('stpl',i);
+  // WHY: Direkt per ID ansprechen statt Reihenfolge im DOM annehmen
+  [0,1,2].forEach(j=>{
+    const el=document.getElementById('tpl'+j);
+    if(el) el.classList.toggle('on', j===i);
+  });
+  refreshStamp();
+}
 function pickCol(el){document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));el.classList.add('on');stamp.color=el.dataset.c;document.getElementById('cPick').value=stamp.color;refreshStamp();}
 function freeCol(inp){stamp.color=inp.value;document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));refreshStamp();}
 function refreshStamp(){stamp.firma=document.getElementById('sFirma').value;stamp.frei=document.getElementById('sFrei').value;drawStamp(document.getElementById('stmpC'),stamp,'ER-2026-0001',stampTpl);}
@@ -3071,7 +3090,23 @@ function updApiBanner(){
   if(b)b.style.display=apiKey?'none':'block';
 }
 
-function saveApiKey(){apiKey=document.getElementById('apiKey').value.trim();if(apiKey)localStorage.setItem('cak',apiKey);updApiStat();updApiBanner();toast('API Key gespeichert','ok');}
+function saveApiKey(){
+  const k=document.getElementById('apiKey').value.trim();
+  if(!k){toast('Bitte Key eingeben','er');return;}
+  if(!k.startsWith('sk-')){toast('Key muss mit sk- beginnen','er');return;}
+  apiKey=k;
+  localStorage.setItem('cak',k);
+  updApiStat();updApiBanner();
+  toast('✓ API Key gespeichert','ok');
+}
+function clearApiKeySettings(){
+  if(!confirm('API Key löschen?'))return;
+  apiKey='';
+  localStorage.removeItem('cak');
+  document.getElementById('apiKey').value='';
+  updApiStat();updApiBanner();
+  toast('Key gelöscht','ok');
+}
 function updApiStat(){const s=document.getElementById('apiStat');if(s)s.textContent=apiKey?'✓ Claude API aktiv. Garantie-Wächter + Abo-Detektiv + Monitor-Erkennung aktiv.':'Kein Key – manuelle Eingabe. Intelligenz-Module eingeschränkt.';}
 function resetCounters(){if(!confirm('Zähler zurücksetzen?'))return;erC=0;arC=0;localStorage.setItem('erc','0');localStorage.setItem('arc','0');updCounters();toast('Zurückgesetzt','ok');}
 
