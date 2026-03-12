@@ -728,6 +728,17 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     </div>
   </div>
 
+  <!-- API-Kosten Mini-Card -->
+  <div id="apiCostCard" style="display:none;background:rgba(136,153,170,.05);border:1px solid rgba(136,153,170,.15);
+    border-radius:var(--r8);padding:9px 14px;margin-bottom:10px;
+    display:flex;align-items:center;justify-content:space-between">
+    <div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:2px">API-Verbrauch</div>
+      <div style="font-size:13px;font-weight:300" id="apiCostHome">–</div>
+    </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+  </div>
+
   <!-- ── PROGRESSIONS-SCHUTZ ──
        WHY: Erscheint wenn Gewinn sich einer Steuerstufe nähert.
        Gibt konkreten Investitions-Tipp um Steuerlast zu senken. -->
@@ -813,6 +824,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     <select class="sel" id="ftT" onchange="renderBelege()"><option value="">Alle</option><option value="er">Eingang</option><option value="ar">Ausgang</option></select>
     <select class="sel" id="ftC" onchange="renderBelege()"><option value="">Kategorie</option><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select>
     <button class="btn btn-g btn-sm" onclick="exportCSV()">CSV</button>
+    <button onclick="openHelp('belege')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button>
   </div>
   <div id="bList"></div>
 </div>
@@ -825,7 +837,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       <div style="font-size:22px;font-weight:200;color:var(--silv)" id="privTotalDisp">0,00 €</div>
       <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="privCountDisp">0 Belege</div>
     </div>
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:center">
+      <button onclick="openHelp('priv')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button>
       <button class="btn btn-sm" onclick="openSchnell()"
         style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:12px;display:flex;align-items:center;gap:5px">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -883,7 +896,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 <div class="view" id="v-konto">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div>
-      <div style="font-size:16px;font-weight:300;color:var(--txt)">Kontoauszug-Abgleich</div>
+      <div style="display:flex;align-items:center;gap:8px"><div style="font-size:16px;font-weight:300;color:var(--txt)">Kontoauszug-Abgleich</div><button onclick="openHelp('konto')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button></div>
       <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="kontoStatusLbl">Noch keine Buchungen geladen</div>
     </div>
     <button class="btn btn-g btn-sm" onclick="kontoAllesLoeschen()" style="font-size:11px">Leeren</button>
@@ -991,7 +1004,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 
 <!-- ── VERPFLEGUNGSPAUSCHALE / FAHRTKOSTEN ── -->
 <div class="view" id="v-verpfl">
-  <div style="font-size:16px;font-weight:300;color:var(--txt);margin-bottom:4px">Verpflegungspauschale</div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div style="font-size:16px;font-weight:300;color:var(--txt)">Verpflegungspauschale</div><button onclick="openHelp('verpfl')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button></div>
   <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">§ 4 Abs. 5 EStG · Inland 8 € / 14 € / 28 €</div>
 
   <!-- Betriebsstätte -->
@@ -1101,6 +1114,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 
 <!-- ── STEUER ── -->
 <div class="view" id="v-steuer">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:6px"><button onclick="openHelp('steuer')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button></div>
   <div class="est-hero">
     <div class="lbl">Geschätzte Einkommensteuer (Jahr)</div>
     <div class="big" id="estJahr">0 €</div>
@@ -1165,7 +1179,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 
 <!-- ── SETTINGS ── -->
 <div class="view" id="v-settings">
-  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+    <button class="btn btn-g btn-sm" onclick="showView('steuer')">← Zurück</button>
+    <button onclick="openHelp('settings')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button>
+  </div>
   <div class="pwa-card">
     <div class="l">📱 Als App installieren</div>
     <p>iOS: <strong style="color:var(--txt)">Teilen → Zum Homescreen</strong><br>Android: <strong style="color:var(--txt)">Menü → App installieren</strong></p>
@@ -1464,6 +1481,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-gold btn-sm" onclick="saveBeleg()">Speichern</button>
+        <button id="voiceCommentBtn" class="btn btn-g btn-sm" onclick="startVoiceComment(getFormKontext(), onVoiceCommentResult)" style="gap:5px">🎙️ Erklärung</button>
         <button class="btn btn-g btn-sm" onclick="resetScan()">Neu scannen</button>
         <button class="btn btn-g btn-sm" id="retryKiBtn" style="display:none"
           onclick="retryKi()">⚡ KI erneut starten</button>
@@ -1982,6 +2000,7 @@ function calcBongLive() {
 // ██ MODUL: HOME RENDER
 // ════════════════════════════════════════════════════════
 async function renderHome(){
+  updApiCostDisplay(); // WHY: Home immer aktuell
   renderTacho(); // WHY: Synchron – sofort sichtbar, kein DB-Wait nötig
   // WHY: try/catch damit ein Fehler hier nicht die ganze Home-View blockiert
   try { await renderProgressionsSchutz(); } catch(e) { console.warn('ProgSchutz:', e); }
@@ -2103,13 +2122,21 @@ async function renderGarantieWaechter(all){
 // aus den bereits vorhandenen shop/brutto/date Feldern –
 // ohne dass der Nutzer etwas markieren muss.
 // ════════════════════════════════════════════════════════
-const ABO_KEYWORDS=/netflix|spotify|amazon prime|prime video|disney|dazn|youtube premium|apple music|apple one|icloud|dropbox|adobe|microsoft 365|office 365|google one|notion|slack|zoom|github|aws|heroku|openai|anthropic|claude|chatgpt|xing|linkedin|audible|kindle unlimited|software|subscription|abo|monats|jahres/i;
+const // WHY: NUR eindeutig digitale Streaming/SaaS-Abos – keine Telko, Baumärkte,
+// Tankstellen oder andere Regelmäßigkeiten die keine Abos sind.
+ABO_KEYWORDS=/^(netflix|spotify|amazon prime|prime video|disney\+|dazn|youtube premium|apple music|apple one|icloud\+|dropbox|adobe|microsoft 365|office 365|google one|notion|slack|zoom|github|aws |heroku|openai|anthropic|claude|chatgpt|xing premium|linkedin premium|audible|kindle unlimited|apple tv\+|sky ticket|wow streaming|maxdome|joyn\+|tidal|deezer|napster|crunchyroll|curiosity stream|mubi|arte mediathek abo)$/i;
+// Sekundäre Erkennung: enthält diese Muster – aber nur wenn KEIN Ausschluss-Match
+const ABO_EXCLUDE=/baumarkt|hornbach|obi|bauhaus|hagebau|lidl|aldi|rewe|edeka|dm |rossmann|müller|saturn|mediamarkt|telekom|vodafone|o2|1&1|congstar|freenet|klarmobil|eon|engie|vattenfall|gas|strom|versicherung|rundfunk|gez|sparkasse|volksbank|postbank|ing |dkb /i;
 
 function detectAbos(all){
   // WHY: Gleicher Händler, ähnlicher Betrag, mindestens 2x – das ist ein Abo
+  // Aber nur für eindeutig digitale Dienste – nicht Tankstellen, Baumärkte etc.
   const byShop={};
   all.filter(b=>b.date&&b.brutto).forEach(b=>{
-    const key=(b.shop||'unbekannt').toLowerCase().trim().substring(0,30);
+    const shopLow=(b.shop||'').toLowerCase();
+    // Ausschluss: bekannte Nicht-Abo-Kategorien überspringen
+    if(ABO_EXCLUDE.test(shopLow)) return;
+    const key=shopLow.trim().substring(0,30);
     if(!byShop[key])byShop[key]={shop:b.shop,belege:[],brutto:[]};
     byShop[key].belege.push(b);
     byShop[key].brutto.push(b.brutto);
@@ -2494,6 +2521,16 @@ WICHTIGE REGELN:
 3. Wenn Netto und Brutto sichtbar: berechne MwSt = Brutto - Netto
 4. Wenn nur Brutto sichtbar und MwSt-Satz erkennbar: berechne Netto = Brutto / 1.${cfg().mwstH}
 5. mwstRate: nur die Zahl (19 nicht "19%")
+6. WICHTIG – Folgende Aussteller sind MwSt-BEFREIT → mwst:0, mwstRate:0:
+   - Finanzamt, Finanzämter, Finanzbehörde
+   - Krankenhaus, Arzt, Arztpraxis, Heilpraktiker, Zahnarzt, Physiotherapie
+   - Apotheke (nur rezeptpflichtige Medikamente – Pauschal: mwstRate:0 wenn nur Medikamente)
+   - GEZ, Rundfunkbeitrag, ARD ZDF
+   - Öffentliche Verkehrsbetriebe (BVG, MVG, HVV, VGN, Stadtwerke, DB Nahverkehr)
+   - Gemeinde, Stadt, Landkreis, Bürgeramt, Standesamt, Behörden
+   - Notar, Gericht, Gerichtsgebühren
+   - Versicherungen (Versicherungsteuer ≠ MwSt)
+   Bei diesen: mwst immer 0, mwstRate immer 0
 6. category muss GENAU einer dieser Werte sein: Lebensmittel, Restaurant, Elektronik, Kleidung, Tanken, Haushalt, Gesundheit, Dienstleistung, Software, Sonstiges
 7. payment muss GENAU einer dieser Werte sein: Karte, Bar, Überweisung, Online
 8. istAbo=true wenn monatliche/jährliche Gebühr erkennbar
@@ -2740,8 +2777,12 @@ async function saveBeleg(){
 
   // ── BUSINESS-BELEG (er/ar): bisherige Logik ──
   const brutto=parseFloat(document.getElementById('rBrutto').value)||0;
-  const mwst=parseFloat(document.getElementById('rMwst').value)||0;
-  const net=parseFloat(document.getElementById('rNet').value)||0;
+  let mwst=parseFloat(document.getElementById('rMwst').value)||0;
+  let net=parseFloat(document.getElementById('rNet').value)||0;
+  // WHY: Automatische MwSt-Korrektur für bekannte befreite Stellen
+  const shopVal=(document.getElementById('rShop').value||'').toLowerCase();
+  const MWST_FREI=/finanzamt|finanzbehörde|krankenkasse|krankenhaus|arztpraxis|zahnarzt|heilpraktiker|physiotherap|rundfunkbeitrag|gez|bvg|mvg|hvv|vgn|s-bahn gmbh|stadtwerke.*verkehr|db regio|notar.*gebühr|amtsgericht|standesamt|bürgeramt/i;
+  if(MWST_FREI.test(shopVal)){mwst=0;net=brutto;}
   let nr;
   if(scanType==='ar'&&curRes?.belegNrExtern){
     nr=curRes.belegNrExtern;arC++;localStorage.setItem('arc',arC);
@@ -3395,13 +3436,22 @@ async function kontoQueueStart(){
   }
   kontoQueue=[];
   renderKontoQueue();
-  setKontoLog(`✓ Alle ${total} Bilder analysiert`,100);
-  setTimeout(()=>document.getElementById('kontoProg').style.display='none',1500);
-  kontoRunning=false;
-  if(btn){btn.disabled=false;btn.textContent='Alle analysieren starten';}
+  setKontoLog(`✓ Alle ${total} Bilder analysiert · Gleiche ab …`,95);
   await kontoAbgleichAlle();
+  // WHY: Erst rendern, dann Progress ausblenden – sonst Reihenfolge-Bug
   renderKontoBuchungen();
   updKontoStatus();
+  kontoRunning=false;
+  if(btn){btn.disabled=false;btn.textContent='Alle analysieren starten';}
+  // WHY: Kurz warten dann Progress ausblenden – Ergebnis ist schon im DOM
+  setTimeout(()=>{
+    const p=document.getElementById('kontoProg');
+    if(p) p.style.display='none';
+    setKontoLog('Bereit …',0);
+  },1200);
+  // WHY: Sicherstellen dass Konto-View aktiv und sichtbar ist
+  showView('konto');
+  toast(`Analyse fertig · ${document.querySelectorAll('#kontoUnknownList > div').length} offen`,'ok');
 }
 
 async function kontoAnalyseFile(file){
@@ -4012,12 +4062,353 @@ function trackApiCost(typ, imgB64Len=0){
 
 function updApiCostDisplay(){
   const data=JSON.parse(localStorage.getItem(API_COST_KEY)||'{"calls":0,"cost":0}');
+  const costEur=data.cost*0.92;
+  const txt=`${data.calls} KI-Calls · ~${costEur.toFixed(3)} €`;
+  // Settings
   const el=document.getElementById('apiCostDisp');
-  if(!el) return;
-  const costEur=data.cost*0.92; // $ → € Schätzung
-  el.innerHTML=`<span style="color:var(--txt)">${data.calls} KI-Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} € verbraucht</span>`;
+  if(el) el.innerHTML=`<span style="color:var(--txt)">${data.calls} KI-Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} € verbraucht</span>`;
+  // Home mini-card
+  const homeEl=document.getElementById('apiCostHome');
+  const homeCard=document.getElementById('apiCostCard');
+  if(homeEl){
+    homeEl.innerHTML=`<span style="color:var(--txt2)">${data.calls} Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} €</span>`;
+    if(homeCard) homeCard.style.display=data.calls>0?'flex':'none';
+  }
 }
 
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: KONTEXT-HILFE
+// WHY: Jeder Bereich hat einen (?) Button der sofort erklärt
+// was dieser Bereich tut und wie er zu bedienen ist.
+// ════════════════════════════════════════════════════════
+const HILFE = {
+  home: {
+    title: '🏠 Startseite',
+    text: 'Die Startseite zeigt eine Übersicht deiner wichtigsten Kennzahlen.
+
+• KI-Effizienz: Wie viele Scans du gemacht hast und wie viel Zeit/Geld du damit gespart hast
+• API-Verbrauch: Wie viel von deinem Anthropic-Guthaben verwendet wurde
+• Zuletzt erfasst: Deine letzten Belege (je nach Business/Privat-Modus)
+
+Mit dem Toggle unten wechselst du zwischen Business- und Privat-Modus.',
+    links: ['scanner','belege','priv']
+  },
+  scanner: {
+    title: '📸 Scanner',
+    text: 'Fotografiere oder wähle ein Bild deines Belegs.
+
+• Eingangsrechnung (ER): Rechnungen die du bezahlt hast → Vorsteuer absetzbar
+• Ausgangsrechnung (AR): Rechnungen die du gestellt hast → MwSt abführen
+
+Die KI liest automatisch alle Felder aus. Du kannst alles manuell korrigieren bevor du speicherst.
+
+⚠️ Ohne API Key: Felder manuell ausfüllen.',
+    links: ['belege','mwst']
+  },
+  belege: {
+    title: '📋 Belege',
+    text: 'Alle gespeicherten Eingangs- und Ausgangsrechnungen.
+
+• Tippe auf einen Beleg für Details
+• Stempel: PDF mit Buchungsstempel exportieren
+• Filter: nach Typ (ER/AR), Kategorie und Suche
+
+Belege werden lokal in deinem Browser gespeichert (IndexedDB).',
+    links: ['mwst','steuer']
+  },
+  mwst: {
+    title: '💶 Mehrwertsteuer',
+    text: 'Übersicht deiner MwSt-Situation.
+
+• Eingenommene MwSt (AR): MwSt aus deinen Ausgangsrechnungen → abführen
+• Vorsteuer (ER): MwSt aus Eingangsrechnungen → vom Finanzamt zurückbekommen
+• Zahllast: AR-MwSt − Vorsteuer = was du überweisen musst
+• Erstattung (grün): Mehr Vorsteuer als MwSt eingenommen
+
+Finanzamt, Ärzte, ÖPNV und Behörden sind MwSt-befreit.',
+    links: ['steuer','belege']
+  },
+  steuer: {
+    title: '📊 Einkommensteuer',
+    text: 'Schätzung deiner Einkommensteuer nach §32a EStG.
+
+• Einnahmen: Summe aller AR-Nettobeiträge
+• Betriebsausgaben: Summe aller ER-Nettobeiträge
+• Gewinn = Einnahmen − Ausgaben − manueller Freibetrag
+
+Der Gauge zeigt in welcher Steuerstufe du dich befindest.
+
+⚠️ Nur Schätzung – kein Ersatz für einen Steuerberater.',
+    links: ['mwst']
+  },
+  priv: {
+    title: '🏠 Privatausgaben',
+    text: 'Privater Bereich – getrennt von Business.
+
+• Hier landen Belege die im Privat-Modus gescannt wurden
+• Schnelleingabe (+): Für kleine Ausgaben ohne Quittung (Eis, Trinkgeld)
+• Spracheingabe: Einfach sprechen – KI erkennt Betrag und Kategorie
+• Kreisdiagramm: Zeigt Ausgaben nach Artikel (nicht nach Kategorie)
+• KI-Monatsanalyse: Analysiert alle Belege des aktuellen Monats
+
+Privat-Belege beeinflussen nie die MwSt- oder Steuerberechnung.',
+    links: ['home','konto']
+  },
+  konto: {
+    title: '🏦 Kontoauszug-Abgleich',
+    text: 'Vergleicht deine Kontoauszüge mit gespeicherten Belegen.
+
+1. Fotos hochladen: Einzeln oder mehrere gleichzeitig aus der Galerie
+2. Alle analysieren: KI liest alle Buchungen aus
+3. Abgleich: Buchungen ±0,50€ und ±3 Tage werden automatisch gematcht
+4. Unbekannte Buchungen: Als Privat oder Business erfassen oder ignorieren
+
+Alle Daten bleiben gespeichert – auch nach Tab-Wechsel.',
+    links: ['belege','priv']
+  },
+  verpfl: {
+    title: '🚗 Verpflegungspauschale',
+    text: 'Erfasse Außentermine für die steuerliche Verpflegungspauschale.
+
+• Betriebsstätte: Dein Heimatort/Büro – einmal hinterlegen
+• "Ich bin hier": Erfasst deinen aktuellen Standort per GPS (nur einmalig)
+• Timer läuft: Zeigt wie lange du unterwegs bist
+• "Fertig": Speichert den Besuch mit berechneter Pauschale
+
+Pauschalen §4 Abs. 5 EStG Inland: 8h = 8€, 14h = 14€, 24h = 28€
+
+Alle Fahrten des Monats werden summiert.',
+    links: ['steuer']
+  },
+  settings: {
+    title: '⚙️ Einstellungen',
+    text: 'Hier konfigurierst du BelegScan Pro.
+
+• API Key: Dein persönlicher Anthropic Claude Key (sk-ant-…)
+  → console.anthropic.com → API Keys → Create Key
+• Stempel: Dein Firmenstempel für PDF-Exporte
+• Land/Steuertyp: Bestimmt MwSt-Sätze und Belegnummern-Format
+• API-Verbrauch: Geschätzte Kosten deiner KI-Nutzung
+
+Alle Daten bleiben lokal auf deinem Gerät.',
+    links: ['scanner']
+  }
+};
+
+function openHelp(thema){
+  const h=HILFE[thema]||{title:'Hilfe',text:'Keine Hilfe für diesen Bereich verfügbar.',links:[]};
+  document.getElementById('helpTitle').textContent=h.title;
+  document.getElementById('helpText').style.whiteSpace='pre-wrap';
+  document.getElementById('helpText').textContent=h.text;
+  const linksEl=document.getElementById('helpLinks');
+  linksEl.innerHTML=(h.links||[]).map(l=>{
+    const lt=HILFE[l];
+    return lt?`<button class="btn btn-g btn-sm" onclick="openHelp('${l}')" style="font-size:11px">${lt.title}</button>`:'';
+  }).join('');
+  document.getElementById('helpOvl').classList.add('on');
+}
+function closeHelp(){ document.getElementById('helpOvl').classList.remove('on'); }
+function closeHelpOuter(e){ if(e.target===document.getElementById('helpOvl')) closeHelp(); }
+
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: SPRACH-KOMMENTAR
+// WHY: Nach jeder KI-Analyse oder im Privat-Tab kann der Nutzer
+// per Sprache erklären wie eine Buchung einzuordnen ist.
+// KI verarbeitet den Kommentar und schlägt Änderungen vor.
+// Auch für komplexe Vorgänge (Autoverkauf, Mischbuchungen).
+// ════════════════════════════════════════════════════════
+let voiceRec = null;
+let voiceActive = false;
+
+function startVoiceComment(kontext, onResult) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    toast('Spracheingabe nicht unterstützt – bitte Chrome/Safari', 'er');
+    return;
+  }
+  if (voiceActive) { stopVoiceComment(); return; }
+
+  voiceRec = new SpeechRecognition();
+  voiceRec.lang = 'de-DE';
+  voiceRec.continuous = false;
+  voiceRec.interimResults = false;
+  voiceActive = true;
+
+  const btn = document.getElementById('voiceCommentBtn');
+  if (btn) { btn.style.background = 'rgba(192,64,64,.2)'; btn.style.borderColor = 'var(--red)'; btn.innerHTML = '🔴 Sprechen …'; }
+
+  voiceRec.onresult = e => {
+    const text = e.results[0][0].transcript;
+    voiceActive = false;
+    if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.innerHTML = '🎙️ Erklärung sprechen'; }
+    verarbeiteSprachKommentar(text, kontext, onResult);
+  };
+
+  voiceRec.onerror = e => {
+    voiceActive = false;
+    if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.innerHTML = '🎙️ Erklärung sprechen'; }
+    toast('Mikrofon-Fehler: ' + e.error, 'er');
+  };
+
+  voiceRec.onend = () => {
+    voiceActive = false;
+    if (btn) { btn.style.background = ''; btn.style.borderColor = ''; btn.innerHTML = '🎙️ Erklärung sprechen'; }
+  };
+
+  voiceRec.start();
+}
+
+function stopVoiceComment() {
+  if (voiceRec) { try { voiceRec.stop(); } catch(_) {} }
+  voiceActive = false;
+}
+
+async function verarbeiteSprachKommentar(text, kontext, onResult) {
+  apiKey = localStorage.getItem('cak') || apiKey || '';
+  if (!apiKey) { toast('API Key fehlt', 'er'); return; }
+
+  // Zeige was erkannt wurde
+  toast('Erkannt: "' + text.substring(0, 60) + (text.length > 60 ? '…' : '') + '"', 'ok');
+
+  const prompt = `Du bist ein Buchhalter-Assistent. Der Nutzer hat eine Sprachnotiz zu einer Buchung hinterlassen.
+Kontext (aktuell erfasste Daten): ${JSON.stringify(kontext)}
+Sprachnotiz des Nutzers: "${text}"
+
+Analysiere die Sprachnotiz und antworte NUR mit JSON:
+{
+  "aktion": "update" | "split" | "move" | "info",
+  "erklaerung": "kurze Erklärung was du tust (max 1 Satz)",
+  "aenderungen": {
+    "typ": "er" | "ar" | "priv" | null,
+    "cat": "Kategorie oder null",
+    "brutto": Zahl oder null,
+    "mwst": Zahl oder null,
+    "mwstRate": Zahl oder null,
+    "shop": "Name oder null",
+    "notiz": "Freitext-Notiz oder null"
+  },
+  "split": [
+    {"typ":"er","brutto":0,"cat":"","beschreibung":""},
+    {"typ":"priv","brutto":0,"cat":"","beschreibung":""}
+  ] | null
+}
+
+Beispiele:
+- "Das ist mein Autoverkauf, zu 1/3 bar, 2/3 überwiesen" → split oder move
+- "Das gehört zu Business, da MwSt absetzbar" → typ: "er"
+- "Das war eigentlich Privat" → typ: "priv"
+- "Keine MwSt, war ein Finanzamt" → mwst: 0, mwstRate: 0`;
+
+  trackApiCost('voice');
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-5', max_tokens: 600, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    const raw = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '';
+    let result;
+    try { result = JSON.parse(raw.trim()); } catch(_) {
+      const m = raw.match(/\{[\s\S]*\}/); if (m) result = JSON.parse(m[0]);
+    }
+    if (result && onResult) onResult(result, text);
+  } catch(e) { toast('Fehler: ' + e.message, 'er'); }
+}
+
+// Zeigt das Sprach-Ergebnis als Modal mit Bestätigungs-Buttons
+function zeigeSprachErgebnis(result, originalText, kontext, onConfirm) {
+  const modal = document.getElementById('voiceResultModal');
+  if (!modal) return;
+  const a = result.aenderungen || {};
+  let html = `<div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px">Erkannt: "${originalText}"</div>`;
+  html += `<div style="font-size:13px;font-weight:300;color:var(--txt);margin-bottom:12px">💡 ${result.erklaerung || ''}</div>`;
+
+  if (result.aktion === 'split' && result.split) {
+    html += '<div style="font-size:11px;color:var(--txt3);margin-bottom:6px">AUFTEILEN IN:</div>';
+    result.split.forEach((s,i) => {
+      html += `<div style="background:var(--s2);border-radius:var(--r8);padding:8px 10px;margin-bottom:6px;font-size:12px">
+        <span style="color:var(--txt2)">${s.typ==='priv'?'🏠 Privat':'💼 Business'}</span> · ${fm(s.brutto||0)} € · ${s.beschreibung||s.cat||''}
+      </div>`;
+    });
+  } else {
+    if (a.typ) html += `<div style="font-size:12px;color:var(--txt2);margin-bottom:4px">Typ: ${a.typ==='priv'?'🏠 Privat':a.typ==='ar'?'AR Ausgangsrechnung':'ER Eingangsrechnung'}</div>`;
+    if (a.cat) html += `<div style="font-size:12px;color:var(--txt2);margin-bottom:4px">Kategorie: ${a.cat}</div>`;
+    if (a.mwst===0) html += `<div style="font-size:12px;color:var(--grn);margin-bottom:4px">MwSt-befreit (0 €)</div>`;
+    if (a.notiz) html += `<div style="font-size:11px;color:var(--txt3);margin-top:4px">${a.notiz}</div>`;
+  }
+
+  html += `<div style="display:flex;gap:8px;margin-top:14px">
+    <button class="btn btn-gold btn-sm" style="flex:1;justify-content:center" onclick="bestaetigenSprachErgebnis()">✓ Übernehmen</button>
+    <button class="btn btn-g btn-sm" onclick="closeVoiceResult()">Abbrechen</button>
+  </div>`;
+
+  document.getElementById('voiceResultContent').innerHTML = html;
+  modal.classList.add('on');
+  window._pendingVoiceResult = { result, onConfirm };
+}
+
+function bestaetigenSprachErgebnis() {
+  const p = window._pendingVoiceResult;
+  if (p && p.onConfirm) p.onConfirm(p.result);
+  closeVoiceResult();
+}
+function closeVoiceResult() {
+  const m = document.getElementById('voiceResultModal');
+  if (m) m.classList.remove('on');
+  window._pendingVoiceResult = null;
+}
+
+// Kontext aus Scanner-Formular lesen
+function getFormKontext() {
+  if (scanType === 'priv') {
+    return {
+      typ: 'priv',
+      shop: document.getElementById('pShop')?.value || '',
+      betrag: document.getElementById('pBrutto')?.value || '',
+      cat: document.getElementById('pCat')?.value || '',
+      items: curRes?.items || []
+    };
+  }
+  return {
+    typ: scanType,
+    shop: document.getElementById('rShop')?.value || '',
+    brutto: document.getElementById('rBrutto')?.value || '',
+    mwst: document.getElementById('rMwst')?.value || '',
+    net: document.getElementById('rNet')?.value || '',
+    cat: document.getElementById('rCat')?.value || ''
+  };
+}
+
+// Ergebnis des Sprach-Kommentars auf Formular anwenden
+function onVoiceCommentResult(result, originalText) {
+  zeigeSprachErgebnis(result, originalText, getFormKontext(), (res) => {
+    const a = res.aenderungen || {};
+    if (scanType !== 'priv') {
+      // Business-Formular updaten
+      if (a.typ && (a.typ === 'er' || a.typ === 'ar')) {
+        scanType = a.typ;
+        document.querySelectorAll('.scan-tab').forEach(t => t.classList.remove('on'));
+        const tab = document.getElementById('tab_' + a.typ);
+        if (tab) tab.classList.add('on');
+      }
+      if (a.cat) { const el = document.getElementById('rCat'); if (el) el.value = a.cat; }
+      if (a.mwst === 0) {
+        const mEl = document.getElementById('rMwst'); if (mEl) mEl.value = '0.00';
+        const nEl = document.getElementById('rNet'); if (nEl) nEl.value = document.getElementById('rBrutto')?.value || '0';
+        const rEl = document.getElementById('rRate'); if (rEl) rEl.value = '0';
+      }
+      if (a.brutto != null) { const el = document.getElementById('rBrutto'); if (el) el.value = a.brutto.toFixed(2); }
+    } else {
+      // Privat-Formular
+      if (a.cat) { const el = document.getElementById('pCat'); if (el) el.value = a.cat; }
+      if (a.brutto != null) { const el = document.getElementById('pBrutto'); if (el) el.value = a.brutto.toFixed(2); }
+    }
+    toast('Übernommen ✓', 'ok');
+  });
+}
 function fd(d){if(!d)return'–';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
 function fm(n){return(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmK(n){if(Math.abs(n)>=1000)return(n/1000).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1})+'k';return(n||0).toLocaleString('de-DE');}
@@ -4040,5 +4431,30 @@ function initApp(){
 setupPWA();
 initDB().then(()=>{checkOnboarding();}).catch(e=>toast('DB Fehler: '+e.message,'er'));
 </script>
+
+
+<!-- ── SPRACH-ERGEBNIS MODAL ── -->
+<div class="ovl" id="voiceResultModal" onclick="if(event.target===this)closeVoiceResult()">
+  <div class="sheet">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeVoiceResult()">✕</button>
+    <div style="font-size:14px;font-weight:300;color:var(--txt);margin-bottom:12px">🎙️ Sprach-Kommentar verarbeitet</div>
+    <div id="voiceResultContent"></div>
+  </div>
+</div>
+
+<!-- ── HILFE-MODAL ── -->
+<div class="ovl" id="helpOvl" onclick="closeHelpOuter(event)">
+  <div class="sheet" style="max-height:75vh;overflow-y:auto">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeHelp()">✕</button>
+    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:4px" id="helpTitle">Hilfe</div>
+    <div style="font-size:13px;font-weight:300;color:var(--txt2);line-height:1.8" id="helpText"></div>
+    <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--br)">
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:8px">VERWANDTE HILFE-THEMEN</div>
+      <div id="helpLinks" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
