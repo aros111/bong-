@@ -1,8 +1,7 @@
-// BelegScan Pro – Service Worker v6
-const V = 'bsp-v6';
+// BelegScan Pro – Service Worker v7
+const V = 'bsp-v7';
 const ASSETS = [
-  './',
-  './index.html',
+  './', './index.html',
   'https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=DM+Mono:wght@300&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'

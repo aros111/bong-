@@ -454,6 +454,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 /* ════════════════════════════════════════════════════
    SETTINGS VIEW
 ════════════════════════════════════════════════════ */
+@keyframes spin{to{transform:rotate(360deg)}}
 .stpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
 .stpl{border:2px solid var(--br);border-radius:var(--r8);padding:10px;cursor:pointer;
   background:var(--s2);text-align:center;font-size:12px;font-weight:300;
@@ -1010,8 +1011,12 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 
     <div id="verpflActiveCard" style="display:none;background:rgba(74,128,192,.07);border:1px solid rgba(74,128,192,.2);
       border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">
-      <div style="font-size:11px;font-weight:300;color:var(--blu);margin-bottom:4px">⏱️ Besuch läuft …</div>
-      <div style="font-size:12px;font-weight:300;color:var(--txt)" id="verpflActiveInfo">–</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="font-size:11px;font-weight:300;color:var(--blu)">⏱️ Besuch läuft …</div>
+        <div style="font-size:18px;font-weight:200;color:var(--gold);font-variant-numeric:tabular-nums" id="verpflTimer">00:00:00</div>
+      </div>
+      <div style="font-size:11px;font-weight:300;color:var(--txt2)" id="verpflActiveInfo">–</div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px" id="verpflStartInfo">–</div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
@@ -1189,11 +1194,6 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Stempel</div>
-    <div class="stpl-grid">
-      <div class="stpl on" id="tpl0" onclick="pickTpl(0)">Klassisch</div>
-      <div class="stpl" id="tpl1" onclick="pickTpl(1)">Modern</div>
-      <div class="stpl" id="tpl2" onclick="pickTpl(2)">Minimal</div>
-    </div>
     <div class="stamp-prev"><canvas id="stmpC" width="290" height="110"></canvas></div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
       <div class="field"><label>Firma</label><input id="sFirma" type="text" placeholder="Meine Firma GbR" oninput="refreshStamp()"></div>
@@ -2006,6 +2006,22 @@ async function renderHome(){
   const sorted=appMode==='priv'
     ? sortedAll.filter(b=>b.type==='priv').slice(0,6)
     : sortedAll.filter(b=>b.type!=='priv').slice(0,6);
+
+  // WHY: Im Privat-Modus Gesamtübersicht auf Home
+  {
+    let phEl=document.getElementById('privHomeTotal');
+    if(appMode==='priv'){
+      const privAll=all.filter(b=>b.type==='priv');
+      const privTotal=privAll.reduce((s,b)=>s+(b.brutto||0),0);
+      const mo=String(new Date().getMonth()+1).padStart(2,'0');
+      const thisMonth=privAll.filter(b=>(b.date||'').substring(5,7)===mo);
+      const monthTotal=thisMonth.reduce((s,b)=>s+(b.brutto||0),0);
+      const rlp2=document.getElementById('recentList');
+      if(!phEl&&rlp2){phEl=document.createElement('div');phEl.id='privHomeTotal';phEl.style.cssText='background:rgba(136,153,170,.06);border:1px solid rgba(136,153,170,.18);border-radius:var(--r12);padding:14px 16px;margin-bottom:14px';rlp2.parentNode.insertBefore(phEl,rlp2);}
+      if(phEl){phEl.style.display='block';phEl.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">Gesamt Privatausgaben</div><div style="font-size:28px;font-weight:200;color:var(--silv)">'+fm(privTotal)+' €</div><div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:2px">'+privAll.length+' Belege</div></div><div style="text-align:right"><div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:4px">Dieser Monat</div><div style="font-size:18px;font-weight:200;color:var(--silv)">'+fm(monthTotal)+' €</div><div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:2px">'+thisMonth.length+' Belege</div></div></div>';}
+    } else if(phEl){phEl.style.display='none';}
+  }
+
   const rl=document.getElementById('recentList');
   if(!sorted.length){rl.innerHTML='<div class="empty"><p>Noch keine Belege.<br>Tippe auf den Scanner-Button.</p></div>';return;}
   rl.innerHTML=sorted.map(b=>{
@@ -2359,6 +2375,11 @@ function resetScan(){
   document.getElementById('resWrap').classList.remove('on');
   document.getElementById('progWrap').style.display='none';
   document.getElementById('btnStop').style.display='none';
+  // WHY: Items-Tabelle immer leeren – sonst bleibt vorheriger Scan stehen
+  const bd=document.getElementById('itemsB');if(bd)bd.innerHTML='';
+  const sec=document.getElementById('itemsSec');if(sec)sec.style.display='none';
+  // Privat-Felder auch leeren
+  try{document.getElementById('pShop').value='';document.getElementById('pBrutto').value='';}catch(e){}
   // File-Inputs zurücksetzen damit dasselbe Foto nochmal wählbar ist
   try{document.getElementById('fi').value='';document.getElementById('fiGal').value='';}catch(e){}
 }
@@ -2568,13 +2589,27 @@ WICHTIGE REGELN:
 
 function showRes(r){
   if(!r)return;
-  // WHY: Bei Privat-Scan nur Privat-Felder befüllen
+  // WHY: Bei Privat-Scan Privat-Felder + Items befüllen
   if(scanType==='priv'){
     document.getElementById('pShop').value=r.shop||'';
     document.getElementById('pDate').value=r.date||new Date().toISOString().split('T')[0];
     document.getElementById('pBrutto').value=r.brutto!=null?r.brutto.toFixed(2):'';
     if(r.category)document.getElementById('pCat').value=r.category;
     if(r.payment)document.getElementById('pPay').value=r.payment;
+    // WHY: Items immer neu befüllen – sonst bleibt vorheriger Scan stehen
+    const pbd=document.getElementById('itemsB');
+    if(pbd) pbd.innerHTML='';
+    if(r.items&&r.items.length){
+      document.getElementById('itemsSec').style.display='block';
+      r.items.forEach(it=>{
+        const tr=document.createElement('tr');
+        const p=parseFloat(it.price)||0;
+        tr.innerHTML=`<td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${p.toFixed(2)} ${cfg().currency}</td>`;
+        if(pbd) pbd.appendChild(tr);
+      });
+    } else {
+      document.getElementById('itemsSec').style.display='none';
+    }
     const rib=document.getElementById('retryKiBtn');if(rib)rib.style.display='none';
     document.getElementById('resWrap').classList.add('on');
     return;
@@ -2723,6 +2758,8 @@ async function saveBeleg(){
     await dbadd(item);
     toast(nr+' gespeichert ✓','ok');
     closeScanner();resetScan();updCounters();renderHome();
+    // WHY: MwSt-Tab sofort aktuell halten – egal ob gerade geöffnet oder nicht
+    if(appMode==='biz') renderMwst();
     if(kiScanCount===10) triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
     if(brutto>=500&&scanType==='er'){const vstRueck=(item.mwst||0);if(vstRueck>=50)triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');}
   }catch(e){toast('Fehler: '+e.message,'er');}
@@ -2810,20 +2847,27 @@ async function analysePrivatMonat(){
   apiKey=localStorage.getItem('cak')||apiKey||'';
   if(!apiKey){toast('Bitte erst API Key in Settings hinterlegen','er');openApiSheet();return;}
 
+  // WHY: Sofort visuelles Feedback – Button deaktivieren + Spinner
+  const btn=document.querySelector('[onclick="analysePrivatMonat()"]');
+  if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.innerHTML=btn.innerHTML.replace('KI-Analyse','⏳ Lädt …');}
+
   const now=new Date();
   const monat=String(now.getMonth()+1).padStart(2,'0');
   const jahr=now.getFullYear();
   const monatName=now.toLocaleDateString('de-DE',{month:'long',year:'numeric'});
 
   const all=await dba();
-  // WHY: Immer aktueller Monat – kein manueller Filter
   const it=all.filter(b=>b.type==='priv'&&(b.date||'').startsWith(`${jahr}-${monat}`));
 
-  if(!it.length){toast(`Keine privaten Belege für ${monatName}`,'wr');return;}
+  if(!it.length){
+    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=btn.innerHTML.replace('⏳ Lädt …','KI-Analyse');}
+    toast(`Keine privaten Belege für ${monatName}`,'wr');
+    return;
+  }
 
   const card=document.getElementById('privAnalyseCard');
   card.style.display='block';
-  card.textContent=`⏳ Analysiere ${it.length} Belege aus ${monatName} …`;
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;color:var(--txt3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".2"/><path d="M12 3a9 9 0 019 9"/></svg><span>Analysiere ${it.length} Belege aus ${monatName} …</span></div>`;
 
   const summary=it.map(b=>`- ${fd(b.date)}: ${b.shop||'?'} | ${b.cat||'?'} | ${fm(b.brutto||0)} € | Artikel: ${(b.items||[]).map(i=>i.name).join(', ')||'–'}`).join('\n');
   const total=it.reduce((s,b)=>s+(b.brutto||0),0);
@@ -2845,6 +2889,8 @@ async function analysePrivatMonat(){
     card.innerHTML=`<div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">${monatName} · ${fm(total)} € · ${it.length} Belege</div><div style="white-space:pre-wrap">${eh(text)}</div>`;
   }catch(e){
     card.textContent='❌ '+e.message;
+  }finally{
+    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=btn.innerHTML.replace('⏳ Lädt …','KI-Analyse');}
   }
 }
 
@@ -3608,30 +3654,72 @@ const KATFARBEN={
 // Kategorien wo Einsparpotential realistisch ist (in %)
 const KATSPARPOT={'Restaurant':0.30,'Kleidung':0.25,'Elektronik':0.20,'Freizeit':0.25,'Reise':0.15,'Sonstiges':0.10};
 
+// WHY: Diagramm nach einzelnen POSITIONEN (items) – nicht Kategorien.
+// So sieht man z.B. "Gemüse 3,20€ · Brot 1,80€ · Milch 1,20€" statt nur "Lebensmittel"
+// Palette generiert – für viele verschiedene Artikel
+function itemColor(i){
+  const pal=['#4a9e6b','#4a80c0','#c07030','#9b59b6','#e74c3c','#27ae60',
+             '#1abc9c','#f39c12','#3498db','#7f8c8d','#e67e22','#2ecc71',
+             '#8e44ad','#c0392b','#16a085','#d35400','#2980b9','#27ae60'];
+  return pal[i%pal.length];
+}
+
 function renderPrivatChart(belege){
   const wrap=document.getElementById('privChartWrap');
   const optCard=document.getElementById('privOptCard');
-  if(!belege||!belege.length){wrap.style.display='none';optCard.style.display='none';return;}
+  if(!belege||!belege.length){
+    wrap.style.display='none';
+    if(optCard)optCard.style.display='none';
+    return;
+  }
 
-  // Summen nach Kategorie
+  // WHY: Alle items aus allen Belegen aggregieren
+  const byItem={};
+  let totalItems=0;
+  belege.forEach(b=>{
+    if(b.items&&b.items.length){
+      b.items.forEach(it=>{
+        const name=(it.name||'Sonstiges').trim();
+        const v=parseFloat(it.price)||0;
+        byItem[name]=(byItem[name]||0)+v;
+        totalItems+=v;
+      });
+    }
+  });
+
+  // Wenn keine Items → fallback auf Kategorien
+  const useItems=totalItems>0;
   const byCat={};
-  belege.forEach(b=>{const k=b.cat||'Sonstiges';byCat[k]=(byCat[k]||0)+(b.brutto||0);});
-  const total=Object.values(byCat).reduce((s,v)=>s+v,0);
-  if(!total){wrap.style.display='none';optCard.style.display='none';return;}
+  if(!useItems){
+    belege.forEach(b=>{const k=b.cat||'Sonstiges';byCat[k]=(byCat[k]||0)+(b.brutto||0);});
+  }
 
-  // Einsparpotential berechnen
-  let sparPot=0;
-  Object.entries(byCat).forEach(([k,v])=>{if(KATSPARPOT[k])sparPot+=v*KATSPARPOT[k];});
-  document.getElementById('privOptBetrag').textContent=fm(sparPot)+' €';
-  optCard.style.display='flex';
+  const rawEntries=useItems
+    ? Object.entries(byItem).sort((a,b)=>b[1]-a[1])
+    : Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
 
-  // SVG Tortendiagramm zeichnen
+  // Top 12 anzeigen, Rest als "Sonstiges" zusammenfassen
+  let entries=rawEntries.slice(0,12);
+  if(rawEntries.length>12){
+    const restSum=rawEntries.slice(12).reduce((s,[,v])=>s+v,0);
+    if(restSum>0) entries.push(['Sonstiges',restSum]);
+  }
+
+  const total=entries.reduce((s,[,v])=>s+v,0);
+  if(!total){wrap.style.display='none';if(optCard)optCard.style.display='none';return;}
+
+  // Einsparpotential (einfache 15% Schätzung auf Gesamtausgaben)
+  if(optCard){
+    document.getElementById('privOptBetrag').textContent=fm(total*0.15)+' €';
+    optCard.style.display='flex';
+  }
+
+  // SVG Donut
   const svg=document.getElementById('privPieChart');
-  const cx=55,cy=55,r=48,ri=24; // Donut
+  const cx=55,cy=55,r=48,ri=22;
   let startAngle=-Math.PI/2;
-  const entries=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
   let paths='';
-  entries.forEach(([kat,val])=>{
+  entries.forEach(([name,val],i)=>{
     const angle=(val/total)*Math.PI*2;
     const endAngle=startAngle+angle;
     const x1=cx+r*Math.cos(startAngle),y1=cy+r*Math.sin(startAngle);
@@ -3639,22 +3727,23 @@ function renderPrivatChart(belege){
     const ix1=cx+ri*Math.cos(startAngle),iy1=cy+ri*Math.sin(startAngle);
     const ix2=cx+ri*Math.cos(endAngle),iy2=cy+ri*Math.sin(endAngle);
     const large=angle>Math.PI?1:0;
-    const col=KATFARBEN[kat]||'#7f8c8d';
-    paths+=`<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ri},${ri} 0 ${large},0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z" fill="${col}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    paths+=`<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${r},${r} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} L${ix2.toFixed(1)},${iy2.toFixed(1)} A${ri},${ri} 0 ${large},0 ${ix1.toFixed(1)},${iy1.toFixed(1)} Z" fill="${itemColor(i)}" stroke="var(--bg)" stroke-width="1.5"/>`;
     startAngle=endAngle;
   });
+  // Mittlerer Text: Gesamtsumme
+  paths+=`<text x="55" y="51" text-anchor="middle" font-size="12" font-weight="300" fill="var(--txt)" font-family="Inter,sans-serif">${fm(total)}</text>`;
+  paths+=`<text x="55" y="63" text-anchor="middle" font-size="8" font-weight="300" fill="var(--txt3)" font-family="Inter,sans-serif">gesamt</text>`;
   svg.innerHTML=paths;
   wrap.style.display='block';
 
   // Legende
   const leg=document.getElementById('privPieLegend');
-  leg.innerHTML=entries.map(([kat,val])=>{
+  leg.innerHTML=entries.map(([name,val],i)=>{
     const pct=Math.round(val/total*100);
-    const col=KATFARBEN[kat]||'#7f8c8d';
     return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
-      <div style="width:8px;height:8px;border-radius:50%;background:${col};flex-shrink:0"></div>
-      <span style="color:var(--txt2)">${kat}</span>
-      <span style="color:var(--txt3);margin-left:auto">${pct}%</span>
+      <div style="width:8px;height:8px;border-radius:50%;background:${itemColor(i)};flex-shrink:0"></div>
+      <span style="color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(name)}</span>
+      <span style="color:var(--txt3);flex-shrink:0;margin-left:6px">${fm(val)} €</span>
     </div>`;
   }).join('');
 }
@@ -3667,6 +3756,7 @@ function renderPrivatChart(belege){
 // ════════════════════════════════════════════════════════
 
 let verpflBesuch=null; // aktiver Besuch {start, lat, lon, adresse}
+let verpflTimerInterval=null;
 const VERPFL_KEY='bsp_verpfl_fahrten';
 
 // Pauschale nach Stunden (§4 Abs.5 EStG Inland 2024)
@@ -3729,7 +3819,21 @@ async function verpflAnkunft(){
       <div style="font-size:11px;color:var(--txt3);margin-top:4px">Entfernung Betriebsstätte: ${kmText} (Luftlinie)</div>`;
 
     document.getElementById('verpflActiveCard').style.display='block';
-    document.getElementById('verpflActiveInfo').textContent=`Seit ${new Date(verpflBesuch.start).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} Uhr · ${eh(adresse)}`;
+    document.getElementById('verpflActiveInfo').textContent=`📍 ${eh(adresse)}`;
+    document.getElementById('verpflStartInfo').textContent=`Gestartet: ${new Date(verpflBesuch.start).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} Uhr`;
+
+    // WHY: Timer alle Sekunde aktualisieren
+    if(verpflTimerInterval) clearInterval(verpflTimerInterval);
+    verpflTimerInterval=setInterval(()=>{
+      if(!verpflBesuch){clearInterval(verpflTimerInterval);return;}
+      const diff=Math.floor((Date.now()-verpflBesuch.start)/1000);
+      const h=Math.floor(diff/3600).toString().padStart(2,'0');
+      const m=Math.floor((diff%3600)/60).toString().padStart(2,'0');
+      const s=(diff%60).toString().padStart(2,'0');
+      const el=document.getElementById('verpflTimer');
+      if(el) el.textContent=`${h}:${m}:${s}`;
+      updVerpflTages();
+    },1000);
 
     btn.disabled=false;
     btn.innerHTML='<span style="font-size:18px">📍</span><span>Ich bin hier</span><span style="font-size:10px;color:var(--txt3)">Standort aktualisieren</span>';
@@ -3765,7 +3869,9 @@ async function verpflAbfahrt(){
   localStorage.setItem(VERPFL_KEY,JSON.stringify(existing.slice(0,200))); // max 200
 
   verpflBesuch=null;
+  if(verpflTimerInterval){clearInterval(verpflTimerInterval);verpflTimerInterval=null;}
   document.getElementById('verpflActiveCard').style.display='none';
+  const timerEl=document.getElementById('verpflTimer');if(timerEl)timerEl.textContent='00:00:00';
   document.getElementById('verpflStandortInfo').style.display='none';
   document.getElementById('btnAbfahrt').disabled=true;
 
