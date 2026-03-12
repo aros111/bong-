@@ -951,8 +951,116 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       <div style="font-size:11px;font-weight:300;color:var(--grn);margin-bottom:8px;letter-spacing:.3px">✅ ABGEGLICHEN</div>
       <div id="kontoMatchedList"></div>
     </div>
+    <!-- ══════════════════════════════════════════════════ -->
+  <!-- KILOMETERPAUSCHALE v2 – Routen-Tagebuch           -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <div style="border-top:1px solid var(--br);margin:16px 0 12px"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <div style="font-size:15px;font-weight:300;color:var(--txt)">🚗 Kilometerpauschale</div>
+    <span style="font-size:10px;background:rgba(200,164,90,.15);color:var(--gold);padding:2px 7px;border-radius:10px">0,30 €/km</span>
+    <button onclick="openHelp('verpfl')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;margin-left:auto">?</button>
   </div>
-</div>
+  <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:4px">
+    §9 Abs. 1 Nr. 4 EStG · Privates Auto · Berechnung immer ab Heimatort
+  </div>
+  <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:12px">
+    Heimatort: <strong id="kmHeimatAnzeige" style="color:var(--txt)">– noch nicht gesetzt</strong>
+    <button onclick="document.getElementById('bsAdr').focus()" style="background:none;border:none;color:var(--gold);font-size:11px;cursor:pointer">(ändern)</button>
+  </div>
+
+  <!-- ══ PRIMÄR: AKTIVE FAHRT / ICH BIN HIER ══ -->
+
+  <!-- Wenn KEINE aktive Tages-Route läuft: Sofort-Button -->
+  <div id="kmSofortCard" style="margin-bottom:12px">
+    <div class="card card-sm">
+      <div style="font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:10px">
+        Du bist gerade irgendwo angekommen? Drück einfach:
+      </div>
+      <button class="btn btn-gold" onclick="kmIchBinHierSofort()" style="width:100%;justify-content:center;gap:8px;font-size:14px">
+        <span style="font-size:18px">📍</span><span>Ich bin hier angekommen</span>
+      </button>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:8px;text-align:center">
+        GPS ermittelt deinen Standort · Berechnung ab Heimatort · du kannst danach alles korrigieren
+      </div>
+    </div>
+  </div>
+
+  <!-- Wenn aktive Tages-Route läuft -->
+  <div id="kmAktivCard" style="display:none;background:rgba(200,164,90,.07);border:1px solid rgba(200,164,90,.3);border-radius:var(--r12);padding:12px 14px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:400;color:var(--gold)">🟢 Tages-Route läuft</div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3)" id="kmAktivDatum"></div>
+    </div>
+    <div id="kmAktivStops" style="margin-bottom:10px"></div>
+    <button class="btn btn-gold" onclick="kmIchBinHier()" style="width:100%;justify-content:center;gap:6px">
+      <span style="font-size:16px">📍</span><span>Ich bin hier angekommen</span>
+    </button>
+    <button class="btn btn-g btn-sm" onclick="kmRouteAbschliessen()" style="width:100%;justify-content:center;margin-top:8px">
+      🏠 Route beenden &amp; speichern
+    </button>
+  </div>
+
+  <!-- ══ SEKUNDÄR: Tages-Route + Manuelle Eingabe ══ -->
+  <details style="margin-bottom:10px">
+    <summary style="font-size:11px;font-weight:300;color:var(--txt3);cursor:pointer;padding:6px 0;user-select:none">
+      📅 Tages-Route planen (mehrere Stops an einem Tag)
+    </summary>
+    <div class="card card-sm" style="margin-top:8px">
+      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px">
+        Route starten → bei jedem Ziel "Ich bin hier" drücken → Route beenden → alles wird als Belege gespeichert
+      </div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Anlass dieser Route</label>
+        <input id="kmRouteName" class="inp" type="text" placeholder="z.B. Kundentermine 12.03.2026" style="font-size:12px">
+      </div>
+      <div class="field" style="margin-bottom:10px">
+        <label>Datum</label>
+        <input id="kmRouteDatum" class="inp" type="date" style="font-size:12px">
+      </div>
+      <button class="btn btn-g btn-sm" onclick="kmRouteStarten()" style="width:100%;justify-content:center">
+        🚗 Tages-Route starten
+      </button>
+    </div>
+  </details>
+
+  <details style="margin-bottom:14px">
+    <summary style="font-size:11px;font-weight:300;color:var(--txt3);cursor:pointer;padding:6px 0;user-select:none">
+      ✏️ Manuelle Eingabe (Einzelfahrt ohne Tracking)
+    </summary>
+    <div class="card card-sm" style="margin-top:8px">
+      <div class="g2" style="gap:8px;margin-bottom:8px">
+        <div class="field"><label>Von</label>
+          <input id="kmManVon" class="inp" type="text" placeholder="Startadresse" style="font-size:12px">
+        </div>
+        <div class="field"><label>Nach</label>
+          <input id="kmManNach" class="inp" type="text" placeholder="Zieladresse" style="font-size:12px">
+        </div>
+      </div>
+      <div class="g2" style="gap:8px;margin-bottom:8px">
+        <div class="field"><label>Datum</label>
+          <input id="kmManDatum" class="inp" type="date" style="font-size:12px">
+        </div>
+        <div class="field"><label>km (manuell)</label>
+          <input id="kmManKm" class="inp" type="number" min="0" step="0.1" placeholder="z.B. 23.5" style="font-size:12px">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:10px"><label>Anlass</label>
+        <input id="kmManAnlass" class="inp" type="text" placeholder="z.B. Kundentermin" style="font-size:12px">
+      </div>
+      <button class="btn btn-g btn-sm" onclick="kmManSpeichern()" style="width:100%;justify-content:center">
+        Einzelfahrt speichern
+      </button>
+    </div>
+  </details>
+
+  <!-- ── MONATSÜBERSICHT ── -->
+  <div id="kmMonatWrap" style="display:none">
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px">
+      Fahrten diesen Monat
+    </div>
+    <div id="kmMonatList"></div>
+    <div id="kmMonatSumme" style="background:var(--s2);border-radius:var(--r8);padding:10px 12px;margin-top:8px;font-size:13px;font-weight:300;color:var(--txt2)"></div>
+  </div>
 
 <!-- ── SCHNELLEINGABE SHEET (Privat, kein Foto) ── -->
 <div class="ovl" id="schnellOvl" onclick="closeSchnellOuter(event)">
@@ -1104,6 +1212,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   <div class="cc"><div class="cc-title">Monatsverlauf</div><div class="mchart" id="mChart"></div><div class="chart-leg"><span><i class="dot" style="background:rgba(192,144,64,.5)"></i>Umsatz AR</span><span><i class="dot" style="background:rgba(74,128,192,.4)"></i>Ausgaben ER</span></div></div>
   <div class="cc"><div class="cc-title">MwSt nach Monat</div><table class="mtbl"><thead><tr><th>Monat</th><th>AR-MwSt</th><th>Vorsteuer</th><th>Saldo</th></tr></thead><tbody id="mTbl"></tbody></table></div>
   <div class="cc"><div class="cc-title">Top Kategorien (Ausgaben)</div><div class="barchart" id="catChart"></div></div>
+  <div id="mRcCard" style="display:none;background:rgba(200,164,90,.06);border:1px solid rgba(200,164,90,.2);border-radius:var(--r12);padding:12px 14px;margin:10px 0"></div>
   <!-- Inflations-Tracker -->
   <div class="cc" id="inflCC" style="display:none"><div class="cc-title">📈 Inflations-Tracker</div><div id="inflList"></div></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;padding-bottom:4px">
@@ -1174,6 +1283,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   <div style="display:flex;gap:7px;flex-wrap:wrap">
     <button class="btn btn-gold btn-sm" onclick="exportQCSV()">CSV exportieren</button>
     <button class="btn btn-g btn-sm" onclick="exportQZip()">PDF-Paket (ZIP)</button>
+    <button class="btn btn-gold" id="stbExportBtn" onclick="exportSteuerberater()" style="gap:6px"><span>📊</span><span>Steuerberater-Export</span></button>
   </div>
 </div>
 
@@ -1181,7 +1291,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 <div class="view" id="v-settings">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <button class="btn btn-g btn-sm" onclick="showView('steuer')">← Zurück</button>
-    <button onclick="openHelp('settings')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button>
+    <div style="display:flex;gap:6px;align-items:center">
+      <button onclick="openChangelog()" style="background:none;border:1px solid var(--br);border-radius:var(--r8);padding:3px 8px;font-size:10px;font-weight:300;color:var(--txt3);cursor:pointer">📋 v2.0</button>
+      <button onclick="openHelp('settings')" style="background:none;border:1px solid var(--br);border-radius:50%;width:18px;height:18px;font-size:10px;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0">?</button>
+    </div>
   </div>
   <div class="pwa-card">
     <div class="l">📱 Als App installieren</div>
@@ -1194,6 +1307,22 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     <div class="info-row"><span class="k">Status</span><span class="val" id="settTyp">–</span></div>
     <div class="info-row"><span class="k">Belegnummer-Format</span><span class="val" id="settFmt">–</span></div>
     <button class="btn btn-g btn-sm" onclick="resetOnboarding()" style="margin-top:10px">Neu einrichten</button>
+  </div>
+
+  <div style="background:var(--s2);border:1px dashed var(--br);border-radius:var(--r12);padding:14px;margin-top:10px;opacity:.7">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <span>🏦</span><div style="font-size:13px;font-weight:300;color:var(--txt)">Bank-Synchronisation</div>
+      <span style="font-size:9px;background:var(--br);color:var(--txt3);padding:2px 6px;border-radius:10px">BALD</span>
+    </div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3)">FinTS/HBCI oder PSD2 – Buchungen automatisch importieren.</div>
+  </div>
+
+  <div style="background:var(--s2);border:1px dashed var(--br);border-radius:var(--r12);padding:14px;margin-top:10px;opacity:.7">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+      <span>📄</span><div style="font-size:13px;font-weight:300;color:var(--txt)">Ausgangsrechnungen erstellen</div>
+      <span style="font-size:9px;background:var(--br);color:var(--txt3);padding:2px 6px;border-radius:10px">BALD</span>
+    </div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3)">Eigene Rechnungen mit Stempel und Bankdaten als PDF.</div>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">KI-Verbindung</div>
@@ -1638,7 +1767,7 @@ function showView(v){
   if(v==='belege')renderBelege();
   if(v==='priv')renderPrivatBelege();
   if(v==='konto')initKontoView();
-  if(v==='verpfl'){initVerpflView();}
+  if(v==='verpfl'){initVerpflView();initKmView();}
   if(v==='mwst')renderMwst();
   if(v==='steuer')calcSteuer();
   if(v==='quartal')initQuartal();
@@ -2413,8 +2542,9 @@ function resetScan(){
   document.getElementById('resWrap').classList.remove('on');
   document.getElementById('progWrap').style.display='none';
   document.getElementById('btnStop').style.display='none';
-  // WHY: Items-Tabelle immer leeren – sonst bleibt vorheriger Scan stehen
+  // WHY: Items-Tabelle + RC-Banner immer leeren
   const bd=document.getElementById('itemsB');if(bd)bd.innerHTML='';
+  const rcDiv=document.getElementById('rcBanner');if(rcDiv)rcDiv.innerHTML='';
   const sec=document.getElementById('itemsSec');if(sec)sec.style.display='none';
   // Privat-Felder auch leeren
   try{document.getElementById('pShop').value='';document.getElementById('pBrutto').value='';}catch(e){}
@@ -2537,6 +2667,14 @@ WICHTIGE REGELN:
 9. garantieMonate=24 für Elektronik/Geräte, 12 für Möbel, sonst null
 10. Fehlende oder unlesbare Felder: null (nicht 0, nicht "")`;
 
+  // WHY: Foto-Qualitäts-Check vor API-Call – spart Kosten bei schlechten Fotos
+  if(capB64){
+    const bytes=(capThumb||capB64).length*0.75;
+    if(bytes<5000){
+      const ok=confirm('⚠️ Das Foto scheint sehr klein oder dunkel zu sein.\nTrotzdem analysieren? (Kostet API-Guthaben)');
+      if(!ok) return;
+    }
+  }
   setLog('🤖 Claude analysiert Bild …'); setP(40);
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -2682,6 +2820,20 @@ function showRes(r){
       bd.appendChild(tr);
     });
   }else document.getElementById('itemsSec').style.display='none';
+  // RC-Check nach Shop-Erkennung
+  if(r.shop && detectReverseCharge(r.shop)) {
+    let rcDiv = document.getElementById('rcBanner');
+    if(!rcDiv){ rcDiv=document.createElement('div'); rcDiv.id='rcBanner';
+      const rw=document.getElementById('resWrap'); if(rw) rw.prepend(rcDiv); }
+    rcDiv.innerHTML = rcBannerHtml(r.shop, r.brutto||0, r.mwstRate||19);
+    // Automatisch MwSt auf 0 setzen bei RC-Anbietern
+    if(scanType !== 'priv'){
+      document.getElementById('rMwst').value = '0.00';
+      if(r.brutto) document.getElementById('rNet').value = r.brutto.toFixed(2);
+    }
+  } else {
+    const rcDiv = document.getElementById('rcBanner'); if(rcDiv) rcDiv.innerHTML='';
+  }
   // KI-erneut-Button ausblenden wenn KI erfolgreich war
   const rib = document.getElementById('retryKiBtn');
   if(rib) rib.style.display='none';
@@ -2795,13 +2947,16 @@ async function saveBeleg(){
     garantieBis=kauf.toISOString().split('T')[0];
   }
 
+  const shopVal2 = document.getElementById('rShop').value||'Unbekannt';
+  const isRC = detectReverseCharge(shopVal2);
   const item={type:scanType,belegNr:nr,
-    shop:document.getElementById('rShop').value||'Unbekannt',
+    shop:shopVal2,
     date:document.getElementById('rDate').value||new Date().toISOString().split('T')[0],
     net,mwst,brutto,
     mwstRate:parseFloat(document.getElementById('rRate').value)||cfg().mwstH,
     cat:document.getElementById('rCat').value,payment:document.getElementById('rPay').value,
     items:curRes?.items||[],image:capThumb||capB64,savedAt:Date.now(),
+    reverseCharge:isRC,bewirtung:null,
     istAbo:curRes?.istAbo||false,
     garantieBis,
     isDigitalScreen:curRes?.isDigitalScreen||false,
@@ -2811,6 +2966,7 @@ async function saveBeleg(){
     await dbadd(item);
     toast(nr+' gespeichert ✓','ok');
     closeScanner();resetScan();updCounters();renderHome();
+    checkBewirtungPrompt(item);
     // WHY: MwSt-Tab sofort aktuell halten – egal ob gerade geöffnet oder nicht
     if(appMode==='biz') renderMwst();
     if(kiScanCount===10) triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
@@ -2833,7 +2989,7 @@ async function renderBelege(){
   const q=(document.getElementById('srch').value||'').toLowerCase();
   const tf=document.getElementById('ftT').value,cf=document.getElementById('ftC').value;
   // WHY: Privat-Belege (type='priv') gehören NICHT in die Business-Liste
-  let it=all.filter(b=>b.type!=='priv'&&(!q||b.shop.toLowerCase().includes(q)||(b.belegNr||'').toLowerCase().includes(q))&&(!tf||b.type===tf)&&(!cf||b.cat===cf));
+  let it=all.filter(b=>b.type!=='priv'&&(!q||b.shop.toLowerCase().includes(q)||(b.belegNr||'').toLowerCase().includes(q)||(b.items||[]).some(i=>(i.name||'').toLowerCase().includes(q)))&&(!tf||b.type===tf)&&(!cf||b.cat===cf));
   it.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
   const l=document.getElementById('bList');
   if(!it.length){l.innerHTML='<div class="empty"><div class="ico">🧾</div><p>Keine Belege gefunden.</p></div>';return;}
@@ -2842,7 +2998,7 @@ async function renderBelege(){
     <div class="bc-bar" style="background:${b.type==='er'?'var(--blu)':'var(--ylw)'}"></div>
     <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
     <div class="bc-inf">
-      <div class="bc-sh">${eh(b.shop||'Unbekannt')}</div>
+      <div class="bc-sh">${eh(b.shop||'Unbekannt')}${gobdBadgeHtml(b)}</div>
       <div class="bc-me"><span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type==='er'?'Eingang':'Ausgang'}</span>${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}${b.garantieBis?'<span style="font-size:9px;color:var(--grn)">🛡️</span>':''}${b.isDigitalScreen?'<span style="font-size:9px;color:var(--silv)">🖥️</span>':''}</div>
       <div class="bc-nr">${eh(b.belegNr||'')}</div>
       ${renderItemsLine(b.items)}
@@ -3044,6 +3200,23 @@ async function renderMwst(){
   document.getElementById('catChart').innerHTML=cats.map(([c,v])=>`<div class="barrow"><div class="bar-lbl">${eh(c)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxC*100)}%;background:rgba(74,128,192,.45)"></div></div><div class="bar-val">${fm(v)}</div></div>`).join('');
   // Inflations-Tracker
   await renderInflationsTracker();
+
+  // Reverse-Charge Summen anzeigen
+  const rcBelege = all.filter(b => b.type==='er' && b.reverseCharge);
+  const rcEl = document.getElementById('mRcCard');
+  if(rcBelege.length > 0) {
+    const rcSum = rcBelege.reduce((s,b)=>{
+      const info = getRcInfo(b.brutto||0, b.mwstRate||19);
+      return s + info.rcMwst;
+    }, 0);
+    if(rcEl) {
+      rcEl.style.display = 'block';
+      rcEl.innerHTML = `<div style="font-size:10px;font-weight:300;color:var(--gold);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">⚠️ Reverse Charge §13b UStG</div>
+        <div style="font-size:13px;font-weight:300;color:var(--txt2)">${rcBelege.length} Buchungen · selbst abzuführen und abziehbar</div>
+        <div style="font-size:18px;font-weight:200;color:var(--orn);margin:4px 0">${fm(rcSum)} €</div>
+        <div style="font-size:10px;font-weight:300;color:var(--txt3)">Nettoeffekt: 0 € · In UStVA Zeile 52 + 67 eintragen</div>`;
+    }
+  } else if(rcEl) { rcEl.style.display='none'; }
 }
 
 // ════════════════════════════════════════════════════════
@@ -4063,15 +4236,23 @@ function trackApiCost(typ, imgB64Len=0){
 function updApiCostDisplay(){
   const data=JSON.parse(localStorage.getItem(API_COST_KEY)||'{"calls":0,"cost":0}');
   const costEur=data.cost*0.92;
-  const txt=`${data.calls} KI-Calls · ~${costEur.toFixed(3)} €`;
+  const avgEur=data.calls>0?(costEur/data.calls):0;
+  // Spar-Tipp kontextabhängig
+  let sparTipp='';
+  if(data.calls>20) sparTipp='Tipp: Gute Beleuchtung beim Foto spart KI-Tokens.';
+  else if(data.calls>5) sparTipp='Tipp: Unleserliche Belege lieber manuell eingeben.';
   // Settings
   const el=document.getElementById('apiCostDisp');
-  if(el) el.innerHTML=`<span style="color:var(--txt)">${data.calls} KI-Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} € verbraucht</span>`;
+  if(el) el.innerHTML=`<span style="color:var(--txt)">${data.calls} KI-Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} € verbraucht</span>`
+    +`<div style="font-size:10px;color:var(--txt3);margin-top:3px">ø ${avgEur.toFixed(4)} €/Call · Als Betriebsausgabe absetzbar</div>`
+    +(sparTipp?`<div style="font-size:10px;color:var(--silv);margin-top:2px">💡 ${sparTipp}</div>`:'')
+    +`<div style="font-size:10px;color:var(--txt3);margin-top:3px">⚠️ Anthropic (US): Reverse Charge §13b – kein DE-MwSt-Ausweis, selbst abzuführen + abziehbar.</div>`;
   // Home mini-card
   const homeEl=document.getElementById('apiCostHome');
   const homeCard=document.getElementById('apiCostCard');
   if(homeEl){
-    homeEl.innerHTML=`<span style="color:var(--txt2)">${data.calls} Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} €</span>`;
+    homeEl.innerHTML=`<span style="color:var(--txt2)">${data.calls} API-Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} €</span>`
+      +`<div style="font-size:10px;color:var(--txt3);margin-top:2px">Betriebsausgabe absetzbar · RC §13b</div>`;
     if(homeCard) homeCard.style.display=data.calls>0?'flex':'none';
   }
 }
@@ -4085,113 +4266,47 @@ function updApiCostDisplay(){
 const HILFE = {
   home: {
     title: '🏠 Startseite',
-    text: 'Die Startseite zeigt eine Übersicht deiner wichtigsten Kennzahlen.
-
-• KI-Effizienz: Wie viele Scans du gemacht hast und wie viel Zeit/Geld du damit gespart hast
-• API-Verbrauch: Wie viel von deinem Anthropic-Guthaben verwendet wurde
-• Zuletzt erfasst: Deine letzten Belege (je nach Business/Privat-Modus)
-
-Mit dem Toggle unten wechselst du zwischen Business- und Privat-Modus.',
+    text: `Die Startseite zeigt eine Übersicht deiner wichtigsten Kennzahlen.\n\n• KI-Effizienz: Scans, gesparte Zeit und Ersparnis vs. Steuerberater\n• API-Verbrauch: Geschätzte Kosten deines Anthropic-Guthabens\n• Zuletzt erfasst: Deine letzten Belege je nach Modus\n\nMit dem Toggle wechselst du zwischen Business- und Privat-Modus.`,
     links: ['scanner','belege','priv']
   },
   scanner: {
     title: '📸 Scanner',
-    text: 'Fotografiere oder wähle ein Bild deines Belegs.
-
-• Eingangsrechnung (ER): Rechnungen die du bezahlt hast → Vorsteuer absetzbar
-• Ausgangsrechnung (AR): Rechnungen die du gestellt hast → MwSt abführen
-
-Die KI liest automatisch alle Felder aus. Du kannst alles manuell korrigieren bevor du speicherst.
-
-⚠️ Ohne API Key: Felder manuell ausfüllen.',
+    text: `Fotografiere oder wähle ein Bild deines Belegs.\n\n• Eingangsrechnung (ER): Rechnungen die du bezahlt hast → Vorsteuer absetzbar\n• Ausgangsrechnung (AR): Rechnungen die du gestellt hast → MwSt abführen\n\nDie KI liest alle Felder automatisch aus. Alles ist manuell korrigierbar.\nNach der Analyse: 🎙️ Erklärung sprechen für Korrekturen per Stimme.\n\n⚠️ Ohne API Key: Felder manuell ausfüllen.`,
     links: ['belege','mwst']
   },
   belege: {
     title: '📋 Belege',
-    text: 'Alle gespeicherten Eingangs- und Ausgangsrechnungen.
-
-• Tippe auf einen Beleg für Details
-• Stempel: PDF mit Buchungsstempel exportieren
-• Filter: nach Typ (ER/AR), Kategorie und Suche
-
-Belege werden lokal in deinem Browser gespeichert (IndexedDB).',
+    text: `Alle gespeicherten Eingangs- und Ausgangsrechnungen.\n\n• Tippe auf einen Beleg für Details und Stempel-Export\n• Filter: nach Typ (ER/AR), Kategorie und Suche\n• Volltext-Suche durchsucht auch erkannte Artikel\n• CSV-Export für externe Buchhaltung\n\nBelege werden lokal in deinem Browser gespeichert (IndexedDB).`,
     links: ['mwst','steuer']
   },
   mwst: {
     title: '💶 Mehrwertsteuer',
-    text: 'Übersicht deiner MwSt-Situation.
-
-• Eingenommene MwSt (AR): MwSt aus deinen Ausgangsrechnungen → abführen
-• Vorsteuer (ER): MwSt aus Eingangsrechnungen → vom Finanzamt zurückbekommen
-• Zahllast: AR-MwSt − Vorsteuer = was du überweisen musst
-• Erstattung (grün): Mehr Vorsteuer als MwSt eingenommen
-
-Finanzamt, Ärzte, ÖPNV und Behörden sind MwSt-befreit.',
+    text: `Übersicht deiner MwSt-Situation.\n\n• Eingenommene MwSt (AR): aus Ausgangsrechnungen → abführen\n• Vorsteuer (ER): aus Eingangsrechnungen → zurückbekommen\n• Zahllast (rot): AR-MwSt minus Vorsteuer = zu überweisen\n• Erstattung (grün): Mehr Vorsteuer als MwSt eingenommen\n\nMwSt-befreit: Finanzamt, Ärzte, ÖPNV, Behörden, Notare.\nReverse Charge (§13b): Nicht-DE-Anbieter wie Anthropic, Adobe, AWS.`,
     links: ['steuer','belege']
   },
   steuer: {
     title: '📊 Einkommensteuer',
-    text: 'Schätzung deiner Einkommensteuer nach §32a EStG.
-
-• Einnahmen: Summe aller AR-Nettobeiträge
-• Betriebsausgaben: Summe aller ER-Nettobeiträge
-• Gewinn = Einnahmen − Ausgaben − manueller Freibetrag
-
-Der Gauge zeigt in welcher Steuerstufe du dich befindest.
-
-⚠️ Nur Schätzung – kein Ersatz für einen Steuerberater.',
+    text: `Schätzung deiner Einkommensteuer nach §32a EStG.\n\n• Einnahmen: Summe aller AR-Nettobeiträge\n• Betriebsausgaben: Summe aller ER-Nettobeiträge\n• Gewinn = Einnahmen − Ausgaben − manueller Freibetrag\n\nDer Gauge zeigt in welcher Steuerstufe du dich befindest.\n\n⚠️ Nur Schätzung – kein Ersatz für einen Steuerberater.`,
     links: ['mwst']
   },
   priv: {
     title: '🏠 Privatausgaben',
-    text: 'Privater Bereich – getrennt von Business.
-
-• Hier landen Belege die im Privat-Modus gescannt wurden
-• Schnelleingabe (+): Für kleine Ausgaben ohne Quittung (Eis, Trinkgeld)
-• Spracheingabe: Einfach sprechen – KI erkennt Betrag und Kategorie
-• Kreisdiagramm: Zeigt Ausgaben nach Artikel (nicht nach Kategorie)
-• KI-Monatsanalyse: Analysiert alle Belege des aktuellen Monats
-
-Privat-Belege beeinflussen nie die MwSt- oder Steuerberechnung.',
+    text: `Privater Bereich – vollständig getrennt von Business.\n\n• Hier landen alle Belege im Privat-Modus\n• Schnelleingabe (⚡): Für kleine Ausgaben ohne Quittung\n• Spracheingabe: KI erkennt Betrag und Kategorie\n• Kreisdiagramm: Ausgaben nach Artikeln vom Kassenzettel\n• KI-Monatsanalyse: Analysiert alle Belege des aktuellen Monats\n\nPrivat-Belege beeinflussen nie MwSt oder Steuer.`,
     links: ['home','konto']
   },
   konto: {
     title: '🏦 Kontoauszug-Abgleich',
-    text: 'Vergleicht deine Kontoauszüge mit gespeicherten Belegen.
-
-1. Fotos hochladen: Einzeln oder mehrere gleichzeitig aus der Galerie
-2. Alle analysieren: KI liest alle Buchungen aus
-3. Abgleich: Buchungen ±0,50€ und ±3 Tage werden automatisch gematcht
-4. Unbekannte Buchungen: Als Privat oder Business erfassen oder ignorieren
-
-Alle Daten bleiben gespeichert – auch nach Tab-Wechsel.',
+    text: `Vergleicht deine Kontoauszüge mit gespeicherten Belegen.\n\n1. Fotos hochladen: Einzeln oder mehrere gleichzeitig\n2. Alle analysieren starten: KI liest alle Buchungen aus\n3. Abgleich: ±0,50 € und ±3 Tage werden automatisch gematcht\n4. Unbekannte: Als Privat oder Business erfassen oder ignorieren\n\nAlle Buchungen bleiben gespeichert – auch nach Tab-Wechsel.\nSteuerberater-Export enthält nur Business-Buchungen.`,
     links: ['belege','priv']
   },
   verpfl: {
-    title: '🚗 Verpflegungspauschale',
-    text: 'Erfasse Außentermine für die steuerliche Verpflegungspauschale.
-
-• Betriebsstätte: Dein Heimatort/Büro – einmal hinterlegen
-• "Ich bin hier": Erfasst deinen aktuellen Standort per GPS (nur einmalig)
-• Timer läuft: Zeigt wie lange du unterwegs bist
-• "Fertig": Speichert den Besuch mit berechneter Pauschale
-
-Pauschalen §4 Abs. 5 EStG Inland: 8h = 8€, 14h = 14€, 24h = 28€
-
-Alle Fahrten des Monats werden summiert.',
+    title: '🚗 Fahrt & Verpflegung',
+    text: `Erfasse Außentermine und Fahrten mit dem privaten Auto.\n\nVerpflegungspauschale §4 Abs. 5 EStG:\n• ab 8h = 8 €, ab 14h = 14 €, 24h = 28 €\n• Timer läuft ab "Ich bin hier"\n\nKilometerpauschale (privates Auto):\n• 0,30 €/km als Betriebsausgabe\n• Start/Ziel eingeben oder GPS nutzen\n• Entfernung wird automatisch berechnet`,
     links: ['steuer']
   },
   settings: {
     title: '⚙️ Einstellungen',
-    text: 'Hier konfigurierst du BelegScan Pro.
-
-• API Key: Dein persönlicher Anthropic Claude Key (sk-ant-…)
-  → console.anthropic.com → API Keys → Create Key
-• Stempel: Dein Firmenstempel für PDF-Exporte
-• Land/Steuertyp: Bestimmt MwSt-Sätze und Belegnummern-Format
-• API-Verbrauch: Geschätzte Kosten deiner KI-Nutzung
-
-Alle Daten bleiben lokal auf deinem Gerät.',
+    text: `Hier konfigurierst du BelegScan Pro.\n\n• API Key: Dein Anthropic Claude Key (sk-ant-…)\n  Erstellen unter: console.anthropic.com → API Keys\n• Stempel: Firmenstempel für PDF-Exporte\n• Land: Deutschland / Österreich / Schweiz\n• API-Verbrauch: Kosten, Betriebsausgabe-Hinweis, Spar-Tipps\n\nAlle Daten bleiben lokal auf deinem Gerät.`,
     links: ['scanner']
   }
 };
@@ -4409,6 +4524,798 @@ function onVoiceCommentResult(result, originalText) {
     toast('Übernommen ✓', 'ok');
   });
 }
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: KILOMETERPAUSCHALE v2 – Routen-Tagebuch
+// WHY: Privates Auto für Dienstreisen → 0,30 €/km
+// §9 Abs. 1 Nr. 4 EStG. Workflow: "Ich bin jetzt hier"
+// statt GPS-Dauerverfolgung. OSRM für echtes Routing.
+// Multi-Stop: Mehrere Ziele an einem Tag möglich.
+// ════════════════════════════════════════════════════════
+const KM_STORE       = 'bsp_km_fahrten';
+const KM_ROUTE_KEY   = 'bsp_km_aktiv';   // aktive Route im localStorage
+const KM_PAUSCHALE   = 0.30;
+const OSRM_URL       = 'https://router.project-osrm.org/route/v1/driving/';
+
+function kmLoad(){ try{ return JSON.parse(localStorage.getItem(KM_STORE)||'[]'); }catch(_){ return []; } }
+function kmSave(arr){ localStorage.setItem(KM_STORE, JSON.stringify(arr)); }
+function kmAktivLoad(){ try{ return JSON.parse(localStorage.getItem(KM_ROUTE_KEY)||'null'); }catch(_){ return null; } }
+function kmAktivSave(r){ if(r) localStorage.setItem(KM_ROUTE_KEY, JSON.stringify(r)); else localStorage.removeItem(KM_ROUTE_KEY); }
+
+// ── Routing via OSRM (kostenlos, kein Key nötig) ──────
+async function osrmRoute(lat1, lon1, lat2, lon2){
+  try{
+    const url = OSRM_URL + lon1+','+lat1+';'+lon2+','+lat2+'?overview=false';
+    const r = await fetch(url, {headers:{'User-Agent':'BelegScanPro/1.0'}});
+    const d = await r.json();
+    if(d.code==='Ok' && d.routes && d.routes[0]){
+      return {
+        km:   Math.round(d.routes[0].distance / 100) / 10,   // Meter → km
+        minuten: Math.round(d.routes[0].duration / 60)       // Sekunden → Minuten
+      };
+    }
+  }catch(_){}
+  return null;
+}
+
+// ── Heimatort-Koordinaten holen ───────────────────────
+function kmHeimat(){
+  const adr   = localStorage.getItem('bsp_bs') || '';
+  const coord = JSON.parse(localStorage.getItem('bsp_bs_coords')||'null');
+  return { adr, coord };
+}
+
+// ── initKmView: View aufbauen ─────────────────────────
+function initKmView(){
+  const d = document.getElementById('kmRouteDatum');
+  if(d && !d.value) d.value = new Date().toISOString().split('T')[0];
+  const md = document.getElementById('kmManDatum');
+  if(md && !md.value) md.value = new Date().toISOString().split('T')[0];
+  // Heimatort anzeigen
+  const h = kmHeimat();
+  const el = document.getElementById('kmHeimatAnzeige');
+  if(el) el.textContent = h.adr || ' – noch nicht gesetzt (in Fahrt-Tab oben eintragen)';
+  renderKmAktiv();
+  renderKmMonat();
+}
+
+// ── Route starten ─────────────────────────────────────
+function kmRouteStarten(){
+  const h = kmHeimat();
+  if(!h.adr){ toast('Bitte zuerst Betriebsstätte / Heimatort eintragen (oben)','wr'); return; }
+  const anlass = document.getElementById('kmRouteName').value.trim();
+  if(!anlass){ toast('Bitte Anlass eingeben','wr'); return; }
+  const datum  = document.getElementById('kmRouteDatum').value || new Date().toISOString().split('T')[0];
+  const aktiv = {
+    datum, anlass,
+    heimat: { adr: h.adr, coord: h.coord },
+    stops: [],       // { nr, ziel, adr, coord, kmVon, zeitMin, ts }
+    gestartetAt: Date.now()
+  };
+  kmAktivSave(aktiv);
+  renderKmAktiv();
+  toast('Route gestartet – fahr los! 🚗','ok');
+}
+
+// ── "Ich bin hier angekommen" ─────────────────────────
+
+// ── "Ich bin hier" SOFORT (primärer Workflow) ────────
+// WHY: Berechnung IMMER ab Heimatort, egal wo der Nutzer
+// heute Nacht war. Das ist steuerlich korrekt nach §9 EStG.
+async function kmIchBinHierSofort(){
+  const h = kmHeimat();
+  if(!h.adr){
+    toast('Bitte zuerst Betriebsstätte / Heimatort oben eintragen','wr');
+    document.getElementById('bsAdr').focus();
+    return;
+  }
+  const btn = document.querySelector('[onclick="kmIchBinHierSofort()"]');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span>⏳</span><span>Standort wird ermittelt …</span>'; }
+  try{
+    const pos = await new Promise((res,rej)=>
+      navigator.geolocation.getCurrentPosition(res,rej,{timeout:12000,maximumAge:30000}));
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+    // Reverse Geocoding
+    const revR = await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json',
+      {headers:{'User-Agent':'BelegScanPro/1.0'}});
+    const geo = await revR.json();
+    const a = geo.address||{};
+    const adr = [a.road,a.house_number,a.city||a.town||a.village].filter(Boolean).join(' ')
+      || (lat.toFixed(4)+', '+lon.toFixed(4));
+    // OSRM Route: IMMER von Heimatort (egal wo Nutzer übernachtet hat)
+    let kmVon=0, zeitMin=0;
+    if(h.coord){
+      const route = await osrmRoute(h.coord.lat, h.coord.lon, lat, lon);
+      if(route){ kmVon=route.km; zeitMin=route.minuten; }
+      else { kmVon = Math.round(haversine(h.coord.lat,h.coord.lon,lat,lon)*1.3*10)/10; }
+    }
+    kmZielSheetOeffnen({
+      adr, lat, lon,
+      vonAdr: h.adr,
+      kmVon, zeitMinOSRM: zeitMin,
+      stopNr: 1,
+      sofort: true   // Flag: kein aktives Route-Objekt, direkt speichern
+    });
+  }catch(e){
+    // GPS fehlgeschlagen → Sheet trotzdem öffnen für manuelle Eingabe
+    const h2 = kmHeimat();
+    kmZielSheetOeffnen({adr:'',lat:null,lon:null,vonAdr:h2.adr,kmVon:0,zeitMinOSRM:0,stopNr:1,sofort:true});
+    toast('GPS nicht verfügbar – bitte manuell eingeben','wr');
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML='<span style="font-size:18px">📍</span><span>Ich bin hier angekommen</span>'; }
+  }
+}
+
+async function kmIchBinHier(){
+  const aktiv = kmAktivLoad();
+  if(!aktiv){ toast('Keine aktive Route','er'); return; }
+
+  const btn = document.querySelector('[onclick="kmIchBinHier()"]');
+  if(btn){ btn.disabled=true; btn.innerHTML='<span>⏳</span><span>Standort wird ermittelt …</span>'; }
+
+  try{
+    // GPS-Koordinaten einmalig holen
+    const pos = await new Promise((res,rej)=>
+      navigator.geolocation.getCurrentPosition(res,rej,{timeout:12000,maximumAge:30000}));
+    const lat = pos.coords.latitude;
+    const lon = pos.coords.longitude;
+
+    // Reverse Geocoding → Adresse
+    const revResp = await fetch(
+      'https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json',
+      {headers:{'User-Agent':'BelegScanPro/1.0'}});
+    const geo = await revResp.json();
+    const adr_obj = geo.address||{};
+    const adr = [adr_obj.road, adr_obj.house_number, adr_obj.city||adr_obj.town||adr_obj.village]
+      .filter(Boolean).join(' ') || (lat.toFixed(4)+', '+lon.toFixed(4));
+
+    // Letzten Punkt bestimmen (Heimatort oder letzter Stop)
+    const letzterStop = aktiv.stops.length > 0 ? aktiv.stops[aktiv.stops.length-1] : null;
+    const vonCoord    = letzterStop ? letzterStop.coord : aktiv.heimat.coord;
+    const vonAdr      = letzterStop ? letzterStop.adr   : aktiv.heimat.adr;
+
+    let kmVon = null, zeitMinOSRM = null;
+    if(vonCoord){
+      const route = await osrmRoute(vonCoord.lat, vonCoord.lon, lat, lon);
+      if(route){ kmVon = route.km; zeitMinOSRM = route.minuten; }
+    }
+    // Fallback: Haversine mit Straßenfaktor 1,3
+    if(!kmVon && vonCoord){
+      kmVon = Math.round(haversine(vonCoord.lat, vonCoord.lon, lat, lon) * 1.3 * 10) / 10;
+    }
+
+    // Sheet öffnen für Bestätigung / Zeitkorrektur
+    kmZielSheetOeffnen({
+      adr, lat, lon,
+      vonAdr, kmVon: kmVon||0,
+      zeitMinOSRM: zeitMinOSRM||0,
+      stopNr: aktiv.stops.length + 1
+    });
+
+  }catch(e){
+    toast('GPS-Fehler: '+e.message,'er');
+    // Fallback: manuelles Ziel-Sheet ohne GPS
+    kmZielSheetOeffnen({adr:'', lat:null, lon:null, vonAdr: aktiv.heimat.adr, kmVon:0, zeitMinOSRM:0, stopNr: aktiv.stops.length+1});
+  }finally{
+    if(btn){ btn.disabled=false; btn.innerHTML='<span style="font-size:16px">📍</span><span>Ich bin hier angekommen</span>'; }
+  }
+}
+
+// ── Ziel-Bestätigungs-Sheet ───────────────────────────
+function kmZielSheetOeffnen(data){
+  const ovl = document.getElementById('kmZielOvl');
+  if(!ovl) return;
+  document.getElementById('kmZielAdr').value    = data.adr||'';
+  document.getElementById('kmZielKm').value     = data.kmVon||'';
+  document.getElementById('kmZielMin').value    = data.zeitMinOSRM||'';
+  document.getElementById('kmZielNr').value     = data.stopNr||1;
+  document.getElementById('kmZielLat').value    = data.lat||'';
+  document.getElementById('kmZielLon').value    = data.lon||'';
+  document.getElementById('kmZielVonAdr').textContent = data.vonAdr||'';
+  // OSRM-Zeit anzeigen
+  const hint = document.getElementById('kmZielOsrmHint');
+  if(hint){
+    if(data.zeitMinOSRM>0){
+      hint.textContent = 'OSRM-Routenzeit: ca. '+data.zeitMinOSRM+' min · Stau oder Umweg? Zeit oben korrigieren.';
+      hint.style.display='block';
+    } else { hint.style.display='none'; }
+  }
+  // Sofort-Modus: Anlass-Feld einblenden, hidden flag setzen
+  const sofortEl = document.getElementById('kmZielSofort');
+  if(sofortEl) sofortEl.value = data.sofort ? '1' : '0';
+  const anlassRow = document.getElementById('kmZielAnlassRow');
+  if(anlassRow) anlassRow.style.display = data.sofort ? 'block' : 'none';
+  ovl.classList.add('on');
+}
+
+function kmZielSchliessen(){ document.getElementById('kmZielOvl').classList.remove('on'); }
+
+async function kmZielSpeichern(){
+  const adr    = document.getElementById('kmZielAdr').value.trim();
+  const km     = parseFloat(document.getElementById('kmZielKm').value)||0;
+  const minStr = document.getElementById('kmZielMin').value;
+  const lat    = parseFloat(document.getElementById('kmZielLat').value)||null;
+  const lon    = parseFloat(document.getElementById('kmZielLon').value)||null;
+  const nr     = parseInt(document.getElementById('kmZielNr').value)||1;
+  const sofort = document.getElementById('kmZielSofort').value==='1';
+  const vonAdrEl = document.getElementById('kmZielVonAdr');
+  const vonAdr   = vonAdrEl ? vonAdrEl.textContent : '';
+  const anlassEl = document.getElementById('kmZielAnlass');
+  const anlass   = anlassEl ? anlassEl.value.trim() : '';
+
+  if(!adr){ toast('Bitte Ziel-Adresse eingeben','wr'); return; }
+
+  if(sofort){
+    // Sofort-Modus: direkt als ER-Beleg speichern
+    if(!km){ toast('Bitte km eingeben','wr'); return; }
+    const betrag = Math.round(km * KM_PAUSCHALE * 100)/100;
+    const datum  = new Date().toISOString().split('T')[0];
+    const bNr    = nextNr('er');
+    const item   = {
+      type:'er', belegNr:bNr,
+      shop:'Fahrt: '+vonAdr+' → '+adr,
+      date: datum, net:betrag, mwst:0, brutto:betrag, mwstRate:0,
+      cat:'Fahrtkosten', payment:'Pauschale',
+      items:[{name:km.toFixed(1)+' km × 0,30 €', price:betrag}],
+      image:null, savedAt:Date.now(),
+      istAbo:false, garantieBis:null, reverseCharge:false, bewirtung:null,
+      kmFahrt:{ von:vonAdr, nach:adr, km, anlass, zeitMin:minStr?parseInt(minStr):null }
+    };
+    try{
+      await dbadd(item);
+      const fahrten = kmLoad();
+      fahrten.push({id:Date.now(),datum,von:vonAdr,nach:adr,km,betrag,anlass,belegNr:bNr});
+      kmSave(fahrten);
+      kmZielSchliessen();
+      renderKmMonat(); renderHome();
+      toast(bNr+' gespeichert · '+km.toFixed(1)+' km · '+fm(betrag)+' € ✓','ok');
+    }catch(e){ toast('Fehler: '+e.message,'er'); }
+    return;
+  }
+
+  // Tages-Route Modus
+  const aktiv = kmAktivLoad();
+  if(!aktiv) return;
+  aktiv.stops.push({
+    nr, adr, coord: (lat&&lon)?{lat,lon}:null,
+    kmVon: km, zeitMin: minStr?parseInt(minStr):null,
+    ts: Date.now()
+  });
+  kmAktivSave(aktiv);
+  kmZielSchliessen();
+  renderKmAktiv();
+  toast('Stop '+nr+' gespeichert – '+km.toFixed(1)+' km ✓','ok');
+}
+
+// ── Route abschließen und als Belege speichern ────────
+async function kmRouteAbschliessen(){
+  const aktiv = kmAktivLoad();
+  if(!aktiv || !aktiv.stops.length){
+    toast('Keine Stops erfasst – bitte zuerst "Ich bin hier" drücken','wr'); return;
+  }
+  if(!confirm('Route abschließen und als Belege speichern?')) return;
+
+  const fahrten = kmLoad();
+  let savedCount = 0;
+
+  for(const stop of aktiv.stops){
+    if(!stop.kmVon || stop.kmVon<=0) continue;
+    const betrag = Math.round(stop.kmVon * KM_PAUSCHALE * 100)/100;
+    const vonAdr = stop.nr===1 ? aktiv.heimat.adr : aktiv.stops[stop.nr-2].adr;
+    const nr = nextNr('er');
+    const item = {
+      type:'er', belegNr:nr,
+      shop:'Fahrt: '+(vonAdr||'Start')+' → '+stop.adr,
+      date: aktiv.datum,
+      net:betrag, mwst:0, brutto:betrag, mwstRate:0,
+      cat:'Fahrtkosten', payment:'Pauschale',
+      items:[{name:stop.kmVon.toFixed(1)+' km × 0,30 €', price:betrag}],
+      image:null, savedAt:Date.now(),
+      istAbo:false, garantieBis:null, reverseCharge:false, bewirtung:null,
+      kmFahrt:{ von:vonAdr, nach:stop.adr, km:stop.kmVon, anlass:aktiv.anlass, zeitMin:stop.zeitMin }
+    };
+    try{ await dbadd(item); } catch(_){}
+    fahrten.push({ id:Date.now()+stop.nr, datum:aktiv.datum,
+      von:vonAdr, nach:stop.adr, km:stop.kmVon, betrag,
+      anlass:aktiv.anlass, belegNr:nr });
+    savedCount++;
+  }
+
+  kmSave(fahrten);
+  kmAktivSave(null); // aktive Route löschen
+  renderKmAktiv();
+  renderKmMonat();
+  renderHome();
+  try{ renderMwst(); }catch(_){}
+  toast(savedCount+' Fahrten gespeichert · Route abgeschlossen ✓','ok');
+}
+
+// ── Aktive Route rendern ──────────────────────────────
+function renderKmAktiv(){
+  const aktiv     = kmAktivLoad();
+  const sofortCard= document.getElementById('kmSofortCard');
+  const aktivCard = document.getElementById('kmAktivCard');
+  if(!aktivCard) return;
+
+  if(!aktiv){
+    if(sofortCard) sofortCard.style.display='block';
+    aktivCard.style.display='none'; return;
+  }
+  if(sofortCard) sofortCard.style.display='none';
+  aktivCard.style.display='block';
+
+  const datumEl = document.getElementById('kmAktivDatum');
+  if(datumEl) datumEl.textContent = aktiv.datum+' · '+aktiv.anlass;
+
+  const stopsEl = document.getElementById('kmAktivStops');
+  if(!stopsEl) return;
+
+  let html = '<div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px">Heimatort: <strong style="color:var(--txt)">'+eh(aktiv.heimat.adr)+'</strong></div>';
+  if(!aktiv.stops.length){
+    html += '<div style="font-size:11px;font-weight:300;color:var(--txt2);font-style:italic">Noch keine Stops – fahr los und drücke "Ich bin hier"</div>';
+  } else {
+    let totalKm=0;
+    aktiv.stops.forEach((s,i)=>{
+      totalKm += s.kmVon||0;
+      html += '<div style="background:var(--s2);border-radius:var(--r8);padding:7px 10px;margin-bottom:5px;display:flex;justify-content:space-between">'
+        +'<div><div style="font-size:11px;font-weight:300;color:var(--txt)">'+i+'→ '+eh(s.adr)+'</div>'
+        +(s.zeitMin?'<div style="font-size:10px;color:var(--txt3)">'+s.zeitMin+' min</div>':'')+'</div>'
+        +'<div style="font-size:12px;font-weight:300;color:var(--grn)">'+s.kmVon.toFixed(1)+' km</div></div>';
+    });
+    const total = Math.round(totalKm * KM_PAUSCHALE * 100)/100;
+    html += '<div style="font-size:12px;font-weight:300;color:var(--gold);margin-top:4px">Gesamt bisher: '+totalKm.toFixed(1)+' km · '+fm(total)+' €</div>';
+  }
+  stopsEl.innerHTML = html;
+}
+
+// ── Monatsübersicht ───────────────────────────────────
+function renderKmMonat(){
+  const fahrten = kmLoad();
+  const now = new Date();
+  const mo = String(now.getMonth()+1).padStart(2,'0');
+  const yr = now.getFullYear();
+  const dieserMonat = fahrten.filter(f=>(f.datum||'').startsWith(yr+'-'+mo));
+  const wrap = document.getElementById('kmMonatWrap');
+  if(!wrap) return;
+  if(!dieserMonat.length){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const gesamtKm     = dieserMonat.reduce((s,f)=>s+(f.km||0),0);
+  const gesamtBetrag = dieserMonat.reduce((s,f)=>s+(f.betrag||0),0);
+  document.getElementById('kmMonatList').innerHTML = dieserMonat.map(f=>
+    '<div style="background:var(--s2);border-radius:var(--r8);padding:8px 12px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">'
+    +'<div><div style="font-size:12px;font-weight:300;color:var(--txt)">'+eh(f.von||'')+'→ '+eh(f.nach||'')+'</div>'
+    +'<div style="font-size:10px;font-weight:300;color:var(--txt3)">'+fd(f.datum)+' · '+eh(f.anlass||'')+' · '+(f.km||0).toFixed(1)+' km</div></div>'
+    +'<div style="font-size:13px;font-weight:300;color:var(--grn)">'+fm(f.betrag||0)+' €</div></div>'
+  ).join('');
+  document.getElementById('kmMonatSumme').innerHTML =
+    '<div style="display:flex;justify-content:space-between">'
+    +'<span style="color:var(--txt3)">'+dieserMonat.length+' Fahrten · '+gesamtKm.toFixed(1)+' km gesamt</span>'
+    +'<strong style="color:var(--grn)">'+fm(gesamtBetrag)+' €</strong></div>';
+}
+
+// ── Manuelle Einzelfahrt speichern ────────────────────
+async function kmManSpeichern(){
+  const von    = document.getElementById('kmManVon').value.trim();
+  const nach   = document.getElementById('kmManNach').value.trim();
+  const datum  = document.getElementById('kmManDatum').value;
+  const km     = parseFloat(document.getElementById('kmManKm').value)||0;
+  const anlass = document.getElementById('kmManAnlass').value.trim();
+  if(!von||!nach){ toast('Bitte Start und Ziel eingeben','wr'); return; }
+  if(!km){ toast('Bitte km eingeben','wr'); return; }
+  const betrag = Math.round(km * KM_PAUSCHALE * 100)/100;
+  const nr = nextNr('er');
+  const item = {
+    type:'er', belegNr:nr,
+    shop:'Fahrt: '+von+' → '+nach,
+    date: datum||new Date().toISOString().split('T')[0],
+    net:betrag, mwst:0, brutto:betrag, mwstRate:0,
+    cat:'Fahrtkosten', payment:'Pauschale',
+    items:[{name:km.toFixed(1)+' km × 0,30 €', price:betrag}],
+    image:null, savedAt:Date.now(),
+    istAbo:false, garantieBis:null, reverseCharge:false, bewirtung:null,
+    kmFahrt:{ von, nach, km, anlass }
+  };
+  try{
+    await dbadd(item);
+    const fahrten = kmLoad();
+    fahrten.push({ id:Date.now(), datum, von, nach, km, betrag, anlass, belegNr:nr });
+    kmSave(fahrten);
+    toast(nr+' gespeichert · '+km.toFixed(1)+' km · '+fm(betrag)+' €','ok');
+    renderKmMonat(); renderHome();
+    document.getElementById('kmManVon').value='';
+    document.getElementById('kmManNach').value='';
+    document.getElementById('kmManKm').value='';
+    document.getElementById('kmManAnlass').value='';
+  }catch(e){ toast('Fehler: '+e.message,'er'); }
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BEWIRTUNGSBELEG §4 Abs. 5 EStG
+// WHY: Restaurantbelege als Business-Ausgabe absetzbar wenn
+// Bewirtung von Geschäftspartnern mit Anlass dokumentiert.
+// Nur 70% absetzbar (§4 Abs. 5 Nr. 2 EStG).
+// ════════════════════════════════════════════════════════
+const RESTAURANT_KEYWORDS = /restaurant|café|cafe|bistro|pizzeria|sushi|döner|doner|mcdonald|burger king|subway|nordsee|vapiano|l'osteria|dean david|hans im glück|peter pane|enchilada|ritzi|wirtschaft|gasthaus|gasthof|biergarten|bar |lounge|steakhouse|grill /i;
+
+function istRestaurant(shopName){
+  return RESTAURANT_KEYWORDS.test((shopName||'').toLowerCase());
+}
+
+// Bewirtungsbeleg-Sheet öffnen (nach Speichern eines Restaurant-ER)
+function openBewirtungSheet(belegId){
+  const ovl = document.getElementById('bewirtOvl');
+  if(!ovl) return;
+  document.getElementById('bewirtBelegId').value = belegId||'';
+  document.getElementById('bewirtDatum').value = new Date().toISOString().split('T')[0];
+  document.getElementById('bewirtPersonen').value = '2';
+  document.getElementById('bewirtPartner').value = '';
+  document.getElementById('bewirtAnlass').value = '';
+  document.getElementById('bewirtOrt').value = '';
+  ovl.classList.add('on');
+}
+
+function closeBewirtung(){
+  const ovl = document.getElementById('bewirtOvl');
+  if(ovl) ovl.classList.remove('on');
+}
+
+async function saveBewirtung(){
+  const belegId = document.getElementById('bewirtBelegId').value;
+  const partner = document.getElementById('bewirtPartner').value.trim();
+  const anlass = document.getElementById('bewirtAnlass').value.trim();
+  const personen = parseInt(document.getElementById('bewirtPersonen').value)||2;
+  const ort = document.getElementById('bewirtOrt').value.trim();
+
+  if(!partner||!anlass){ toast('Bitte Geschäftspartner und Anlass ausfüllen','wr'); return; }
+
+  // Beleg in DB updaten mit Bewirtungs-Daten
+  try{
+    const all = await dba();
+    const beleg = all.find(b=>String(b.id)===String(belegId));
+    if(beleg){
+      beleg.bewirtung = { partner, anlass, personen, ort };
+      beleg.cat = 'Bewirtung';
+      // WHY: Nur 70% steuerlich absetzbar
+      beleg.bewirtungAbsetzbar = Math.round((beleg.net||beleg.brutto||0)*0.7*100)/100;
+      // Update via delete + re-add
+      await new Promise((res,rej)=>{
+        const tx=db.transaction('b','readwrite');
+        const store=tx.objectStore('b');
+        const req=store.put(beleg);
+        req.onsuccess=()=>res(); req.onerror=()=>rej();
+      });
+    }
+    toast('Bewirtungsbeleg gespeichert ✓','ok');
+    closeBewirtung();
+    renderHome();
+  }catch(e){ toast('Fehler: '+e.message,'er'); }
+}
+
+// Nach Restaurant-ER scannen → Frage ob Bewirtungsbeleg
+function checkBewirtungPrompt(item){
+  if(item.type==='er' && istRestaurant(item.shop)){
+    // Kurz warten dann fragen
+    setTimeout(()=>{
+      const yes = confirm(`"${item.shop}" klingt nach einem Restaurant. Willst du einen Bewirtungsbeleg mit Geschäftspartner ausfüllen?
+(Nur 70% absetzbar – aber korrekt dokumentiert)`);
+      if(yes) openBewirtungSheet(item.id);
+    }, 600);
+  }
+}
+
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: STEUERBERATER-EXPORT
+// WHY: Steuerberater braucht strukturierten Überblick:
+// Business-Belege + Business-Kontoauszüge + RC-Aufstellung
+// + Bewirtungsbelege + Kilometerfahrten – alles in einem ZIP.
+// ════════════════════════════════════════════════════════
+
+async function exportSteuerberater(){
+  const btn = document.getElementById('stbExportBtn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Erstelle Export …'; }
+  try{
+    const all = await dba();
+    const now = new Date();
+    const yr = now.getFullYear();
+    const mo = String(now.getMonth()+1).padStart(2,'0');
+
+    // Nur Business-Belege
+    const bizBelege = all.filter(b => b.type !== 'priv');
+    const erBelege  = bizBelege.filter(b => b.type === 'er');
+    const arBelege  = bizBelege.filter(b => b.type === 'ar');
+    const rcBelege  = erBelege.filter(b => b.reverseCharge);
+    const bewBelege = erBelege.filter(b => b.bewirtung);
+    const kmBelege  = erBelege.filter(b => b.kmFahrt);
+
+    // Business-Kontoauszüge
+    const kontoRaw = JSON.parse(localStorage.getItem('bsp_konto_v2')||'[]');
+    const kontoBiz = kontoRaw.filter(k => k.status==='erfasst_biz'||k.status==='abgeglichen');
+
+    // Kilometerfahrten
+    const kmFahrten = JSON.parse(localStorage.getItem('bsp_km_fahrten')||'[]');
+
+    // ── Zahlen berechnen ──
+    const einnahmen = arBelege.reduce((s,b)=>s+(b.net||0),0);
+    const ausgaben  = erBelege.reduce((s,b)=>s+(b.net||0),0);
+    const gewinn    = einnahmen - ausgaben;
+    const mwstAr    = arBelege.reduce((s,b)=>s+(b.mwst||0),0);
+    const mwstEr    = erBelege.reduce((s,b)=>s+(b.mwst||0),0);
+    const zahllast  = mwstAr - mwstEr;
+    const rcSumme   = rcBelege.reduce((s,b)=>{ const i=getRcInfo(b.brutto||0,b.mwstRate||19); return s+i.rcMwst; },0);
+    const kmGesamt  = kmFahrten.reduce((s,f)=>s+(f.km||0),0);
+    const kmBetrag  = kmFahrten.reduce((s,f)=>s+(f.betrag||0),0);
+
+    // ── CSV-Inhalt bauen ──
+    const csvLines = [];
+    const sep = ';';
+
+    // Header-Block
+    csvLines.push(`BelegScan Pro – Steuerberater-Export`);
+    csvLines.push(`Erstellt am:${sep}${now.toLocaleDateString('de-DE')} ${now.toLocaleTimeString('de-DE')}`);
+    csvLines.push(`Zeitraum:${sep}${yr}`);
+    csvLines.push('');
+
+    // Zusammenfassung
+    csvLines.push('=== ZUSAMMENFASSUNG ===');
+    csvLines.push(`Einnahmen (AR netto)${sep}${einnahmen.toFixed(2)} €`);
+    csvLines.push(`Ausgaben (ER netto)${sep}${ausgaben.toFixed(2)} €`);
+    csvLines.push(`Gewinn (Schätzung)${sep}${gewinn.toFixed(2)} €`);
+    csvLines.push(`MwSt-Einnahmen (AR)${sep}${mwstAr.toFixed(2)} €`);
+    csvLines.push(`Vorsteuer (ER)${sep}${mwstEr.toFixed(2)} €`);
+    csvLines.push(`MwSt-Zahllast${sep}${zahllast.toFixed(2)} €`);
+    csvLines.push(`Reverse Charge §13b (selbst abzuführen)${sep}${rcSumme.toFixed(2)} €`);
+    csvLines.push(`Kilometerpauschale gesamt${sep}${kmBetrag.toFixed(2)} € (${kmGesamt.toFixed(1)} km)`);
+    csvLines.push('');
+
+    // ER-Belege
+    csvLines.push('=== EINGANGSRECHNUNGEN ===');
+    csvLines.push(['BelegNr','Datum','Anbieter','Kategorie','Netto €','MwSt €','Brutto €','RC','Bewirtung'].join(sep));
+    erBelege.forEach(b=>{
+      csvLines.push([
+        b.belegNr||'', fd(b.date), (b.shop||'').replace(/;/g,' '),
+        b.cat||'', (b.net||0).toFixed(2), (b.mwst||0).toFixed(2), (b.brutto||0).toFixed(2),
+        b.reverseCharge?'Ja §13b':'',
+        b.bewirtung?`Ja – ${(b.bewirtung.partner||'').replace(/;/g,' ')} | ${(b.bewirtung.anlass||'').replace(/;/g,' ')}`:'',
+      ].join(sep));
+    });
+    csvLines.push('');
+
+    // AR-Belege
+    csvLines.push('=== AUSGANGSRECHNUNGEN ===');
+    csvLines.push(['BelegNr','Datum','Kunde','Kategorie','Netto €','MwSt €','Brutto €'].join(sep));
+    arBelege.forEach(b=>{
+      csvLines.push([
+        b.belegNr||'', fd(b.date), (b.shop||'').replace(/;/g,' '),
+        b.cat||'', (b.net||0).toFixed(2), (b.mwst||0).toFixed(2), (b.brutto||0).toFixed(2),
+      ].join(sep));
+    });
+    csvLines.push('');
+
+    // Kontoauszüge
+    if(kontoBiz.length){
+      csvLines.push('=== KONTOAUSZUG (BUSINESS) ===');
+      csvLines.push(['Datum','Beschreibung','Betrag €','Status','Abgeglichen mit'].join(sep));
+      kontoBiz.forEach(k=>{
+        csvLines.push([
+          fd(k.datum||k.date||''), (k.text||k.beschreibung||'').replace(/;/g,' '),
+          (k.betrag||0).toFixed(2), k.status||'',
+          k.matchedBelegNr||''
+        ].join(sep));
+      });
+      csvLines.push('');
+    }
+
+    // Reverse Charge
+    if(rcBelege.length){
+      csvLines.push('=== REVERSE CHARGE §13b UStG ===');
+      csvLines.push('HINWEIS: Diese Beträge müssen in der UStVA in Zeile 52 (Steuer) + Zeile 67 (Vorsteuer) eingetragen werden.');
+      csvLines.push(['Anbieter','Datum','Netto €','RC-MwSt (19%) €','UStVA Zeile'].join(sep));
+      rcBelege.forEach(b=>{
+        const info = getRcInfo(b.brutto||0, b.mwstRate||19);
+        csvLines.push([
+          (b.shop||'').replace(/;/g,' '), fd(b.date),
+          info.netto.toFixed(2), info.rcMwst.toFixed(2),
+          '52 + 67'
+        ].join(sep));
+      });
+      csvLines.push(`Summe RC-MwSt${sep}${sep}${sep}${rcSumme.toFixed(2)} €${sep}`);
+      csvLines.push('');
+    }
+
+    // Bewirtungsbelege
+    if(bewBelege.length){
+      csvLines.push('=== BEWIRTUNGSBELEGE §4 Abs. 5 Nr. 2 EStG ===');
+      csvLines.push('HINWEIS: Nur 70% der Bewirtungskosten sind steuerlich absetzbar.');
+      csvLines.push(['Datum','Restaurant','Geschäftspartner','Anlass','Personen','Brutto €','Absetzbar 70% €'].join(sep));
+      bewBelege.forEach(b=>{
+        const bw = b.bewirtung||{};
+        csvLines.push([
+          fd(b.date), (b.shop||'').replace(/;/g,' '),
+          (bw.partner||'').replace(/;/g,' '), (bw.anlass||'').replace(/;/g,' '),
+          bw.personen||'', (b.brutto||0).toFixed(2),
+          (b.bewirtungAbsetzbar||0).toFixed(2)
+        ].join(sep));
+      });
+      csvLines.push('');
+    }
+
+    // Kilometer
+    if(kmFahrten.length){
+      csvLines.push('=== KILOMETERPAUSCHALE (PRIVATES AUTO) ===');
+      csvLines.push('Pauschale: 0,30 €/km gemäß §9 Abs. 1 Nr. 4 EStG');
+      csvLines.push(['Datum','Von','Nach','Anlass','km','Betrag €'].join(sep));
+      kmFahrten.forEach(f=>{
+        csvLines.push([
+          fd(f.datum), (f.von||'').replace(/;/g,' '), (f.nach||'').replace(/;/g,' '),
+          (f.anlass||'').replace(/;/g,' '), (f.km||0).toFixed(1), (f.betrag||0).toFixed(2)
+        ].join(sep));
+      });
+      csvLines.push(`Gesamt${sep}${sep}${sep}${sep}${kmGesamt.toFixed(1)}${sep}${kmBetrag.toFixed(2)} €`);
+      csvLines.push('');
+    }
+
+    // Als CSV-Datei herunterladen (mit BOM für Excel-Kompatibilität)
+    const bom = '\uFEFF';
+    const csvContent = bom + csvLines.join('\n');
+    const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `BelegScanPro_Steuerberater_${yr}_${mo}.csv`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast('Steuerberater-Export heruntergeladen ✓','ok');
+  }catch(e){ toast('Export-Fehler: '+e.message,'er'); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='📊 Steuerberater-Export'; } }
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: GOBD-PFLICHTFELD-CHECKER
+// WHY: GoBD (Grundsätze ordnungsmäßiger Buchführung)
+// schreibt vor welche Felder ein Beleg enthalten muss.
+// Unvollständige Belege werden markiert → Steuerberater sieht es.
+// ════════════════════════════════════════════════════════
+function gobdCheck(beleg){
+  const fehler = [];
+  if(!beleg.shop || beleg.shop==='Unbekannt') fehler.push('Aussteller fehlt');
+  if(!beleg.date) fehler.push('Datum fehlt');
+  if(!beleg.brutto || beleg.brutto<=0) fehler.push('Betrag fehlt');
+  if(beleg.type==='er' && beleg.mwstRate===undefined) fehler.push('MwSt-Satz fehlt');
+  if(!beleg.belegNr && beleg.type!=='priv') fehler.push('Belegnummer fehlt');
+  return fehler;
+}
+
+function gobdBadgeHtml(beleg){
+  if(beleg.type==='priv') return '';
+  const f = gobdCheck(beleg);
+  if(!f.length) return '<span style="font-size:9px;color:var(--grn);margin-left:4px">✓ GoBD</span>';
+  return `<span title="${f.join(', ')}" style="font-size:9px;color:var(--orn);margin-left:4px;cursor:help">⚠️ GoBD (${f.length})</span>`;
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: DEV-CHANGELOG
+// WHY: Transparenz für Nutzer + Steuerberater welche Version
+// der App verwendet wurde. Neueste Version oben.
+// ════════════════════════════════════════════════════════
+const CHANGELOG = [
+  { v:'2.0', d:'2026-03', t:'Großes Update – Reverse Charge, Kilometer, Restaurant', items:[
+    'Kritischer JS-Syntax-Fix (App war komplett eingefroren)',
+    'Reverse Charge §13b UStG: Automatische Erkennung nicht-DE-Anbieter (Anthropic, Adobe, AWS etc.)',
+    'RC-Banner im Scanner mit MwSt-Berechnung und UStVA-Hinweis',
+    'RC-Summe im MwSt-Tab separat ausgewiesen',
+    'Kilometerpauschale: privates Auto, 0,30 €/km, GPS-Start, Nominatim-Routing',
+    'Bewirtungsbeleg §4 Abs. 5 EStG: Restaurant-Erkennung, Geschäftspartner, 70%-Absetzbarkeit',
+    'Steuerberater-Export: CSV mit Business-Belegen, Kontoauszügen, RC-Aufstellung, Bewirtung, km',
+    'GoBD-Pflichtfeld-Checker: Warnsymbol bei unvollständigen Belegen',
+    'API-Kosten-Karte: Betriebsausgabe-Hinweis, RC-Erklärung, Spar-Tipps',
+    'Hilfe-Texte (?) komplett überarbeitet',
+    'DEV-Changelog eingebaut',
+  ]},
+  { v:'1.9', d:'2026-02', t:'Kontoauszug Multi-Upload + Sprach-Kommentar', items:[
+    'Kontoauszug-Abgleich: Mehrere Fotos gleichzeitig hochladen',
+    'Buchungen akkumulieren – kein Überschreiben mehr',
+    'Sprach-Kommentar: 🎙️ Button nach Scan für KI-gestützte Korrekturen',
+    'API-Kosten-Tracker eingebaut (Settings + Home)',
+    'Kontext-Hilfe (?) in jedem Tab',
+    'Kreisdiagramm nach Artikel-Positionen (nicht Kategorien)',
+    'Verpflegungspauschale: Timer mit Echtzeit-Anzeige',
+  ]},
+  { v:'1.8', d:'2026-01', t:'Business/Privat-Modus + Verpflegungspauschale', items:[
+    'Toggle Business ↔ Privat auf Startseite',
+    'Privat-Tab mit eigener Monatsanalyse',
+    'Verpflegungspauschale: Betriebsstätte, GPS, Timer, Monatsliste',
+    'Fahrt-Tab nur im Business-Modus sichtbar',
+    'Schnelleingabe ⚡ für Privat-Ausgaben ohne Foto',
+  ]},
+  { v:'1.7', d:'2025-12', t:'Abo-Detektiv + MwSt-Ausnahmen', items:[
+    'Abo-Detektiv: erkennt digitale Streaming/SaaS-Abos',
+    'MwSt-Ausnahmen: Finanzamt, Ärzte, GEZ, ÖPNV automatisch 0%',
+    'ABO_EXCLUDE: Telekommunikation, Supermärkte nicht als Abo erkannt',
+    'Inflations-Tracker eingebaut',
+  ]},
+  { v:'1.6', d:'2025-11', t:'GoBD + Stempel + DACH', items:[
+    'Einheitlicher GoBD-Buchungsstempel (kein Stil-Wechsel mehr)',
+    'Österreich + Schweiz Support (MwSt-Sätze, Belegnummern)',
+    'Kleinunternehmer-Modus (KU)',
+    'Einkommensteuer-Gauge nach §32a EStG',
+  ]},
+  { v:'1.0', d:'2025-10', t:'Erstveröffentlichung', items:[
+    'Basisversion: Belege scannen, ER/AR, IndexedDB',
+    'KI-Analyse via Anthropic Claude API',
+    'PWA-fähig (installierbar auf iOS/Android)',
+    'Garantie-Wächter, Abo-Detektiv Basis',
+  ]},
+];
+
+function openChangelog(){
+  const ovl = document.getElementById('changelogOvl');
+  if(!ovl) return;
+  const content_el = document.getElementById('changelogContent');
+  content_el.innerHTML = CHANGELOG.map(v=>
+    `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+        <span style="font-size:13px;font-weight:400;color:var(--gold)">v${v.v}</span>
+        <span style="font-size:11px;font-weight:300;color:var(--txt3)">${v.d}</span>
+        <span style="font-size:12px;font-weight:300;color:var(--txt)">${v.t}</span>
+      </div>
+      <ul style="margin:0;padding-left:16px;list-style:disc">
+        ${v.items.map(i=>`<li style="font-size:11px;font-weight:300;color:var(--txt2);margin-bottom:3px">${i}</li>`).join('')}
+      </ul>
+    </div>`
+  ).join('<div style="border-top:1px solid var(--br);margin:12px 0"></div>');
+  ovl.classList.add('on');
+}
+
+function closeChangelog(){
+  const ovl = document.getElementById('changelogOvl');
+  if(ovl) ovl.classList.remove('on');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: REVERSE CHARGE §13b UStG
+// WHY: Nicht-DE/EU-Anbieter stellen keine MwSt aus.
+// Der Käufer muss MwSt selbst abführen – und kann sie
+// gleichzeitig als Vorsteuer abziehen (Nettoeffekt: 0).
+// Meldepflicht: UStVA Zeile 52 + Zeile 67.
+// ════════════════════════════════════════════════════════
+const RC_ANBIETER = /anthropic|openai|adobe|aws|amazon web service|google workspace|google cloud|microsoft 365|office 365|github|netflix|spotify|dropbox|slack|zoom|notion|shopify|stripe|paypal|cloudflare|digitalocean|heroku|twilio|sendgrid|mailchimp|hubspot|salesforce|figma|canva|loom|grammarly|chatgpt|midjourney|stability ai/i;
+
+function detectReverseCharge(shopName){
+  if(!shopName) return false;
+  return RC_ANBIETER.test(shopName);
+}
+
+function getRcInfo(brutto, mwstRate){
+  const rate = (mwstRate||19)/100;
+  const netto = brutto/(1+rate);
+  const rcMwst = brutto - netto;
+  return {
+    netto: Math.round(netto*100)/100,
+    rcMwst: Math.round(rcMwst*100)/100,
+    rate: mwstRate||19
+  };
+}
+
+function rcBannerHtml(shopName, brutto, mwstRate){
+  const info = getRcInfo(brutto||0, mwstRate||19);
+  return '<div style="background:rgba(200,164,90,.08);border:1px solid rgba(200,164,90,.3);'
+    +'border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">'
+    +'<div style="font-size:11px;font-weight:400;color:var(--gold);margin-bottom:4px">'
+    +'⚠️ Reverse Charge §13b UStG – Nicht-DE-Anbieter</div>'
+    +'<div style="font-size:11px;font-weight:300;color:var(--txt2);line-height:1.7">'
+    +'<strong style="color:var(--txt)">'+eh(shopName)+'</strong> stellt keine deutsche MwSt aus.<br>'
+    +'→ MwSt auf Rechnung: <strong>0,00 €</strong><br>'
+    +'→ Du schuldest selbst: <strong style="color:var(--orn)">'+fm(info.rcMwst)+' €</strong> ('+info.rate+'% auf '+fm(info.netto)+' €)<br>'
+    +'→ Gleichzeitig abziehbar als Vorsteuer: <strong style="color:var(--grn)">'+fm(info.rcMwst)+' €</strong><br>'
+    +'→ Nettoeffekt: <strong>0 €</strong> | Betriebsausgabe: <strong>'+fm(info.netto)+' €</strong><br>'
+    +'<span style="color:var(--txt3)">Für Steuerberater: UStVA Zeile 52 + Zeile 67 eintragen.</span>'
+    +'</div></div>';
+}
+
 function fd(d){if(!d)return'–';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
 function fm(n){return(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmK(n){if(Math.abs(n)>=1000)return(n/1000).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1})+'k';return(n||0).toLocaleString('de-DE');}
@@ -4440,6 +5347,89 @@ initDB().then(()=>{checkOnboarding();}).catch(e=>toast('DB Fehler: '+e.message,'
     <button class="sc-btn" onclick="closeVoiceResult()">✕</button>
     <div style="font-size:14px;font-weight:300;color:var(--txt);margin-bottom:12px">🎙️ Sprach-Kommentar verarbeitet</div>
     <div id="voiceResultContent"></div>
+  </div>
+</div>
+
+
+
+<!-- ── KM ZIEL-BESTÄTIGUNG SHEET ── -->
+<div class="ovl" id="kmZielOvl" onclick="if(event.target===this)kmZielSchliessen()">
+  <div class="sheet">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="kmZielSchliessen()">✕</button>
+    <input type="hidden" id="kmZielNr">
+    <input type="hidden" id="kmZielLat">
+    <input type="hidden" id="kmZielLon">
+    <input type="hidden" id="kmZielSofort" value="0">
+    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:2px">📍 Ziel bestätigen</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">
+      Von: <span id="kmZielVonAdr" style="color:var(--txt2)">–</span>
+    </div>
+    <div class="field" style="margin-bottom:8px">
+      <label>Angekommen in (Adresse)</label>
+      <input id="kmZielAdr" class="inp" type="text" placeholder="Automatisch erkannt – bitte prüfen" style="font-size:12px">
+    </div>
+    <div class="field" id="kmZielAnlassRow" style="margin-bottom:8px;display:none">
+      <label>Anlass</label>
+      <input id="kmZielAnlass" class="inp" type="text" placeholder="z.B. Kundentermin" style="font-size:12px">
+    </div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="field">
+        <label>Entfernung (km)</label>
+        <input id="kmZielKm" class="inp" type="number" min="0" step="0.1" placeholder="z.B. 23.5" style="font-size:12px">
+      </div>
+      <div class="field">
+        <label>Fahrzeit (Minuten)</label>
+        <input id="kmZielMin" class="inp" type="number" min="0" step="1" placeholder="z.B. 28" style="font-size:12px">
+      </div>
+    </div>
+    <div id="kmZielOsrmHint" style="display:none;font-size:10px;font-weight:300;color:var(--txt3);
+      background:var(--s2);border-radius:var(--r8);padding:7px 10px;margin-bottom:10px;line-height:1.5">
+    </div>
+    <div style="background:rgba(200,164,90,.06);border:1px solid rgba(200,164,90,.2);border-radius:var(--r8);
+      padding:8px 12px;margin-bottom:14px;font-size:11px;font-weight:300;color:var(--txt3)">
+      💡 Stau gehabt? Fahrzeit einfach manuell korrigieren. Die km-Angabe basiert auf der tatsächlichen Route (OSRM).
+    </div>
+    <button class="btn btn-gold" onclick="kmZielSpeichern()" style="width:100%;justify-content:center">
+      Stop speichern ✓
+    </button>
+  </div>
+</div>
+
+<!-- ── BEWIRTUNGSBELEG SHEET ── -->
+<div class="ovl" id="bewirtOvl" onclick="if(event.target===this)closeBewirtung()">
+  <div class="sheet">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeBewirtung()">✕</button>
+    <input type="hidden" id="bewirtBelegId">
+    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:4px">🍽️ Bewirtungsbeleg</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">§4 Abs. 5 Nr. 2 EStG · 70% absetzbar</div>
+    <div class="g2" style="gap:8px;margin-bottom:8px">
+      <div class="field"><label>Datum</label><input id="bewirtDatum" class="inp" type="date"></div>
+      <div class="field"><label>Personen</label><input id="bewirtPersonen" class="inp" type="number" min="1" max="50" value="2"></div>
+    </div>
+    <div class="field" style="margin-bottom:8px"><label>Geschäftspartner (Name, Firma)</label>
+      <input id="bewirtPartner" class="inp" type="text" placeholder="z.B. Max Müller, Müller GmbH"></div>
+    <div class="field" style="margin-bottom:8px"><label>Anlass / Thema</label>
+      <input id="bewirtAnlass" class="inp" type="text" placeholder="z.B. Projektbesprechung Q1 2026"></div>
+    <div class="field" style="margin-bottom:14px"><label>Ort (Restaurant)</label>
+      <input id="bewirtOrt" class="inp" type="text" placeholder="Automatisch aus Beleg"></div>
+    <div style="background:rgba(200,164,90,.06);border:1px solid rgba(200,164,90,.2);border-radius:var(--r8);padding:9px 12px;margin-bottom:14px;font-size:11px;font-weight:300;color:var(--txt3)">
+      ℹ️ Bewirtungskosten sind nur zu 70% als Betriebsausgabe absetzbar (§4 Abs. 5 Nr. 2 EStG). Dieser Nachweis ist Pflicht für den Steuerberater.
+    </div>
+    <button class="btn btn-gold" onclick="saveBewirtung()" style="width:100%;justify-content:center">Bewirtungsbeleg speichern</button>
+  </div>
+</div>
+
+
+<!-- ── CHANGELOG MODAL ── -->
+<div class="ovl" id="changelogOvl" onclick="if(event.target===this)closeChangelog()">
+  <div class="sheet" style="max-height:80vh;overflow-y:auto">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeChangelog()">✕</button>
+    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:4px">📋 Versionshistorie</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">BelegScan Pro – alle Änderungen</div>
+    <div id="changelogContent"></div>
   </div>
 </div>
 
