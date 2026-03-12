@@ -1,0 +1,2751 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BelegScan">
+<meta name="theme-color" content="#070707">
+<link rel="manifest" href="./manifest.json">
+<title>BelegScan Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=DM+Mono:wght@300&display=swap" rel="stylesheet">
+<style>
+/* ══ DESIGN TOKENS ══════════════════════════════════════════ */
+:root{
+  --bg:#070707;--s1:#0e0e0e;--s2:#181818;--s3:#202020;--s4:#282828;
+  --br:#2a2a2a;--br2:#363636;
+  --gold:#c8a45a;--ylw:#c09040;--blu:#4a80c0;--grn:#3aaf70;--red:#c04040;--orn:#c07030;
+  --silv:#8899aa;  /* Privat-Modus Akzentfarbe – silberblau */
+  --txt:#f0f0f0;--txt2:#a0a0a0;--txt3:#686868;
+  --r8:12px;--r12:16px;--r16:20px;--r24:28px;
+  --sb:env(safe-area-inset-bottom,0px);
+  --ring-col:var(--gold); /* wird per JS auf silv umgeschaltet im Privat-Modus */
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
+  background:var(--bg);color:var(--txt);display:flex;flex-direction:column;
+  -webkit-font-smoothing:antialiased}
+#app{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(76px + var(--sb))}
+.view{display:none;padding:16px;animation:fi .18s ease}
+.view.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── NAV ── */
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(7,7,7,.9);border-top:1px solid var(--br);
+  padding:8px 0 calc(8px + var(--sb));
+  display:flex;align-items:center;justify-content:space-around;
+  backdrop-filter:blur(40px) saturate(180%);-webkit-backdrop-filter:blur(40px) saturate(180%)}
+.ni{display:flex;flex-direction:column;align-items:center;gap:3px;border:none;
+  background:transparent;color:var(--txt3);cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:300;
+  letter-spacing:.4px;text-transform:uppercase;padding:2px 10px;transition:color .2s}
+.ni.on{color:var(--gold)}
+.ni svg{width:20px;height:20px;stroke-width:1.3}
+.ni-sw{position:relative;margin-top:-24px}
+.ni-scan{width:56px;height:56px;border-radius:50%;background:var(--s3);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 0 1px var(--br2),0 0 0 5px rgba(7,7,7,.9),0 0 0 6px var(--br);
+  transition:transform .18s cubic-bezier(.34,1.15,.64,1)}
+.ni-scan:active{transform:scale(.88)}
+.ni-scan svg{width:22px;height:22px;stroke-width:1.3;color:var(--txt2)}
+
+/* ── TYPOGRAPHY ── */
+.mono{font-family:'DM Mono',monospace;font-weight:300;letter-spacing:-.3px}
+.stitle{font-size:11px;font-weight:300;letter-spacing:.6px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:12px}
+
+/* ── CARDS ── */
+.card{background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);
+  padding:16px;margin-bottom:10px}
+.card-sm{border-radius:var(--r12);padding:14px}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 20px;border-radius:100px;border:none;
+  font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:300;
+  cursor:pointer;transition:opacity .15s,transform .12s;
+  display:inline-flex;align-items:center;gap:6px;letter-spacing:.1px}
+.btn:active{transform:scale(.94)}
+.btn:disabled{opacity:.25;cursor:not-allowed}
+.btn-g{background:transparent;color:var(--txt2);border:1px solid var(--br)}
+.btn-gold{background:var(--s3);color:var(--gold);border:1px solid var(--br2)}
+.btn-red{background:rgba(192,64,64,.08);color:var(--red);border:1px solid rgba(192,64,64,.18)}
+.btn-blu{background:rgba(74,128,192,.08);color:var(--blu);border:1px solid rgba(74,128,192,.18)}
+.btn-grn{background:rgba(58,175,112,.08);color:var(--grn);border:1px solid rgba(58,175,112,.18)}
+.btn-silv{background:rgba(136,153,170,.08);color:var(--silv);border:1px solid rgba(136,153,170,.2)}
+.btn-sm{padding:7px 14px;font-size:11px}
+
+/* ── INPUTS ── */
+.inp{width:100%;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);
+  padding:10px 14px;color:var(--txt);font-family:'Inter',system-ui,sans-serif;
+  font-size:14px;font-weight:300;outline:none;transition:border-color .2s}
+.inp:focus{border-color:var(--br2)}
+.inp::placeholder{color:var(--txt3)}
+.field{background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:10px 14px}
+.field label{display:block;font-size:11px;font-weight:300;letter-spacing:.4px;
+  text-transform:uppercase;color:var(--txt3);margin-bottom:5px}
+.field input,.field select{background:transparent;border:none;color:var(--txt);
+  font-family:'Inter',system-ui,sans-serif;font-size:14px;font-weight:300;outline:none;width:100%}
+.field select option{background:var(--s2)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:380px){.g2{grid-template-columns:1fr}}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;
+  font-size:10px;font-weight:300;letter-spacing:.2px}
+.b-er{background:rgba(74,128,192,.15);color:var(--blu)}
+.b-ar{background:rgba(192,144,64,.15);color:var(--ylw)}
+.b-priv{background:rgba(136,153,170,.12);color:var(--silv)}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-70px);
+  background:var(--s3);border:1px solid var(--br2);border-radius:var(--r12);
+  padding:10px 20px;font-size:12px;z-index:999;
+  transition:transform .28s cubic-bezier(.34,1.4,.64,1);
+  white-space:nowrap;font-weight:300;letter-spacing:.2px;
+  box-shadow:0 8px 32px rgba(0,0,0,.6)}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.ok{border-color:var(--grn);color:var(--grn)}
+#toast.er{border-color:var(--red);color:var(--red)}
+#toast.wr{border-color:var(--ylw);color:var(--ylw)}
+
+/* ── OVERLAY / SHEET ── */
+.ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+  z-index:200;align-items:flex-end;justify-content:center}
+.ovl.on{display:flex}
+.sheet{background:var(--s1);border:1px solid var(--br);
+  border-radius:var(--r24) var(--r24) 0 0;
+  padding:18px;padding-bottom:calc(18px + var(--sb));
+  width:100%;max-width:600px;max-height:93vh;overflow-y:auto;position:relative;
+  animation:su .28s cubic-bezier(.34,1.1,.64,1)}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sh{width:36px;height:3px;background:var(--br2);border-radius:2px;margin:0 auto 18px}
+.sc-btn{position:absolute;top:14px;right:14px;background:var(--s3);border:1px solid var(--br);
+  color:var(--txt2);width:28px;height:28px;border-radius:50%;cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center}
+::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:var(--br);border-radius:2px}
+
+/* ════════════════════════════════════════════════════
+   ONBOARDING
+════════════════════════════════════════════════════ */
+#onboarding{display:none;position:fixed;inset:0;background:var(--bg);
+  z-index:500;overflow-y:auto;padding:32px 20px;padding-bottom:calc(32px + var(--sb))}
+#onboarding.on{display:block}
+.ob-step{display:none}.ob-step.on{display:block}
+.ob-logo{font-size:48px;text-align:center;margin-bottom:12px}
+.ob-title{font-size:26px;font-weight:200;letter-spacing:-1.2px;text-align:center;margin-bottom:8px}
+.ob-sub{font-size:14px;font-weight:300;color:var(--txt2);text-align:center;
+  line-height:1.65;margin-bottom:32px}
+.ob-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px}
+.ob-card{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:16px 12px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.ob-card.on{border-color:var(--gold);background:var(--s2)}
+.ob-card .ico{font-size:28px;margin-bottom:8px}
+.ob-card .lbl{font-size:13px;font-weight:300;color:var(--txt);margin-bottom:4px}
+.ob-card .sub{font-size:11px;font-weight:300;color:var(--txt3);line-height:1.4}
+.ob-card .ck{position:absolute;top:10px;right:10px;width:18px;height:18px;
+  border-radius:50%;background:var(--gold);display:none;align-items:center;
+  justify-content:center;font-size:10px;color:#000}
+.ob-card.on .ck{display:flex}
+.ob-prog{display:flex;gap:6px;justify-content:center;margin-bottom:28px}
+.ob-dot{width:6px;height:6px;border-radius:50%;background:var(--br2);transition:background .3s}
+.ob-dot.on{background:var(--gold)}
+.ob-api-box{background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);
+  padding:16px;margin-bottom:16px}
+.ob-api-box .step-row{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+.ob-api-box .step-row:last-child{margin-bottom:0}
+.ob-api-box .sn{width:24px;height:24px;border-radius:50%;background:var(--s3);border:1px solid var(--br2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:300;
+  color:var(--txt2);flex-shrink:0;margin-top:1px}
+.ob-api-box .st{font-size:13px;font-weight:300;color:var(--txt2);line-height:1.55}
+.ob-api-box a{color:var(--gold);text-decoration:none}
+.ob-api-box .st strong{color:var(--txt);font-weight:300}
+.ob-nr-opts{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.ob-nr-opt{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:14px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.ob-nr-opt.on{border-color:var(--gold);background:var(--s2)}
+.ob-nr-opt .nr-fmt{font-family:'DM Mono',monospace;font-size:14px;font-weight:300;color:var(--txt)}
+.ob-nr-opt .nr-lbl{font-size:11px;font-weight:300;color:var(--txt3);margin-top:3px}
+.ob-nr-opt .ck2{margin-left:auto;width:18px;height:18px;border-radius:50%;
+  background:var(--gold);display:none;align-items:center;justify-content:center;font-size:10px;color:#000}
+.ob-nr-opt.on .ck2{display:flex}
+.ku-warn{background:rgba(192,64,64,.08);border:1px solid rgba(192,64,64,.2);
+  border-radius:var(--r12);padding:14px;margin-bottom:16px}
+.ku-warn p{font-size:12px;font-weight:300;color:var(--txt2);line-height:1.6}
+.ku-warn strong{color:var(--red);font-weight:300}
+
+/* ════════════════════════════════════════════════════
+   MODUS-TOGGLE (Business ↔ Privat)
+   WHY: Der Potential-Ring ändert Farbe und Bedeutung je nach Kontext.
+   Gold = Business/Steuern, Silber/Blau = Privat/Sparpotentiale
+════════════════════════════════════════════════════ */
+.mode-toggle{display:flex;background:var(--s2);border:1px solid var(--br);border-radius:100px;
+  padding:3px;margin-bottom:14px;align-self:center;width:fit-content;margin-left:auto;margin-right:auto}
+.mode-btn{padding:7px 18px;border:none;border-radius:100px;background:transparent;
+  font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:300;
+  cursor:pointer;transition:all .25s;color:var(--txt3);display:flex;align-items:center;gap:5px}
+.mode-btn.on{background:var(--s4);color:var(--txt)}
+.mode-btn.on.biz{color:var(--gold)}
+.mode-btn.on.priv{color:var(--silv)}
+
+/* ════════════════════════════════════════════════════
+   HOME / RING
+════════════════════════════════════════════════════ */
+.ring-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:14px;padding-top:4px}
+.ring-c{position:relative;width:130px;height:130px}
+.ring-svg{width:130px;height:130px;transform:rotate(-90deg)}
+.ring-bg{fill:none;stroke:var(--s3);stroke-width:6}
+.ring-f{fill:none;stroke-width:6;stroke-linecap:round;
+  transition:stroke-dashoffset 1.2s ease,stroke 1s ease}
+.ring-in{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px}
+.ring-big{font-size:30px;font-weight:200;line-height:1;letter-spacing:-2px}
+.ring-tag{font-size:9px;font-weight:300;letter-spacing:.8px;color:var(--txt3);text-transform:uppercase}
+.ring-sub{font-size:11px;font-weight:300;color:var(--txt2);margin-top:8px;text-align:center}
+.ring-date{font-family:'DM Mono',monospace;font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px;text-align:center}
+
+/* Hero card */
+.hero{background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);
+  padding:16px;margin-bottom:10px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.hero.zl::before{background:linear-gradient(90deg,transparent,rgba(192,64,64,.4),transparent)}
+.hero.ex::before{background:linear-gradient(90deg,transparent,rgba(58,175,112,.4),transparent)}
+.hero.ku::before{background:linear-gradient(90deg,transparent,rgba(192,144,64,.3),transparent)}
+.hero.priv::before{background:linear-gradient(90deg,transparent,rgba(136,153,170,.3),transparent)}
+.hero-lbl{font-size:11px;font-weight:300;letter-spacing:.5px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:7px}
+.hero-val{font-size:38px;font-weight:200;line-height:1;letter-spacing:-2.5px}
+.hero-bar{height:2px;background:var(--br);border-radius:1px;display:flex;margin-top:12px}
+.hero-bar-a{background:rgba(192,144,64,.55);transition:width .8s ease;border-radius:1px}
+.hero-bar-e{background:rgba(74,128,192,.45);transition:width .8s ease;border-radius:1px}
+.hero-cols{display:flex;margin-top:13px;padding-top:13px;border-top:1px solid var(--br)}
+.hcol{flex:1;text-align:center}
+.hcol+.hcol{border-left:1px solid var(--br)}
+.hcol .l{font-size:10px;font-weight:300;letter-spacing:.4px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:5px}
+.hcol .v{font-family:'DM Mono',monospace;font-size:13px;font-weight:300}
+
+/* KU Limit bar */
+.ku-bar-wrap{margin-top:12px;padding-top:12px;border-top:1px solid var(--br)}
+.ku-bar-lbl{display:flex;justify-content:space-between;font-size:10px;font-weight:300;
+  color:var(--txt3);margin-bottom:6px}
+.ku-bar-track{height:4px;background:var(--s3);border-radius:2px;overflow:hidden}
+.ku-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
+.ku-bar-hint{font-size:11px;font-weight:300;color:var(--txt2);margin-top:7px;line-height:1.5}
+
+/* Quick stats */
+.qs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.qs-c{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);padding:14px}
+.qs-l{font-size:10px;font-weight:300;letter-spacing:.4px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:6px}
+.qs-v{font-size:22px;font-weight:200;line-height:1;letter-spacing:-1px}
+.qs-s{font-size:10px;font-weight:300;color:var(--txt3);margin-top:4px}
+
+/* Recent list */
+.ri{display:flex;align-items:center;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--br);cursor:pointer;transition:opacity .15s}
+.ri:last-child{border:none}
+.ri:active{opacity:.6}
+.ri-bar{width:2px;height:36px;border-radius:1px;flex-shrink:0;opacity:.6}
+.ri-th{width:36px;height:44px;border-radius:8px;background:var(--s3);flex-shrink:0;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:14px}
+.ri-th img{width:100%;height:100%;object-fit:cover}
+.ri-inf{flex:1;min-width:0}
+.ri-sh{font-size:14px;font-weight:300;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;letter-spacing:-.1px}
+.ri-me{font-size:10px;font-weight:300;color:var(--txt2);margin-top:3px;
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ri-r{text-align:right;flex-shrink:0}
+.ri-am{font-family:'DM Mono',monospace;font-size:13px;font-weight:300}
+.ri-dt{font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px}
+
+/* ════════════════════════════════════════════════════
+   INTELLIGENZ-LAYER WIDGETS
+   WHY: Diese Widgets generieren "Aha-Momente" aus den
+   bereits vorhandenen Scan-Daten. Kein neues Datenmodell
+   nötig – nur clevere Auswertung der OCR-Felder.
+════════════════════════════════════════════════════ */
+
+/* Garantie-Wächter */
+.gw-item{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:13px;margin-bottom:7px;display:flex;align-items:center;gap:12px}
+.gw-item.urgent{border-color:rgba(192,64,64,.3);background:rgba(192,64,64,.04)}
+.gw-item.warn{border-color:rgba(192,112,48,.3);background:rgba(192,112,48,.04)}
+.gw-item.ok{border-color:rgba(58,175,112,.2)}
+.gw-ico{font-size:22px;flex-shrink:0}
+.gw-inf{flex:1;min-width:0}
+.gw-name{font-size:13px;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gw-date{font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px}
+.gw-badge{padding:3px 9px;border-radius:100px;font-size:10px;font-weight:300}
+.gw-badge.urgent{background:rgba(192,64,64,.15);color:var(--red)}
+.gw-badge.warn{background:rgba(192,112,48,.15);color:var(--orn)}
+.gw-badge.ok{background:rgba(58,175,112,.12);color:var(--grn)}
+
+/* Abo-Detektiv */
+.abo-item{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:13px;margin-bottom:7px;display:flex;align-items:center;gap:12px}
+.abo-ico{font-size:20px;flex-shrink:0}
+.abo-inf{flex:1;min-width:0}
+.abo-name{font-size:13px;font-weight:300}
+.abo-detail{font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px}
+.abo-amt{font-family:'DM Mono',monospace;font-size:13px;font-weight:300;
+  color:var(--ylw);flex-shrink:0;text-align:right}
+
+/* Vital-Check */
+.vital-bar{height:6px;background:var(--s3);border-radius:3px;overflow:hidden;margin:8px 0}
+.vital-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.vital-row{display:flex;justify-content:space-between;font-size:11px;font-weight:300;
+  color:var(--txt3);margin-bottom:4px}
+
+/* Inflations-Tracker */
+.inf-item{display:flex;align-items:center;gap:10px;padding:9px 0;
+  border-bottom:1px solid var(--br)}
+.inf-item:last-child{border:none}
+.inf-name{flex:1;font-size:12px;font-weight:300}
+.inf-delta{font-family:'DM Mono',monospace;font-size:12px;font-weight:300}
+.inf-delta.up{color:var(--red)}
+.inf-delta.dn{color:var(--grn)}
+.inf-delta.eq{color:var(--txt3)}
+
+/* Insight-Banner (kontextueller "Aha-Moment") */
+.insight{background:linear-gradient(135deg,var(--s2),var(--s3));
+  border:1px solid var(--br2);border-radius:var(--r12);padding:14px;margin-bottom:10px;
+  display:flex;gap:12px;align-items:flex-start}
+.insight .ico{font-size:22px;flex-shrink:0;margin-top:1px}
+.insight .body{flex:1}
+.insight .head{font-size:12px;font-weight:300;color:var(--txt);margin-bottom:4px}
+.insight .desc{font-size:11px;font-weight:300;color:var(--txt3);line-height:1.6}
+.insight .amt{font-family:'DM Mono',monospace;font-size:14px;font-weight:300;
+  color:var(--grn);margin-top:5px}
+
+/* ════════════════════════════════════════════════════
+   BELEGE VIEW
+════════════════════════════════════════════════════ */
+.filter-row{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.sel{background:var(--s2);border:1px solid var(--br);border-radius:100px;
+  padding:7px 12px;color:var(--txt2);font-family:'Inter',system-ui,sans-serif;
+  font-size:11px;font-weight:300;outline:none;cursor:pointer}
+.sel option{background:var(--s2)}
+.bc{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  display:flex;align-items:center;gap:10px;padding:12px;cursor:pointer;
+  transition:opacity .15s;margin-bottom:7px}
+.bc:active{opacity:.7}
+.bc-bar{width:2px;height:44px;border-radius:1px;flex-shrink:0;opacity:.6}
+.bc-th{width:44px;height:54px;border-radius:9px;background:var(--s3);flex-shrink:0;
+  overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:18px}
+.bc-th img{width:100%;height:100%;object-fit:cover}
+.bc-inf{flex:1;min-width:0}
+.bc-sh{font-size:14px;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bc-me{font-size:10px;font-weight:300;color:var(--txt2);margin-top:3px;
+  display:flex;align-items:center;gap:6px}
+.bc-nr{font-family:'DM Mono',monospace;font-size:10px;color:var(--txt3);margin-top:3px}
+.bc-r{text-align:right;flex-shrink:0}
+.bc-am{font-family:'DM Mono',monospace;font-size:14px;font-weight:300}
+.bc-am.er{color:var(--blu)}.bc-am.ar{color:var(--ylw)}
+.bc-dt{font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px}
+.empty{text-align:center;padding:50px 20px;color:var(--txt3)}
+.empty .ico{font-size:40px;margin-bottom:10px;opacity:.4}
+.empty p{font-size:13px;font-weight:300}
+
+/* ════════════════════════════════════════════════════
+   MwSt VIEW
+════════════════════════════════════════════════════ */
+.tabs{display:flex;gap:3px;background:var(--s2);border-radius:var(--r8);
+  padding:3px;margin-bottom:13px}
+.tab{flex:1;padding:8px 4px;border:none;background:transparent;color:var(--txt3);
+  font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:300;
+  cursor:pointer;border-radius:10px;transition:all .2s}
+.tab.on{background:var(--s4);color:var(--txt)}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px}
+.sc-card{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:14px;position:relative;overflow:hidden}
+.sc-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.sc-card.ar::before{background:linear-gradient(90deg,transparent,rgba(192,144,64,.5),transparent)}
+.sc-card.er::before{background:linear-gradient(90deg,transparent,rgba(74,128,192,.5),transparent)}
+.sc-card.zl::before{background:linear-gradient(90deg,transparent,rgba(192,64,64,.5),transparent)}
+.sc-card.ex::before{background:linear-gradient(90deg,transparent,rgba(58,175,112,.5),transparent)}
+.sc-card .l{font-size:11px;font-weight:300;letter-spacing:.4px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:7px}
+.sc-card .v{font-size:24px;font-weight:200;line-height:1;letter-spacing:-1px}
+.sc-card.ar .v{color:var(--ylw)}.sc-card.er .v{color:var(--blu)}
+.sc-card.zl .v{color:var(--red)}.sc-card.ex .v{color:var(--grn)}
+.sc-card .s{font-size:10px;font-weight:300;color:var(--txt3);margin-top:5px}
+.cc{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:15px;margin-bottom:8px}
+.cc-title{font-size:11px;font-weight:300;letter-spacing:.5px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:14px}
+.mchart{display:flex;align-items:flex-end;gap:3px;height:80px;margin-bottom:7px}
+.mcol{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}
+.mcol-bars{display:flex;align-items:flex-end;gap:1px;width:100%;justify-content:center}
+.mbar{width:45%;min-height:2px;border-radius:2px 2px 0 0;transition:height .7s ease}
+.mbar.ar{background:rgba(192,144,64,.5)}.mbar.er{background:rgba(74,128,192,.4)}
+.mbar-l{font-size:8px;font-weight:300;color:var(--txt3);text-align:center}
+.chart-leg{display:flex;gap:14px;font-size:10px;font-weight:300;color:var(--txt3);margin-top:5px}
+.chart-leg span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:7px;height:7px;border-radius:2px;display:inline-block}
+.barchart{display:flex;flex-direction:column;gap:9px}
+.barrow{display:flex;align-items:center;gap:8px}
+.bar-lbl{width:85px;font-size:11px;font-weight:300;color:var(--txt2);text-align:right;
+  flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:2px;background:var(--s3);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px;transition:width .7s ease}
+.bar-val{width:65px;font-family:'DM Mono',monospace;font-size:10px;font-weight:300;color:var(--txt3)}
+.mtbl{width:100%;border-collapse:collapse}
+.mtbl th{text-align:left;padding:5px 8px;font-size:10px;font-weight:300;letter-spacing:.4px;
+  color:var(--txt3);text-transform:uppercase;border-bottom:1px solid var(--br)}
+.mtbl td{padding:8px 8px;font-size:12px;font-weight:300;border-bottom:1px solid var(--br)}
+.mtbl tr:last-child td{border:none}
+.mtbl .mo{font-family:'DM Mono',monospace;font-size:11px;font-weight:300}
+
+/* ════════════════════════════════════════════════════
+   STEUER VIEW – Einkommensteuer-Gauge
+════════════════════════════════════════════════════ */
+.est-hero{background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);
+  padding:20px;margin-bottom:10px;text-align:center;position:relative;overflow:hidden}
+.est-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(192,144,64,.3),transparent)}
+.est-hero .lbl{font-size:11px;font-weight:300;letter-spacing:.5px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:10px}
+.est-hero .big{font-size:44px;font-weight:200;line-height:1;letter-spacing:-3px}
+.est-hero .sub{font-size:11px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.6}
+.est-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:10px}
+.est-c{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:13px;text-align:center}
+.est-c .l{font-size:10px;font-weight:300;letter-spacing:.4px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:5px}
+.est-c .v{font-size:20px;font-weight:200;line-height:1;letter-spacing:-1px}
+.gauge-wrap{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:16px;margin-bottom:8px}
+.gauge-title{font-size:11px;font-weight:300;letter-spacing:.5px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:14px}
+.gauge-track{position:relative;height:10px;border-radius:5px;margin-bottom:8px;
+  background:linear-gradient(90deg,var(--grn) 0%,var(--ylw) 40%,var(--orn) 65%,var(--red) 85%,#800 100%)}
+.gauge-marker{position:absolute;top:-5px;width:4px;height:20px;border-radius:2px;
+  background:var(--txt);transform:translateX(-50%);transition:left 1s ease;
+  box-shadow:0 0 6px rgba(255,255,255,.3)}
+.gauge-stages{display:flex;justify-content:space-between;margin-bottom:12px}
+.gs{font-size:9px;font-weight:300;color:var(--txt3);text-align:center}
+.gs .pct{font-family:'DM Mono',monospace;font-size:10px;color:var(--txt2)}
+.gauge-now{background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);
+  padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.gauge-now .l{font-size:11px;font-weight:300;color:var(--txt2)}
+.gauge-now .v{font-family:'DM Mono',monospace;font-size:14px;font-weight:300}
+.gauge-next{margin-top:8px;font-size:11px;font-weight:300;color:var(--txt3);
+  line-height:1.6;padding:0 2px}
+
+/* ════════════════════════════════════════════════════
+   QUARTAL VIEW
+════════════════════════════════════════════════════ */
+.qsel{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px}
+.qbtn{padding:8px 4px;border:1px solid var(--br);border-radius:var(--r8);background:var(--s2);
+  color:var(--txt3);font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:300;
+  cursor:pointer;transition:all .2s;text-align:center}
+.qbtn.on{background:var(--s3);border-color:var(--br2);color:var(--txt)}
+.qsum{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
+  padding:15px;margin-bottom:8px}
+.qsum-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.qsum-item .l{font-size:10px;font-weight:300;letter-spacing:.4px;color:var(--txt3);
+  text-transform:uppercase;margin-bottom:4px}
+.qsum-item .v{font-family:'DM Mono',monospace;font-size:17px;font-weight:300}
+
+/* ════════════════════════════════════════════════════
+   SETTINGS VIEW
+════════════════════════════════════════════════════ */
+.stpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
+.stpl{border:1px solid var(--br);border-radius:var(--r8);padding:10px;cursor:pointer;
+  background:var(--s2);text-align:center;font-size:11px;font-weight:300;
+  color:var(--txt3);transition:all .2s}
+.stpl.on{border-color:var(--br2);color:var(--txt);background:var(--s3)}
+.stamp-prev{display:flex;justify-content:center;background:var(--s2);
+  border:1px solid var(--br);border-radius:var(--r12);padding:16px;margin-bottom:12px}
+.csw{width:24px;height:24px;border-radius:6px;cursor:pointer;
+  border:2px solid transparent;transition:all .2s;flex-shrink:0}
+.csw.on{border-color:rgba(255,255,255,.5);box-shadow:0 0 0 1px var(--br2)}
+.pwa-card{background:linear-gradient(135deg,var(--s1),var(--s2));border:1px solid var(--br);
+  border-radius:var(--r12);padding:15px;margin-bottom:9px}
+.pwa-card .l{font-size:10px;letter-spacing:.6px;color:var(--txt3);text-transform:uppercase;
+  font-weight:300;margin-bottom:7px}
+.pwa-card p{font-size:12px;font-weight:300;color:var(--txt2);line-height:1.65}
+.info-row{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--br);font-size:13px}
+.info-row:last-child{border:none}
+.info-row .k{color:var(--txt3);font-weight:300;font-size:12px}
+.info-row .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--txt2)}
+
+/* ════════════════════════════════════════════════════
+   SCANNER SHEET
+════════════════════════════════════════════════════ */
+.seg{display:flex;background:var(--s2);border-radius:100px;padding:3px;margin-bottom:14px}
+.seg-btn{flex:1;padding:9px;border:none;border-radius:100px;background:transparent;
+  color:var(--txt3);font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:300;
+  cursor:pointer;transition:all .2s}
+.seg-btn.on{background:var(--s3);color:var(--txt);border:1px solid var(--br)}
+.vf{position:relative;background:#000;border-radius:18px;overflow:hidden;
+  min-height:220px;display:flex;align-items:center;justify-content:center;margin-bottom:0}
+#camStream{width:100%;max-height:310px;object-fit:cover;display:none}
+#capImg{width:100%;max-height:310px;object-fit:contain;display:none;background:#0a0a0a}
+.vf-ph{display:flex;flex-direction:column;align-items:center;gap:14px;padding:46px 20px}
+.vf-ph-ico{width:60px;height:60px;border-radius:50%;background:var(--s3);
+  border:1px solid var(--br);display:flex;align-items:center;justify-content:center}
+.vf-ph p{font-size:12px;font-weight:300;color:var(--txt3);text-align:center;line-height:1.55}
+.vf-ovl{position:absolute;inset:0;pointer-events:none;display:none}
+.vf-line{position:absolute;left:8%;right:8%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+  animation:sc 2.5s ease-in-out infinite}
+@keyframes sc{0%{top:10%;opacity:0}15%{opacity:1}85%{opacity:1}100%{top:88%;opacity:0}}
+.vf-c{position:absolute;width:17px;height:17px;border-color:rgba(255,255,255,.4);border-style:solid}
+.vf-c.tl{top:8%;left:6%;border-width:1px 0 0 1px;border-radius:2px 0 0 0}
+.vf-c.tr{top:8%;right:6%;border-width:1px 1px 0 0;border-radius:0 2px 0 0}
+.vf-c.bl{bottom:8%;left:6%;border-width:0 0 1px 1px;border-radius:0 0 0 2px}
+.vf-c.br{bottom:8%;right:6%;border-width:0 1px 1px 0;border-radius:0 0 2px 0}
+.cam-ctrls{padding:16px 8px 4px;display:flex;align-items:center;justify-content:space-between}
+.cam-side{width:42px;height:42px;border-radius:50%;border:1px solid var(--br);
+  background:var(--s2);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:opacity .15s}
+.cam-side:active{opacity:.6}
+.shutter{width:66px;height:66px;border-radius:50%;border:3px solid var(--br2);
+  background:transparent;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .18s}
+.shutter:active{transform:scale(.9)}
+.shutI{width:50px;height:50px;border-radius:50%;background:var(--s3);transition:background .2s}
+.prog-wrap{display:none;margin-bottom:12px}
+.prog-log{font-family:'DM Mono',monospace;font-size:12px;font-weight:300;color:var(--txt);
+  padding:10px 13px;background:var(--s2);border-radius:var(--r8);margin-bottom:5px;min-height:36px;
+  border:1px solid var(--br);line-height:1.5;word-break:break-word}
+.prog-bar{height:1px;background:var(--br);border-radius:1px;overflow:hidden}
+.prog-fill{height:100%;background:var(--txt3);transition:width .3s ease}
+.res-wrap{display:none}.res-wrap.on{display:block}
+.res-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+@media(max-width:380px){.res-fields{grid-template-columns:1fr}}
+.itbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px}
+.itbl th{text-align:left;padding:5px 8px;color:var(--txt3);font-weight:300;font-size:10px;
+  letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid var(--br)}
+.itbl td{padding:7px 8px;border-bottom:1px solid var(--br);font-weight:300}
+.itbl tr:last-child td{border:none}
+
+/* Detail Sheet */
+.det-img{width:100%;border-radius:var(--r12);margin-bottom:15px}
+.det-title{font-size:21px;font-weight:200;margin-bottom:4px;letter-spacing:-.5px}
+.det-sub{font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:15px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.drow{display:flex;justify-content:space-between;align-items:center;
+  padding:10px 0;border-bottom:1px solid var(--br);font-size:13px}
+.drow:last-child{border:none}
+.dk{color:var(--txt3);font-weight:300;font-size:12px}
+.dv{font-family:'DM Mono',monospace;font-size:12px;font-weight:300}
+
+/* ════════════════════════════════════════════════════
+   PHASE 2/3 PLATZHALTER-BANNER
+   WHY: Zeigt dem Nutzer was kommt, ohne es schon zu bauen.
+   Hält die Roadmap im Produkt selbst sichtbar.
+════════════════════════════════════════════════════ */
+.phase-banner{border:1px dashed var(--br2);border-radius:var(--r12);padding:14px;
+  margin-bottom:10px;opacity:.55}
+.phase-banner .ph-lbl{font-size:9px;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--txt3);margin-bottom:5px;font-weight:300}
+.phase-banner .ph-txt{font-size:12px;font-weight:300;color:var(--txt2);line-height:1.55}
+
+/* ════════════════════════════════════════════════════
+   EFFIZIENZ-TACHO
+   WHY: Zeigt dem Nutzer in Echtzeit was er durch KI-Scanning
+   spart – Zeit UND Geld vs. Steuerberater. Macht den Wert
+   der App sichtbar, bevor er sie kaufen würde.
+════════════════════════════════════════════════════ */
+.tacho-card{background:linear-gradient(135deg,rgba(200,164,90,.06),rgba(200,164,90,.02));
+  border:1px solid rgba(200,164,90,.2);border-radius:var(--r12);padding:14px;margin-bottom:10px}
+.tacho-title{font-size:10px;font-weight:300;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--txt3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.tacho-title::before{content:'⚡';font-size:12px}
+.tacho-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.tacho-item{text-align:center}
+.tacho-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:300;
+  line-height:1;letter-spacing:-1px;color:var(--gold)}
+.tacho-lbl{font-size:9px;font-weight:300;color:var(--txt3);margin-top:4px;
+  letter-spacing:.3px;line-height:1.4}
+.tacho-divider{width:1px;background:var(--br);margin:4px 0}
+
+/* ════════════════════════════════════════════════════
+   BONG-BUTTON ("Kannst du behalten!")
+   WHY: Erscheint NUR kontextbezogen nach echten Ersparnis-Momenten.
+   Kein Spam. Der Nutzer sieht live dass das FA indirekt zahlt.
+   Als "Software-Wartung" 100% absetzbar.
+════════════════════════════════════════════════════ */
+.bong-wrap{position:fixed;bottom:calc(85px + var(--sb));left:50%;transform:translateX(-50%);
+  z-index:150;animation:bong-in .5s cubic-bezier(.34,1.4,.64,1)}
+@keyframes bong-in{from{opacity:0;transform:translateX(-50%) translateY(20px) scale(.88)}
+  to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+.bong-btn{background:linear-gradient(135deg,#1a1400,#0e0e00);
+  border:1px solid rgba(200,164,90,.45);border-radius:var(--r12);
+  padding:13px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;
+  box-shadow:0 8px 32px rgba(0,0,0,.7),0 0 0 1px rgba(200,164,90,.1);
+  white-space:nowrap;transition:transform .15s}
+.bong-btn:active{transform:translateX(-50%) scale(.95) !important}
+.bong-ico{font-size:22px}
+.bong-body .head{font-size:13px;font-weight:300;color:var(--gold);margin-bottom:2px}
+.bong-body .sub{font-size:10px;font-weight:300;color:var(--txt3)}
+.bong-x{background:transparent;border:none;color:var(--txt3);font-size:16px;
+  cursor:pointer;padding:4px;margin-left:4px;line-height:1}
+
+/* ════════════════════════════════════════════════════
+   PROGRESSIONS-SCHUTZ BANNER
+   WHY: Warnt vor Steuerklassen-Wechsel + zeigt konkreten
+   Investitions-Tipp. Spart dem Nutzer echtes Geld = Trust.
+════════════════════════════════════════════════════ */
+.prog-schutz{background:linear-gradient(135deg,rgba(192,112,48,.08),rgba(192,112,48,.03));
+  border:1px solid rgba(192,112,48,.3);border-radius:var(--r12);
+  padding:14px;margin-bottom:10px}
+.prog-schutz .head{font-size:13px;font-weight:300;color:var(--orn);margin-bottom:5px}
+.prog-schutz .body{font-size:11px;font-weight:300;color:var(--txt2);line-height:1.65}
+.prog-schutz .tipp{background:rgba(58,175,112,.08);border:1px solid rgba(58,175,112,.2);
+  border-radius:8px;padding:10px;margin-top:10px;font-size:11px;font-weight:300;
+  color:var(--grn);line-height:1.6}
+
+/* ── API KEY BANNER ── */
+.api-banner{background:linear-gradient(135deg,rgba(200,164,90,.07),rgba(200,164,90,.03));
+  border:1px solid rgba(200,164,90,.25);border-radius:var(--r12);
+  padding:14px 16px;margin-bottom:12px;
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  transition:border-color .2s}
+.api-banner:active{border-color:rgba(200,164,90,.5)}
+.api-banner .ico{font-size:22px;flex-shrink:0}
+.api-banner .body{flex:1}
+.api-banner .head{font-size:13px;font-weight:300;color:var(--txt);margin-bottom:3px}
+.api-banner .sub{font-size:11px;font-weight:300;color:var(--txt3);line-height:1.5}
+.api-banner .arr{font-size:16px;color:var(--gold);flex-shrink:0}
+/* API Key Sheet */
+.api-sheet-title{font-size:18px;font-weight:200;letter-spacing:-.5px;margin-bottom:5px}
+.api-sheet-sub{font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:18px;line-height:1.6}
+.api-steps{background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);padding:14px;margin-bottom:14px}
+.api-step{display:flex;gap:11px;align-items:flex-start;margin-bottom:13px}
+.api-step:last-child{margin-bottom:0}
+.api-step .n{width:22px;height:22px;border-radius:50%;background:var(--s3);border:1px solid var(--br2);
+  display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--txt3);flex-shrink:0;margin-top:1px}
+.api-step .t{font-size:12px;font-weight:300;color:var(--txt2);line-height:1.6}
+.api-step a{color:var(--gold);text-decoration:none}
+.api-key-inp{display:flex;gap:8px;margin-bottom:10px}
+.api-notice{font-size:10px;font-weight:300;color:var(--txt3);line-height:1.6;margin-bottom:16px}
+
+#fi,#ufi{display:none}
+</style>
+</head>
+<body>
+
+<!-- ══ ONBOARDING (unverändert, funktioniert) ════════ -->
+<div id="onboarding">
+  <div class="ob-step on" id="obs1">
+    <div class="ob-logo">🧾</div>
+    <div class="ob-title">BelegScan Pro</div>
+    <div class="ob-sub">Belege erfassen, Steuern tracken,<br>Garantien im Blick behalten.<br><br>Einmal einrichten – dauert 2 Minuten.</div>
+    <div class="stitle">Dein Land</div>
+    <div class="ob-cards">
+      <div class="ob-card on" id="land-de" onclick="pickLand('de')"><div class="ck">✓</div><div class="ico">🇩🇪</div><div class="lbl">Deutschland</div><div class="sub">19% / 7% MwSt<br>KU-Grenze 22.000 €</div></div>
+      <div class="ob-card" id="land-at" onclick="pickLand('at')"><div class="ck">✓</div><div class="ico">🇦🇹</div><div class="lbl">Österreich</div><div class="sub">20% / 10% USt<br>KU-Grenze 35.000 €</div></div>
+      <div class="ob-card" id="land-ch" onclick="pickLand('ch')"><div class="ck">✓</div><div class="ico">🇨🇭</div><div class="lbl">Schweiz</div><div class="sub">8.1% / 2.6% MWST<br>KU-Grenze 100.000 CHF</div></div>
+      <div class="ob-card" id="land-other" onclick="pickLand('other')"><div class="ck">✓</div><div class="ico">🌍</div><div class="lbl">Anderes Land</div><div class="sub">Manuell konfigurieren</div></div>
+    </div>
+    <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="obNext(2)">Weiter →</button>
+  </div>
+  <div class="ob-step" id="obs2">
+    <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+    <div class="ob-title">Dein Status</div>
+    <div class="ob-sub">Die App passt sich automatisch an.</div>
+    <div class="ob-nr-opts" style="margin-bottom:20px">
+      <div class="ob-nr-opt on" id="typ-frei" onclick="pickTyp('frei')"><div><div class="nr-fmt">Freiberufler</div><div class="nr-lbl">Volle MwSt-Pflicht</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="typ-ku" onclick="pickTyp('ku')"><div><div class="nr-fmt">Kleinunternehmer §19</div><div class="nr-lbl">Unter der Umsatzgrenze</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="typ-gew" onclick="pickTyp('gew')"><div><div class="nr-fmt">Gewerbetreibender</div><div class="nr-lbl">MwSt + Gewerbesteuer</div></div><div class="ck2">✓</div></div>
+    </div>
+    <div class="ku-warn" id="kuWarn" style="display:none"><p>⚠️ Als Kleinunternehmer überwacht die App deinen Jahresumsatz und warnt dich vor der Grenze. <strong>Das kann dir tausende Euro ersparen.</strong></p></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(1)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(3)">Weiter →</button></div>
+  </div>
+  <div class="ob-step" id="obs3">
+    <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+    <div class="ob-title">Belegnummer</div>
+    <div class="ob-sub">Einmalig wählen – dann unveränderlich.<br>GoBD-konform, lückenlos, automatisch.</div>
+    <div class="ob-nr-opts">
+      <div class="ob-nr-opt on" id="fmt-a" onclick="pickFmt('A')"><div><div class="nr-fmt">ER-2026-0001</div><div class="nr-lbl">Typ – Jahr – Nummer (empfohlen)</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="fmt-b" onclick="pickFmt('B')"><div><div class="nr-fmt">2026-Q1-ER-0001</div><div class="nr-lbl">Jahr – Quartal – Typ – Nummer</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="fmt-c" onclick="pickFmt('C')"><div><div class="nr-fmt">2026-ER-0001</div><div class="nr-lbl">Jahr – Typ – Nummer</div></div><div class="ck2">✓</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px"><button class="btn btn-g" onclick="obNext(2)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(4)">Weiter →</button></div>
+  </div>
+  <div class="ob-step" id="obs4">
+    <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot"></div></div>
+    <div class="ob-title">KI-Erkennung</div>
+    <div class="ob-sub">Mit Claude API Key erkennt die App Beträge, Händler, Garantien und Abos automatisch aus Fotos – auch von Monitoren.</div>
+    <div class="ob-api-box">
+      <div class="step-row"><div class="sn">1</div><div class="st">Gehe zu <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → kostenlosen Account erstellen.</div></div>
+      <div class="step-row"><div class="sn">2</div><div class="st">Klicke auf <strong>API Keys → Create Key</strong> und kopiere den Key.</div></div>
+      <div class="step-row"><div class="sn">3</div><div class="st">Füge ihn hier ein. Er wird nur lokal auf deinem Gerät gespeichert.</div></div>
+    </div>
+    <input class="inp" type="password" id="obApiKey" placeholder="sk-ant-… (optional)" style="margin-bottom:12px;font-size:13px">
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:20px;line-height:1.6">Ohne Key: manuelle Eingabe. Mit Key: Automatik + Garantie-Wächter + Abo-Detektiv.</p>
+    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(3)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obFinish()">Loslegen ✓</button></div>
+  </div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════ -->
+<div id="app">
+
+<!-- ── HOME ── -->
+<div class="view on" id="v-home">
+
+  <!-- API Key Banner – erscheint nur wenn kein Key hinterlegt ist -->
+  <div id="apiBanner" style="display:none" onclick="openApiSheet()">
+    <div class="api-banner">
+      <div class="ico">⚡</div>
+      <div class="body">
+        <div class="head">KI-Erkennung aktivieren</div>
+        <div class="sub">Fotos automatisch auslesen – Beträge, Garantien, Abos. API Key einrichten.</div>
+      </div>
+      <div class="arr">›</div>
+    </div>
+  </div>
+
+  <!-- ── EFFIZIENZ-TACHO ──
+       WHY: Macht den Wert der KI-Nutzung sofort sichtbar.
+       Formel: 120s (manuell) - 5s (KI) = 115s pro Scan gespart.
+       Hochgerechnet auf alle Scans = gesparte Lebenszeit. -->
+  <div class="tacho-card" id="tachoCard">
+    <div class="tacho-title">KI-Effizienz seit Start</div>
+    <div class="tacho-grid">
+      <div class="tacho-item">
+        <div class="tacho-val" id="tachoScans">0</div>
+        <div class="tacho-lbl">KI-Scans<br>gesamt</div>
+      </div>
+      <div class="tacho-item">
+        <div class="tacho-val" id="tachoZeit" style="color:var(--grn)">0 Min</div>
+        <div class="tacho-lbl">Lebenszeit<br>gespart</div>
+      </div>
+      <div class="tacho-item">
+        <div class="tacho-val" id="tachoGeld" style="color:var(--ylw)">0 €</div>
+        <div class="tacho-lbl">vs. Steuer-<br>berater gespart</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PROGRESSIONS-SCHUTZ ──
+       WHY: Erscheint wenn Gewinn sich einer Steuerstufe nähert.
+       Gibt konkreten Investitions-Tipp um Steuerlast zu senken. -->
+  <div id="progSchutzBanner" style="display:none"></div>
+
+  <!-- Business ↔ Privat Toggle -->
+  <div class="mode-toggle">
+    <button class="mode-btn on biz" id="modeBiz" onclick="setMode('biz')">💼 Business</button>
+    <button class="mode-btn priv" id="modePriv" onclick="setMode('priv')">🏠 Privat</button>
+  </div>
+
+  <!-- Potential-Ring – ändert Farbe und Bedeutung je nach Modus -->
+  <div class="ring-wrap">
+    <div class="ring-c">
+      <svg class="ring-svg" viewBox="0 0 130 130">
+        <circle class="ring-bg" cx="65" cy="65" r="57"/>
+        <circle class="ring-f" id="ringF" cx="65" cy="65" r="57" stroke-dasharray="358.14" stroke-dashoffset="0" stroke="var(--gold)"/>
+      </svg>
+      <div class="ring-in">
+        <div class="ring-big" id="ringBig">–</div>
+        <div class="ring-tag" id="ringTag">Tage</div>
+      </div>
+    </div>
+    <div class="ring-sub" id="ringSub">–</div>
+    <div class="ring-date mono" id="ringDate">–</div>
+  </div>
+
+  <!-- Business-Content (Standard) -->
+  <div id="bizContent">
+    <div class="hero zl" id="heroCard">
+      <div class="hero-lbl" id="heroLbl">Aktueller MwSt-Stand</div>
+      <div class="hero-val" id="heroVal">0,00 €</div>
+      <div class="hero-bar"><div class="hero-bar-a" id="hbA" style="width:50%"></div><div class="hero-bar-e" id="hbE" style="width:50%"></div></div>
+      <div class="hero-cols" id="heroCols">
+        <div class="hcol"><div class="l">Eingenommen</div><div class="v" id="hAR" style="color:var(--ylw)">0,00 €</div></div>
+        <div class="hcol"><div class="l">Vorsteuer</div><div class="v" id="hER" style="color:var(--blu)">0,00 €</div></div>
+        <div class="hcol"><div class="l" id="saldoLbl">Zahllast</div><div class="v" id="hSaldo" style="color:var(--red)">0,00 €</div></div>
+      </div>
+      <div class="ku-bar-wrap" id="kuBarWrap" style="display:none">
+        <div class="ku-bar-lbl"><span id="kuBarLeft">Umsatz YTD</span><span id="kuBarRight">Grenze</span></div>
+        <div class="ku-bar-track"><div class="ku-bar-fill" id="kuBarFill" style="width:0%"></div></div>
+        <div class="ku-bar-hint" id="kuBarHint">–</div>
+      </div>
+    </div>
+    <div class="qs">
+      <div class="qs-c"><div class="qs-l">Umsatz (Jahr)</div><div class="qs-v" id="qsU" style="color:var(--ylw)">0 €</div><div class="qs-s" id="qsUc">0 Rechnungen</div></div>
+      <div class="qs-c"><div class="qs-l">Ausgaben (Jahr)</div><div class="qs-v" id="qsA" style="color:var(--blu)">0 €</div><div class="qs-s" id="qsAc">0 Belege</div></div>
+    </div>
+  </div>
+
+  <!-- Privat-Content (wird per JS ein/ausgeblendet) -->
+  <div id="privContent" style="display:none">
+    <div class="hero priv" id="heroPriv">
+      <div class="hero-lbl">Optimierbares Geld</div>
+      <div class="hero-val" id="heroPrivVal" style="color:var(--silv)">0,00 €</div>
+      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.55" id="heroPrivSub">Abos, Garantien, Sparpotentiale</div>
+    </div>
+    <!-- Insight Banner – erscheint kontextbezogen wenn echtes Sparpotential erkannt wurde -->
+    <div id="insightBanner" style="display:none"></div>
+  </div>
+
+  <!-- Intelligenz-Widgets (immer sichtbar, mode-unabhängig) -->
+  <div class="card" id="gwCard" style="display:none">
+    <div class="stitle">🛡️ Garantie-Wächter</div>
+    <div id="gwList"></div>
+  </div>
+
+  <div class="card" id="aboCard" style="display:none">
+    <div class="stitle">🔍 Abo-Detektiv</div>
+    <div id="aboList"></div>
+  </div>
+
+  <div class="card">
+    <div class="stitle">Zuletzt erfasst</div>
+    <div id="recentList"><div class="empty"><p>Noch keine Belege.<br>Tippe auf den Scanner-Button.</p></div></div>
+  </div>
+</div>
+
+<!-- ── BELEGE ── -->
+<div class="view" id="v-belege">
+  <div class="filter-row">
+    <input class="inp" id="srch" type="text" placeholder="Suchen …" oninput="renderBelege()" style="flex:1;min-width:80px;font-size:12px;padding:8px 12px">
+    <select class="sel" id="ftT" onchange="renderBelege()"><option value="">Alle</option><option value="er">Eingang</option><option value="ar">Ausgang</option></select>
+    <select class="sel" id="ftC" onchange="renderBelege()"><option value="">Kategorie</option><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select>
+    <button class="btn btn-g btn-sm" onclick="exportCSV()">CSV</button>
+  </div>
+  <div id="bList"></div>
+</div>
+
+<!-- ── MwSt ── -->
+<div class="view" id="v-mwst">
+  <div class="tabs">
+    <button class="tab on" onclick="setPeriod('month',this)">Monat</button>
+    <button class="tab" onclick="setPeriod('q',this)">Quartal</button>
+    <button class="tab" onclick="setPeriod('year',this)">Jahr</button>
+    <button class="tab" onclick="setPeriod('all',this)">Gesamt</button>
+  </div>
+  <button class="btn btn-g btn-sm" onclick="showView('quartal')" style="margin-bottom:10px">Quartalsabschluss →</button>
+  <div class="sg">
+    <div class="sc-card ar"><div class="l">MwSt eingenommen</div><div class="v" id="mAR">0,00 €</div><div class="s" id="mARs">0 AR</div></div>
+    <div class="sc-card er"><div class="l">Vorsteuer abziehbar</div><div class="v" id="mER">0,00 €</div><div class="s" id="mERs">0 ER</div></div>
+  </div>
+  <div class="sg">
+    <div class="sc-card zl" id="zlCard"><div class="l">Zahllast</div><div class="v" id="mZL">0,00 €</div><div class="s">MwSt − Vorsteuer</div></div>
+    <div class="sc-card ex" id="exCard" style="display:none"><div class="l">Erstattung</div><div class="v" id="mEX">0,00 €</div><div class="s">Gutschrift ✓</div></div>
+  </div>
+  <div class="cc"><div class="cc-title">Monatsverlauf</div><div class="mchart" id="mChart"></div><div class="chart-leg"><span><i class="dot" style="background:rgba(192,144,64,.5)"></i>Umsatz AR</span><span><i class="dot" style="background:rgba(74,128,192,.4)"></i>Ausgaben ER</span></div></div>
+  <div class="cc"><div class="cc-title">MwSt nach Monat</div><table class="mtbl"><thead><tr><th>Monat</th><th>AR-MwSt</th><th>Vorsteuer</th><th>Saldo</th></tr></thead><tbody id="mTbl"></tbody></table></div>
+  <div class="cc"><div class="cc-title">Top Kategorien (Ausgaben)</div><div class="barchart" id="catChart"></div></div>
+  <!-- Inflations-Tracker -->
+  <div class="cc" id="inflCC" style="display:none"><div class="cc-title">📈 Inflations-Tracker</div><div id="inflList"></div></div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap;padding-bottom:4px">
+    <button class="btn btn-g btn-sm" onclick="exportCSV()">CSV Export</button>
+    <button class="btn btn-g btn-sm" onclick="exportBackup()">Backup JSON</button>
+  </div>
+</div>
+
+<!-- ── STEUER ── -->
+<div class="view" id="v-steuer">
+  <div class="est-hero">
+    <div class="lbl">Geschätzte Einkommensteuer (Jahr)</div>
+    <div class="big" id="estJahr">0 €</div>
+    <div class="sub" id="estSub">Auf Basis der erfassten Einnahmen</div>
+  </div>
+  <div class="est-grid">
+    <div class="est-c"><div class="l">Gewinn</div><div class="v" id="estG" style="color:var(--grn)">0 €</div></div>
+    <div class="est-c"><div class="l">Eff. Satz</div><div class="v" id="estR" style="color:var(--ylw)">0 %</div></div>
+    <div class="est-c"><div class="l">∅ / Monat</div><div class="v" id="estM" style="color:var(--red)">0 €</div></div>
+  </div>
+  <div class="gauge-wrap">
+    <div class="gauge-title">Einkommensteuerstufen</div>
+    <div class="gauge-track"><div class="gauge-marker" id="gaugeM" style="left:0%"></div></div>
+    <div class="gauge-stages">
+      <div class="gs"><div class="pct">0%</div><div>0 €</div></div>
+      <div class="gs"><div class="pct">14–24%</div><div>12k €</div></div>
+      <div class="gs"><div class="pct">24–42%</div><div>17k €</div></div>
+      <div class="gs"><div class="pct">42%</div><div>67k €</div></div>
+      <div class="gs"><div class="pct">45%</div><div>278k €</div></div>
+    </div>
+    <div class="gauge-now"><div class="l" id="gaugeStufeTxt">Aktueller Grenzsteuersatz</div><div class="v" id="gaugeStufe" style="color:var(--grn)">0 %</div></div>
+    <div class="gauge-next" id="gaugeNext">–</div>
+  </div>
+  <!-- Vital-Check Widget -->
+  <div class="card card-sm" id="vitalCard" style="display:none;margin-bottom:9px">
+    <div class="stitle">🥦 Vital-Check</div>
+    <div id="vitalContent"></div>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Parameter</div>
+    <div class="g2" style="gap:8px">
+      <div class="field"><label>Steuerklasse</label><select id="stK" onchange="calcSteuer()"><option value="1">I – Ledig</option><option value="3">III – Verheiratet</option><option value="4">IV – Gleich</option></select></div>
+      <div class="field"><label>Kinder</label><input id="stKi" type="number" value="0" min="0" max="10" oninput="calcSteuer()"></div>
+      <div class="field"><label>Kirchensteuer</label><select id="stKi2" onchange="calcSteuer()"><option value="0">Nein</option><option value="0.09">9 %</option><option value="0.08">8 % Bayern</option></select></div>
+      <div class="field"><label>Ausgaben manuell (€)</label><input id="stM" type="number" value="0" min="0" oninput="calcSteuer()"></div>
+    </div>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Hinweis</div>
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);line-height:1.7">Schätzung nach §32a EStG. Kein Ersatz für einen Steuerberater.</p>
+  </div>
+  <!-- Phase 2 Platzhalter -->
+  <div class="phase-banner">
+    <div class="ph-lbl">Phase 2 – Geplant</div>
+    <div class="ph-txt">GoBD-Rechnungserstellung direkt in der App. Managed API – kein eigener Key nötig. Guthaben-Modell.</div>
+  </div>
+  <button class="btn btn-g btn-sm" onclick="showView('settings')">Einstellungen →</button>
+</div>
+
+<!-- ── QUARTAL ── -->
+<div class="view" id="v-quartal">
+  <button class="btn btn-g btn-sm" onclick="showView('mwst')" style="margin-bottom:12px">← Zurück</button>
+  <div class="stitle">Quartalsabschluss</div>
+  <div class="qsel" id="qSel"></div>
+  <div class="qsum" id="qSum"></div>
+  <div class="cc"><div class="cc-title">Belege im Quartal</div><div id="qBList"></div></div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap">
+    <button class="btn btn-gold btn-sm" onclick="exportQCSV()">CSV exportieren</button>
+    <button class="btn btn-g btn-sm" onclick="exportQZip()">PDF-Paket (ZIP)</button>
+  </div>
+</div>
+
+<!-- ── SETTINGS ── -->
+<div class="view" id="v-settings">
+  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
+  <div class="pwa-card">
+    <div class="l">📱 Als App installieren</div>
+    <p>iOS: <strong style="color:var(--txt)">Teilen → Zum Homescreen</strong><br>Android: <strong style="color:var(--txt)">Menü → App installieren</strong></p>
+    <button class="btn btn-g btn-sm" id="pwaBtn" onclick="installPWA()" style="margin-top:10px;display:none">App installieren</button>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Mein Profil</div>
+    <div class="info-row"><span class="k">Land</span><span class="val" id="settLand">–</span></div>
+    <div class="info-row"><span class="k">Status</span><span class="val" id="settTyp">–</span></div>
+    <div class="info-row"><span class="k">Belegnummer-Format</span><span class="val" id="settFmt">–</span></div>
+    <button class="btn btn-g btn-sm" onclick="resetOnboarding()" style="margin-top:10px">Neu einrichten</button>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">KI-Verbindung</div>
+    <div style="display:flex;gap:7px"><input class="inp" type="password" id="apiKey" placeholder="sk-ant-… Claude API Key" style="font-size:12px"><button class="btn btn-g btn-sm" onclick="saveApiKey()">OK</button></div>
+    <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:7px;line-height:1.6" id="apiStat">–</p>
+    <a href="https://console.anthropic.com" target="_blank" style="font-size:11px;color:var(--gold);text-decoration:none;display:inline-block;margin-top:6px">→ API Key erstellen</a>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Stempel</div>
+    <div class="stpl-grid">
+      <div class="stpl on" id="tpl0" onclick="pickTpl(0)">Klassisch</div>
+      <div class="stpl" id="tpl1" onclick="pickTpl(1)">Modern</div>
+      <div class="stpl" id="tpl2" onclick="pickTpl(2)">Minimal</div>
+    </div>
+    <div class="stamp-prev"><canvas id="stmpC" width="290" height="110"></canvas></div>
+    <div class="g2" style="gap:8px;margin-bottom:10px">
+      <div class="field"><label>Firma</label><input id="sFirma" type="text" placeholder="Meine Firma GbR" oninput="refreshStamp()"></div>
+      <div class="field"><label>Freitext</label><input id="sFrei" type="text" placeholder="Buchungskreis o.ä." oninput="refreshStamp()"></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <div class="csw on" style="background:#b71c1c" data-c="#b71c1c" onclick="pickCol(this)"></div>
+      <div class="csw" style="background:#1565c0" data-c="#1565c0" onclick="pickCol(this)"></div>
+      <div class="csw" style="background:#2e7d32" data-c="#2e7d32" onclick="pickCol(this)"></div>
+      <div class="csw" style="background:#4a148c" data-c="#4a148c" onclick="pickCol(this)"></div>
+      <div class="csw" style="background:#e65100" data-c="#e65100" onclick="pickCol(this)"></div>
+      <div class="csw" style="background:#37474f" data-c="#37474f" onclick="pickCol(this)"></div>
+      <input type="color" id="cPick" value="#b71c1c" style="width:24px;height:24px;border-radius:6px;border:1px solid var(--br);cursor:pointer;padding:1px;background:transparent" oninput="freeCol(this)">
+    </div>
+    <button class="btn btn-gold btn-sm" onclick="saveStamp()">Stempel speichern</button>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Belegnummer-Zähler</div>
+    <p style="font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:10px;line-height:1.7">
+      Nächste ER: <span id="erND" class="mono" style="color:var(--blu)">–</span><br>
+      Nächste AR: <span id="arND" class="mono" style="color:var(--ylw)">–</span>
+    </p>
+    <button class="btn btn-red btn-sm" onclick="resetCounters()">Zähler zurücksetzen</button>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Datensicherung</div>
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.65">Alle Daten liegen ausschließlich lokal (IndexedDB). Kein Server.</p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-g btn-sm" onclick="exportBackup()">Backup exportieren</button>
+      <button class="btn btn-g btn-sm" onclick="document.getElementById('ufi').click()">Backup importieren</button>
+    </div>
+    <input type="file" id="ufi" accept=".json" onchange="importBackup(this)">
+  </div>
+  <!-- Phase 3 Platzhalter -->
+  <div class="phase-banner">
+    <div class="ph-lbl">Phase 3 – Roadmap</div>
+    <div class="ph-txt">Creator Elite: VIP-Einladungscodes für Multiplikatoren mit Spezial-Dashboards und White-Label Export. Benötigt Backend.</div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<!-- ── NAV ── -->
+<nav id="nav">
+  <button class="ni on" onclick="showView('home')" data-v="home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Start
+  </button>
+  <button class="ni" onclick="showView('belege')" data-v="belege">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Belege
+  </button>
+  <div class="ni-sw">
+    <button class="ni-scan" onclick="openScanner()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </button>
+  </div>
+  <button class="ni" onclick="showView('mwst')" data-v="mwst">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>MwSt
+  </button>
+  <button class="ni" onclick="showView('steuer')" data-v="steuer">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Steuer
+  </button>
+</nav>
+
+<!-- ── BONG-BUTTON ("Kannst du behalten!")
+     WHY: Taucht kontextbezogen auf wenn die App dem Nutzer
+     gerade echtes Geld gespart hat. Nicht als Werbung –
+     als Celebration-Moment. Als "Software-Wartung" absetzbar. -->
+<div class="bong-wrap" id="bongWrap" style="display:none">
+  <div class="bong-btn" onclick="openBongSheet()">
+    <div class="bong-ico">🍺</div>
+    <div class="bong-body">
+      <div class="head">Bong? Kannst du behalten!</div>
+      <div class="sub" id="bongSubText">Du hast gerade Steuern gespart.</div>
+    </div>
+    <button class="bong-x" onclick="closeBong(event)">✕</button>
+  </div>
+</div>
+
+<!-- ── BONG SHEET (Trinkgeld-Detail) ── -->
+<div class="ovl" id="bongOvl" onclick="closeBongOuter(event)">
+  <div class="sheet">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeBongSheet()">✕</button>
+    <div style="font-size:28px;margin-bottom:8px">🍺</div>
+    <div style="font-size:20px;font-weight:200;letter-spacing:-.5px;margin-bottom:6px">Bong? Kannst du behalten!</div>
+    <div style="font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:20px;line-height:1.65" id="bongSheetCtx">–</div>
+
+    <!-- Live-Kalkulation: Der Steuer-Kniff
+         WHY: Nutzer sieht dass 100% der Trinkgeld-Kosten absetzbar sind.
+         Das Finanzamt zahlt also anteilig mit. Ehrlich & legal. -->
+    <div style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);padding:14px;margin-bottom:14px">
+      <div style="font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-bottom:12px;font-weight:300">Live-Kalkulation</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <input class="inp" type="number" id="bongAmount" placeholder="0" min="1" max="500"
+          style="font-size:18px;font-weight:200;letter-spacing:-1px;text-align:center;width:110px"
+          oninput="calcBongLive()">
+        <span style="font-size:14px;font-weight:300;color:var(--txt3)">€ Trinkgeld</span>
+      </div>
+      <div id="bongCalc" style="font-size:12px;font-weight:300;color:var(--txt2);line-height:1.9">
+        Betrag eingeben um Effektivkosten zu sehen.
+      </div>
+    </div>
+
+    <div style="background:rgba(58,175,112,.06);border:1px solid rgba(58,175,112,.2);border-radius:var(--r12);padding:12px;margin-bottom:16px">
+      <p style="font-size:11px;font-weight:300;color:var(--grn);line-height:1.65">
+        💡 Als <strong style="font-weight:300">"Software-Wartung & Support"</strong> buchbar –
+        100% Betriebsausgabe nach §4 Abs.4 EStG. Netto-Betrag von der Steuer absetzbar,
+        19% Vorsteuer zurückfordern (falls MwSt-pflichtig).
+      </p>
+    </div>
+
+    <a href="https://buy.stripe.com/bongplaceholder" target="_blank" id="bongPayLink"
+      style="display:block;text-align:center;background:linear-gradient(135deg,var(--gold),var(--ylw));
+      color:#000;border-radius:var(--r12);padding:14px;font-size:14px;font-weight:300;
+      text-decoration:none;letter-spacing:.2px;margin-bottom:10px">
+      → Trinkgeld senden
+    </a>
+    <p style="font-size:10px;font-weight:300;color:var(--txt3);text-align:center;line-height:1.6">
+      Kein Abo. Keine Pflicht. Nur wenn du willst.<br>
+      Du erhältst eine Quittung als Betriebsausgabe.
+    </p>
+  </div>
+</div>
+
+<!-- ── API KEY SHEET ── -->
+<div class="ovl" id="apiOvl" onclick="closeApiOuter(event)">
+  <div class="sheet">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeApiSheet()">✕</button>
+    <div class="api-sheet-title">⚡ KI-Erkennung</div>
+    <div class="api-sheet-sub">Mit deinem eigenen Claude API Key liest die App Belege automatisch aus – Beträge, Händler, Datum, Garantien und Abos. ~1–3 Cent pro Scan. Key wird nur lokal gespeichert.</div>
+    <div class="api-steps">
+      <div class="api-step"><div class="n">1</div><div class="t">Gehe zu <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> und erstelle einen kostenlosen Account.</div></div>
+      <div class="api-step"><div class="n">2</div><div class="t">Klicke links auf <strong style="color:var(--txt)">API Keys</strong> → <strong style="color:var(--txt)">Create Key</strong>. Kopiere den Key (beginnt mit <span class="mono" style="font-size:11px;color:var(--gold)">sk-ant-</span>).</div></div>
+      <div class="api-step"><div class="n">3</div><div class="t">Füge ihn unten ein und tippe auf <strong style="color:var(--txt)">Aktivieren</strong>. Fertig.</div></div>
+    </div>
+    <div class="api-key-inp">
+      <input class="inp" type="password" id="apiKeySheet" placeholder="sk-ant-api03-…" style="font-size:13px;letter-spacing:.5px" autocomplete="off">
+      <button class="btn btn-gold" onclick="saveApiKeySheet()">Aktivieren</button>
+    </div>
+    <div class="api-notice">🔒 Dein Key wird ausschließlich lokal in diesem Browser gespeichert und nie an Server übertragen – nur direkt an die Anthropic API beim Scan.</div>
+    <div id="apiSheetStat" style="font-size:12px;font-weight:300;color:var(--grn);display:none">✓ KI-Erkennung ist aktiv</div>
+    <div style="margin-top:6px">
+      <button class="btn btn-red btn-sm" id="apiRemoveBtn" onclick="removeApiKey()" style="display:none">Key entfernen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCANNER SHEET ── -->
+<div class="ovl" id="scanOvl" onclick="closeScanOuter(event)">
+  <div class="sheet" style="max-height:95vh">
+    <div class="sh"></div>
+    <button class="sc-btn" onclick="closeScanner()">✕</button>
+    <div class="seg">
+      <button class="seg-btn on" id="ttER" onclick="setScanType('er')">Eingangsrechnung</button>
+      <button class="seg-btn" id="ttAR" onclick="setScanType('ar')">Ausgangsrechnung</button>
+    </div>
+
+    <!-- Vorschau: wird sichtbar sobald ein Bild gewählt wurde -->
+    <div class="vf" id="camArea" style="display:none">
+      <video id="camStream" autoplay playsinline muted></video>
+      <img id="capImg" alt="">
+      <div id="vfOvl" class="vf-ovl">
+        <div class="vf-line"></div>
+        <div class="vf-c tl"></div><div class="vf-c tr"></div>
+        <div class="vf-c bl"></div><div class="vf-c br"></div>
+      </div>
+    </div>
+
+    <!-- Upload-Bereich: primäre Aktion, immer sichtbar wenn kein Bild da -->
+    <div id="camPH" style="margin-bottom:14px">
+      <!-- Primär: Foto aus Galerie / Kamera (ein input, öffnet beides auf iOS) -->
+      <input type="file" id="fi" accept="image/*" capture="environment" onchange="loadFile(this)" style="display:none">
+      <input type="file" id="fiGal" accept="image/*" onchange="loadFile(this)" style="display:none">
+
+      <button onclick="document.getElementById('fi').click()"
+        style="width:100%;background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r16);
+        padding:28px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;
+        cursor:pointer;transition:border-color .2s;margin-bottom:10px"
+        id="btnMainUpload">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.2">
+          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span style="font-size:14px;font-weight:300;color:var(--txt)">Foto aufnehmen</span>
+        <span style="font-size:11px;font-weight:300;color:var(--txt3)">Beleg, Bon, Monitor oder Screen</span>
+      </button>
+
+      <!-- Sekundär: aus Galerie wählen (ohne capture) -->
+      <button onclick="document.getElementById('fiGal').click()"
+        style="width:100%;background:transparent;border:1px solid var(--br);border-radius:var(--r12);
+        padding:12px 16px;display:flex;align-items:center;justify-content:center;gap:8px;
+        cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        Aus Galerie wählen
+      </button>
+    </div>
+
+    <!-- Kamera-Capture-Button: nur sichtbar wenn Live-Kamera läuft -->
+    <div class="cam-ctrls" id="camCtrls" style="display:none">
+      <div style="width:44px"></div>
+      <button class="shutter" id="btnCap" onclick="captureCam()" disabled>
+        <div class="shutI" id="shutI"></div>
+      </button>
+      <div style="width:44px"></div>
+    </div>
+    <div style="text-align:center;margin-bottom:14px">
+      <button id="btnStop" onclick="stopCam()" style="display:none;background:transparent;border:none;color:var(--txt3);font-size:11px;font-weight:300;cursor:pointer;letter-spacing:.2px">Kamera beenden</button>
+    </div>
+
+    <div class="prog-wrap" id="progWrap">
+      <div class="prog-log mono" id="progLog">Bereit …</div>
+      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+    </div>
+    <div class="res-wrap" id="resWrap">
+      <!-- Hinweis-Banner: zeigt ob KI oder manuell -->
+      <div id="scanModeBanner" style="margin-bottom:12px;padding:9px 12px;border-radius:8px;
+        font-size:11px;font-weight:300;line-height:1.5;display:none"></div>
+      <p style="font-size:13px;font-weight:300;color:var(--txt2);margin-bottom:13px">Daten prüfen und ggf. korrigieren:</p>
+      <div class="res-fields">
+        <div class="field"><label>Händler / Aussteller</label><input id="rShop" type="text" placeholder="–"></div>
+        <div class="field"><label>Datum</label><input id="rDate" type="date"></div>
+        <div class="field"><label>Netto</label><input id="rNet" type="text" placeholder="0.00"></div>
+        <div class="field"><label>MwSt-Betrag</label><input id="rMwst" type="text" placeholder="0.00"></div>
+        <div class="field"><label>Brutto</label><input id="rBrutto" type="text" placeholder="0.00"></div>
+        <div class="field"><label>MwSt-Satz</label><select id="rRate"></select></div>
+        <div class="field"><label>Kategorie</label><select id="rCat"><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select></div>
+        <div class="field"><label>Zahlung</label><select id="rPay"><option>Karte</option><option>Bar</option><option>Überweisung</option><option>Online</option></select></div>
+      </div>
+      <div id="itemsSec" style="display:none;margin-bottom:12px">
+        <p class="stitle" style="margin-bottom:8px">Erkannte Positionen</p>
+        <table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody id="itemsB"></tbody></table>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-gold btn-sm" onclick="saveBeleg()">Speichern</button>
+        <button class="btn btn-g btn-sm" onclick="resetScan()">Neu scannen</button>
+        <button class="btn btn-g btn-sm" id="retryKiBtn" style="display:none"
+          onclick="retryKi()">⚡ KI erneut starten</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DETAIL SHEET ── -->
+<div class="ovl" id="detOvl" onclick="closeDetOuter(event)">
+  <div class="sheet"><div class="sh"></div><button class="sc-btn" onclick="closeDet()">✕</button>
+    <div id="detContent"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+'use strict';
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PWA
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PWA
+// ════════════════════════════════════════════════════════
+// WHY: SW läuft als externe sw.js – Blob-URL funktioniert nicht
+// auf GitHub Pages wegen Security-Restrictions.
+let pwaPrompt=null;
+function setupPWA(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
+  }
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();pwaPrompt=e;const b=document.getElementById('pwaBtn');if(b)b.style.display='inline-flex';});
+}
+function installPWA(){if(pwaPrompt){pwaPrompt.prompt();pwaPrompt.userChoice.then(()=>{pwaPrompt=null;});}}
+// ════════════════════════════════════════════════════════
+// ██ MODUL: DATENBANK (IndexedDB)
+// WHY: Alles lokal. Keine Cloud, keine Kosten für den Nutzer.
+// ════════════════════════════════════════════════════════
+let db;
+function initDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('bsp7',1);
+    r.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('b')){
+        const s=d.createObjectStore('b',{keyPath:'id',autoIncrement:true});
+        s.createIndex('date','date');s.createIndex('type','type');
+        // WHY: 'shop' Index für Inflations-Tracker – gleiche Händler über Zeit vergleichen
+        s.createIndex('shop','shop');
+      }
+    };
+    r.onsuccess=e=>{db=e.target.result;res();};r.onerror=()=>rej(r.error);
+  });
+}
+const dba=()=>new Promise((res,rej)=>{const r=db.transaction('b','readonly').objectStore('b').getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
+const dbadd=it=>new Promise((res,rej)=>{const r=db.transaction('b','readwrite').objectStore('b').add(it);r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
+const dbdel=id=>new Promise((res,rej)=>{const r=db.transaction('b','readwrite').objectStore('b').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej();});
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: STATE & KONFIGURATION
+// ════════════════════════════════════════════════════════
+let camStream=null,capB64=null,capThumb=null,scanType='er',curRes=null,curDet=null;
+let toastT; // WHY: Muss oben stehen – wird vor toast()-Definition schon genutzt
+let apiKey=localStorage.getItem('cak')||'';
+let erC=parseInt(localStorage.getItem('erc')||'0');
+let arC=parseInt(localStorage.getItem('arc')||'0');
+let mwstPer='month';
+let qY=new Date().getFullYear(),qQ=Math.ceil((new Date().getMonth()+1)/3);
+let stampTpl=parseInt(localStorage.getItem('stpl')||'0');
+let stamp={firma:'',frei:'',color:'#b71c1c'};
+
+// WHY: appMode steuert den Potential-Ring und die Home-Ansicht.
+// 'biz' = Business (Gold, Steuer-Fristen), 'priv' = Privat (Silber, Sparpotentiale)
+let appMode=localStorage.getItem('appMode')||'biz';
+
+let profile={
+  land: localStorage.getItem('p_land')||'de',
+  typ:  localStorage.getItem('p_typ')||'frei',
+  fmt:  localStorage.getItem('p_fmt')||'A',
+  done: localStorage.getItem('p_done')==='1'
+};
+
+// DACH Steuer-Konfiguration
+const LANDCFG={
+  de:{name:'Deutschland',flag:'🇩🇪',mwstH:19,mwstL:7,kuLimit:22000,currency:'€',steuerLabel:'MwSt'},
+  at:{name:'Österreich',flag:'🇦🇹',mwstH:20,mwstL:10,kuLimit:35000,currency:'€',steuerLabel:'USt'},
+  ch:{name:'Schweiz',flag:'🇨🇭',mwstH:8.1,mwstL:2.6,kuLimit:100000,currency:'CHF',steuerLabel:'MWST'},
+  other:{name:'Anderes Land',flag:'🌍',mwstH:20,mwstL:10,kuLimit:22000,currency:'€',steuerLabel:'MwSt'}
+};
+function cfg(){return LANDCFG[profile.land]||LANDCFG.de;}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: MODUS-TOGGLE (Business ↔ Privat)
+// WHY: Derselbe Ring, zwei Bedeutungen. Gold = Steuerpflichten.
+// Silber = persönliche Finanzen. Ein Toggle, kein separater Tab.
+// ════════════════════════════════════════════════════════
+function setMode(m){
+  appMode=m;
+  localStorage.setItem('appMode',m);
+  document.getElementById('modeBiz').className='mode-btn'+(m==='biz'?' on biz':'');
+  document.getElementById('modePriv').className='mode-btn'+(m==='priv'?' on priv':'');
+  document.getElementById('bizContent').style.display=m==='biz'?'block':'none';
+  document.getElementById('privContent').style.display=m==='priv'?'block':'none';
+  // Ring-Farbe wechseln: Gold = Business, Silber = Privat
+  document.getElementById('ringF').style.stroke=m==='biz'?'var(--gold)':'var(--silv)';
+  renderHome();
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: ONBOARDING
+// ════════════════════════════════════════════════════════
+let obLand='de',obTyp='frei',obFmt='A';
+function pickLand(l){obLand=l;document.querySelectorAll('[id^=land-]').forEach(el=>el.classList.remove('on'));document.getElementById('land-'+l).classList.add('on');}
+function pickTyp(t){obTyp=t;document.querySelectorAll('[id^=typ-]').forEach(el=>el.classList.remove('on'));document.getElementById('typ-'+t).classList.add('on');document.getElementById('kuWarn').style.display=t==='ku'?'block':'none';}
+function pickFmt(f){obFmt=f;document.querySelectorAll('[id^=fmt-]').forEach(el=>el.classList.remove('on'));document.getElementById('fmt-'+f).classList.add('on');}
+function obNext(step){document.querySelectorAll('.ob-step').forEach(el=>el.classList.remove('on'));document.getElementById('obs'+step).classList.add('on');}
+function obFinish(){
+  const k=(document.getElementById('obApiKey').value||'').trim();
+  if(k){apiKey=k;localStorage.setItem('cak',k);}
+  profile={land:obLand,typ:obTyp,fmt:obFmt,done:true};
+  localStorage.setItem('p_land',obLand);localStorage.setItem('p_typ',obTyp);
+  localStorage.setItem('p_fmt',obFmt);localStorage.setItem('p_done','1');
+  document.getElementById('onboarding').classList.remove('on');
+  initApp();
+}
+function resetOnboarding(){if(!confirm('Neu einrichten?'))return;localStorage.removeItem('p_done');profile.done=false;document.getElementById('onboarding').classList.add('on');}
+function checkOnboarding(){if(!profile.done){document.getElementById('onboarding').classList.add('on');}else{initApp();}}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: NAV
+// ════════════════════════════════════════════════════════
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
+  document.getElementById('v-'+v).classList.add('on');
+  document.querySelectorAll('.ni[data-v]').forEach(el=>el.classList.toggle('on',el.dataset.v===v));
+  if(v==='home')renderHome();
+  if(v==='belege')renderBelege();
+  if(v==='mwst')renderMwst();
+  if(v==='steuer')calcSteuer();
+  if(v==='quartal')initQuartal();
+  if(v==='settings'){loadStampUI();updCounters();updSettingsInfo();}
+}
+function updSettingsInfo(){
+  const c=cfg();
+  document.getElementById('settLand').textContent=c.flag+' '+c.name;
+  document.getElementById('settTyp').textContent=profile.typ==='ku'?'Kleinunternehmer §19':profile.typ==='gew'?'Gewerbetreibender':'Freiberufler';
+  const fmtEx={A:'ER-2026-0001',B:'2026-Q1-ER-0001',C:'2026-ER-0001'};
+  document.getElementById('settFmt').textContent=fmtEx[profile.fmt]||'–';
+  if(apiKey)document.getElementById('apiKey').value=apiKey;
+  updApiStat();
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BELEGNUMMER – GoBD-konform
+// WHY: Finanzamtkonform = keine Lücken, keine Änderungen.
+// Die Nummer wird einmal vergeben und ist danach fest.
+// ════════════════════════════════════════════════════════
+function nextNr(t){
+  const y=new Date().getFullYear(),q=Math.ceil((new Date().getMonth()+1)/3);
+  const prefix=t==='er'?'ER':'AR';
+  let cnt;
+  if(t==='er'){erC++;localStorage.setItem('erc',erC);cnt=erC;}
+  else{arC++;localStorage.setItem('arc',arC);cnt=arC;}
+  const n=String(cnt).padStart(4,'0');
+  if(profile.fmt==='A')return`${prefix}-${y}-${n}`;
+  if(profile.fmt==='B')return`${y}-Q${q}-${prefix}-${n}`;
+  return`${y}-${prefix}-${n}`;
+}
+function updCounters(){
+  const y=new Date().getFullYear(),q=Math.ceil((new Date().getMonth()+1)/3);
+  const fmtNr=(t,c)=>{const p=t==='er'?'ER':'AR',n=String(c+1).padStart(4,'0');if(profile.fmt==='A')return`${p}-${y}-${n}`;if(profile.fmt==='B')return`${y}-Q${q}-${p}-${n}`;return`${y}-${p}-${n}`;};
+  const e=document.getElementById('erND'),a=document.getElementById('arND');
+  if(e)e.textContent=fmtNr('er',erC);if(a)a.textContent=fmtNr('ar',arC);
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: POTENTIAL-RING
+// WHY: Das visuelle Zentrum der App. Je nach Modus und Nutzertyp
+// zeigt er die relevanteste Zahl – kein verschwendeter Platz.
+// Business+MwSt-Pflicht → Tage bis Voranmeldung
+// Business+KU → Umsatz-% bis zur Grenze
+// Privat → Optimierbares Geld in Prozent genutzt
+// ════════════════════════════════════════════════════════
+async function updateRing(){
+  const circ=358.14;
+  const rf=document.getElementById('ringF');
+
+  if(appMode==='priv'){
+    // PRIVAT-MODUS: Ring zeigt Abo-Last vs. erkanntes Sparpotential
+    // WHY: Statt Steuerfrist sieht der Nutzer wieviel "totes Geld" er ausgibt
+    const all=await dba();
+    const abos=detectAbos(all);
+    const totalAbo=abos.reduce((s,a)=>s+a.monatlich,0);
+    // Sparpotential: Abos mit nur 1 Vorkommen im letzten Jahr (vergessene Abos)
+    const potential=abos.filter(a=>a.count<=2).reduce((s,a)=>s+a.monatlich,0);
+    const pct=totalAbo>0?Math.min(1,potential/totalAbo):0;
+    const col=pct>.5?'var(--red)':pct>.2?'var(--orn)':'var(--silv)';
+    rf.style.stroke=col;
+    rf.style.strokeDashoffset=circ*(1-pct);
+    document.getElementById('ringBig').textContent=fm(Math.round(potential));
+    document.getElementById('ringBig').style.color=col;
+    document.getElementById('ringTag').textContent='€/Mon sparen';
+    document.getElementById('ringSub').textContent=abos.length+' Abos erkannt · '+abos.filter(a=>a.count<=2).length+' selten genutzt';
+    document.getElementById('ringDate').textContent='Abo-Gesamtlast: '+fm(totalAbo)+' €/Mon';
+    // Privat-Hero updaten
+    document.getElementById('heroPrivVal').textContent=fm(potential*12)+' '+cfg().currency;
+    document.getElementById('heroPrivSub').textContent=`${abos.filter(a=>a.count<=2).length} Abos selten genutzt – mögliche Jahrersparnis`;
+    document.getElementById('heroPriv').className='hero priv';
+    // Insight-Banner wenn Sparpotential > 0
+    renderInsightBanner(abos,potential);
+    return;
+  }
+
+  // BUSINESS-MODUS
+  rf.style.stroke='var(--gold)';
+  if(profile.typ==='ku'){
+    // KU-Umsatzwächter
+    const all=await dba(),now=new Date();
+    const yr=all.filter(b=>b.type==='ar'&&b.date&&new Date(b.date+'T00:00:00').getFullYear()===now.getFullYear());
+    const umsatz=yr.reduce((s,b)=>s+(b.brutto||0),0);
+    const limit=cfg().kuLimit;
+    const pct=Math.min(1,umsatz/limit);
+    let col;if(pct>=.9)col='var(--red)';else if(pct>=.75)col='var(--orn)';else col='var(--grn)';
+    rf.style.stroke=col;rf.style.strokeDashoffset=circ*(1-pct);
+    document.getElementById('ringBig').textContent=Math.round(pct*100)+'%';
+    document.getElementById('ringBig').style.color=col;
+    document.getElementById('ringTag').textContent='Umsatz';
+    const rest=Math.max(0,limit-umsatz);
+    document.getElementById('ringSub').textContent='Noch '+fmK(rest)+' '+cfg().currency+' bis MwSt-Pflicht';
+    document.getElementById('ringDate').textContent=`Grenze: ${fmK(limit)} ${cfg().currency}`;
+    document.getElementById('kuBarWrap').style.display='block';
+    document.getElementById('kuBarFill').style.width=Math.round(pct*100)+'%';
+    document.getElementById('kuBarFill').style.background=col;
+    document.getElementById('kuBarLeft').textContent='Umsatz '+fmK(umsatz)+' '+cfg().currency;
+    document.getElementById('kuBarRight').textContent='Grenze '+fmK(limit);
+    if(pct>=.9){document.getElementById('kuBarHint').textContent='⚠️ MwSt-Pflichtgrenze fast erreicht! Steuerberater kontaktieren.';document.getElementById('kuBarHint').style.color='var(--red)';}
+    else if(pct>=.75){document.getElementById('kuBarHint').textContent='Noch '+fmK(rest)+' '+cfg().currency+' Puffer – plane voraus.';document.getElementById('kuBarHint').style.color='var(--orn)';}
+    else{document.getElementById('kuBarHint').textContent='Noch '+fmK(rest)+' '+cfg().currency+' Puffer.';document.getElementById('kuBarHint').style.color='var(--txt3)';}
+    document.getElementById('heroLbl').textContent='Einnahmen dieses Jahr';
+    document.getElementById('heroCols').style.display='none';
+    document.getElementById('heroVal').textContent=fmK(umsatz)+' '+cfg().currency;
+    document.getElementById('heroVal').style.color='var(--ylw)';
+    document.getElementById('heroCard').className='hero ku';
+  } else {
+    // MwSt-Voranmeldungs-Frist
+    document.getElementById('kuBarWrap').style.display='none';
+    document.getElementById('heroCols').style.display='flex';
+    const now=new Date(),y=now.getFullYear(),m=now.getMonth();
+    const deadline=new Date(y,m+1,10);
+    const dLeft=Math.max(0,Math.ceil((deadline-now)/(864e5)));
+    const dPer=new Date(y,m+1,0).getDate()+10;
+    const pct=Math.max(0,Math.min(1,(dPer-dLeft)/dPer));
+    let col;if(dLeft<=3)col='var(--red)';else if(dLeft<=7)col='var(--orn)';else col='var(--grn)';
+    rf.style.stroke=col;rf.style.strokeDashoffset=circ*(1-pct);
+    document.getElementById('ringBig').textContent=dLeft;
+    document.getElementById('ringBig').style.color=col;
+    document.getElementById('ringTag').textContent='Tage';
+    document.getElementById('ringSub').textContent=cfg().steuerLabel+'-Voranmeldung bis';
+    document.getElementById('ringDate').textContent=deadline.toLocaleDateString('de-DE',{day:'2-digit',month:'long',year:'numeric'});
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: EFFIZIENZ-TACHO
+// WHY: Macht den ROI der KI-Nutzung transparent.
+// Formel aus der Spezifikation:
+//   Zeit_manuell (120s) - Zeit_KI (5s) = 115s pro Scan gespart
+//   Steuerberater: ~150€/h = 0,0417€/s → gespart: 115s × 0,0417€ = ~4,80€ pro Scan
+// Der Tacho zählt alle KI-Scans und rechnet hoch.
+// ════════════════════════════════════════════════════════
+
+// Konstanten für die Berechnung (aus Master-Spezifikation)
+const SECS_MANUELL  = 120;  // Sekunden für manuelle Eingabe
+const SECS_KI       = 5;    // Sekunden für KI-Scan
+const SECS_GESPART  = SECS_MANUELL - SECS_KI; // = 115s pro Scan
+const STBR_PRO_STD  = 150;  // Steuerberater-Stundenhonorar (DACH-Durchschnitt)
+const STBR_PRO_SEK  = STBR_PRO_STD / 3600;    // = ~0,0417€ pro Sekunde
+
+// KI-Scan-Zähler aus localStorage (wird bei jedem erfolgreichen Scan erhöht)
+let kiScanCount = parseInt(localStorage.getItem('kiScans') || '0');
+
+function incrKiScans() {
+  // WHY: Nur zählen wenn wirklich die KI gearbeitet hat (nicht manuell)
+  kiScanCount++;
+  localStorage.setItem('kiScans', kiScanCount);
+}
+
+function renderTacho() {
+  // Gesparte Zeit: Anzahl KI-Scans × 115 Sekunden
+  const sekundenGespart = kiScanCount * SECS_GESPART;
+  const minutenGespart  = Math.round(sekundenGespart / 60);
+
+  // Gesparte Kosten vs. Steuerberater
+  const euroGespart = kiScanCount * SECS_GESPART * STBR_PRO_SEK;
+
+  // Darstellung: unter 60min = "X Min", darüber = "X Std"
+  const zeitText = minutenGespart < 60
+    ? minutenGespart + ' Min'
+    : (minutenGespart / 60).toFixed(1) + ' Std';
+
+  document.getElementById('tachoScans').textContent = kiScanCount;
+  document.getElementById('tachoZeit').textContent  = zeitText;
+  document.getElementById('tachoGeld').textContent  = fmK(Math.round(euroGespart)) + ' €';
+
+  // Tacho nur anzeigen wenn mindestens 1 Scan gemacht wurde
+  // WHY: Leere Nullen wären kein motivierendes Bild
+  document.getElementById('tachoCard').style.display = kiScanCount > 0 ? 'block' : 'none';
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PROGRESSIONS-SCHUTZ
+// WHY: Warnt proaktiv bevor der Nutzer in die nächste
+// Steuerprogression rutscht. Gibt konkreten Investitions-Tipp
+// damit er jetzt noch handeln kann.
+// Steuerstufen DE nach §32a EStG (zu versteuerndes Einkommen):
+//   0-11.604€ = 0%, 11.605-17.005€ = 14-24%, 17.006-66.760€ = 24-42%
+//   66.761-277.825€ = 42%, >277.825€ = 45%
+// ════════════════════════════════════════════════════════
+async function renderProgressionsSchutz() {
+  const banner = document.getElementById('progSchutzBanner');
+
+  // Berechne aktuellen Jahresgewinn (Einnahmen minus Ausgaben)
+  const all  = await dba();
+  const now  = new Date();
+  const ar   = all.filter(b => b.type === 'ar' && b.date && new Date(b.date + 'T00:00:00').getFullYear() === now.getFullYear());
+  const er   = all.filter(b => b.type === 'er' && b.date && new Date(b.date + 'T00:00:00').getFullYear() === now.getFullYear());
+  const ein  = ar.reduce((s, b) => s + (b.net || 0), 0);
+  const ausg = er.reduce((s, b) => s + (b.net || 0), 0);
+  const gewinn = Math.max(0, ein - ausg);
+
+  // Grundfreibetrag abziehen → zu versteuerndes Einkommen
+  const grundFB = 11604;
+  const zvE = Math.max(0, gewinn - grundFB);
+
+  // Stufengrenzen (zvE-Werte) und Warnschwellen
+  // WHY: Wir warnen wenn man innerhalb 5.000€ einer Stufengrenze ist
+  const stufen = [
+    { grenze: 17005,   rate: 24, naechste: 42, label: '24–42 %' },
+    { grenze: 66760,   rate: 42, naechste: 45, label: '42 %'    },
+    { grenze: 277825,  rate: 45, naechste: 45, label: '45 %'    },
+  ];
+  const WARN_ABSTAND = 5000; // Warnen wenn noch <5.000€ bis zur nächsten Stufe
+
+  let gefunden = null;
+  for (const s of stufen) {
+    const abstand = s.grenze - zvE;
+    if (abstand > 0 && abstand < WARN_ABSTAND) {
+      gefunden = { ...s, abstand: Math.round(abstand), zvE: Math.round(zvE) };
+      break;
+    }
+  }
+
+  if (!gefunden) { banner.style.display = 'none'; return; }
+
+  // Investitions-Tipp: Steuer-optimale Ausgaben die jetzt noch Sinn ergeben
+  // WHY: Konkreter Tipp > abstrakte Warnung. Nutzer weiß was er tun soll.
+  const tipps = [
+    'Laptop oder externes Display kaufen',
+    'Software-Lizenzen für das nächste Jahr voraus bezahlen',
+    'Fachliteratur und Weiterbildung buchen',
+    'Büromöbel oder Ergonomie-Ausstattung anschaffen',
+    'Reparaturen und Wartung jetzt durchführen lassen',
+  ];
+  const tipp = tipps[Math.floor(zvE / 1000) % tipps.length];
+
+  banner.style.display = 'block';
+  banner.innerHTML = `<div class="prog-schutz">
+    <div class="head">⚠️ Progressions-Warnung: Noch ${fmK(gefunden.abstand)} € Puffer</div>
+    <div class="body">
+      Du nähert dich dem ${gefunden.label}-Steuersatz. Jeder weitere Euro Gewinn
+      kostet dich dann bis zu <strong style="color:var(--orn)">${gefunden.naechste} Cent Steuern</strong>.
+      <br><br>
+      Aktuelles zvE: <span class="mono" style="color:var(--txt)">${fmK(gefunden.zvE)} €</span> ·
+      Stufengrenze: <span class="mono" style="color:var(--orn)">${fmK(gefunden.grenze)} €</span>
+    </div>
+    <div class="tipp">
+      💡 <strong style="font-weight:300">Investitions-Tipp:</strong> ${tipp} –
+      das senkt deinen Gewinn und hält dich in der günstigeren Steuerzone.
+      Als Betriebsausgabe 100% absetzbar.
+    </div>
+  </div>`;
+
+  // WHY: Progressions-Warnung = echter Aha-Moment = Bong-Trigger
+  triggerBong(
+    `Du nähert dich dem ${gefunden.label}-Steuersatz. Noch ${fmK(gefunden.abstand)} € Puffer.`,
+    'progression'
+  );
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BONG-BUTTON
+// WHY: Erscheint NICHT ständig. Nur nach echten "Aha-Momenten":
+// - Großer Steuerspar-Tipp wurde angezeigt
+// - KU-Grenze sicher unterschritten (Nutzer ist safe)
+// - Meilenstein erreicht (z.B. 10. Scan)
+// Der Nutzer sieht die Live-Kalkulation: Trinkgeld ist fast gratis
+// weil 100% absetzbar + MwSt-Rückerstattung.
+// ════════════════════════════════════════════════════════
+
+// Verhindert Spam: Bong nur 1x alle 24h zeigen
+function canShowBong() {
+  const last = parseInt(localStorage.getItem('bongLast') || '0');
+  return Date.now() - last > 24 * 60 * 60 * 1000; // 24 Stunden
+}
+
+function triggerBong(kontext, trigger) {
+  // WHY: Nur zeigen wenn es sich wirklich lohnt und kein Spam
+  if (!canShowBong()) return;
+  if (!kontext) return;
+
+  localStorage.setItem('bongLast', Date.now());
+  localStorage.setItem('bongKontext', kontext);
+
+  const wrap = document.getElementById('bongWrap');
+  const sub  = document.getElementById('bongSubText');
+  sub.textContent = kontext;
+  wrap.style.display = 'block';
+
+  // Auto-hide nach 8 Sekunden wenn nicht angeklickt
+  setTimeout(() => {
+    if (wrap.style.display !== 'none') wrap.style.display = 'none';
+  }, 8000);
+}
+
+function closeBong(e) {
+  e.stopPropagation();
+  document.getElementById('bongWrap').style.display = 'none';
+}
+
+function openBongSheet() {
+  document.getElementById('bongWrap').style.display = 'none';
+  const ctx = localStorage.getItem('bongKontext') || '';
+  document.getElementById('bongSheetCtx').textContent = ctx;
+  document.getElementById('bongAmount').value = '';
+  document.getElementById('bongCalc').textContent = 'Betrag eingeben um Effektivkosten zu sehen.';
+  document.getElementById('bongOvl').classList.add('on');
+}
+function closeBongSheet() { document.getElementById('bongOvl').classList.remove('on'); }
+function closeBongOuter(e) { if (e.target === document.getElementById('bongOvl')) closeBongSheet(); }
+
+function calcBongLive() {
+  // WHY: Live-Kalkulation zeigt dem Nutzer die tatsächlichen Netto-Kosten
+  // nach Steuerersparnis. Das Finanzamt "zahlt" einen Teil mit.
+  const betrag = parseFloat(document.getElementById('bongAmount').value) || 0;
+  if (betrag <= 0) {
+    document.getElementById('bongCalc').textContent = 'Betrag eingeben um Effektivkosten zu sehen.';
+    return;
+  }
+
+  const mwstSatz  = cfg().mwstH / 100;                      // z.B. 0.19
+  const netto     = betrag / (1 + mwstSatz);                 // Netto-Betrag
+  const mwstBet   = betrag - netto;                          // MwSt-Anteil
+  const steuersatz = 0.35;                                   // Annahme: ~35% ESt+Soli
+  const ersparnis = netto * steuersatz;                      // Steuerersparnis durch Abzug
+  const vstRueck  = profile.typ !== 'ku' ? mwstBet : 0;     // Vorsteuer nur wenn MwSt-pflichtig
+  const effektiv  = betrag - ersparnis - vstRueck;           // Echte Kosten nach allem
+
+  const c = document.getElementById('bongCalc');
+  c.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="color:var(--txt3)">Brutto-Betrag</span>
+      <span class="mono">${fm(betrag)} €</span>
+    </div>
+    ${profile.typ !== 'ku' ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="color:var(--txt3)">− Vorsteuer (${cfg().mwstH}%)</span>
+      <span class="mono" style="color:var(--grn)">−${fm(vstRueck)} €</span>
+    </div>` : ''}
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+      <span style="color:var(--txt3)">− ESt-Ersparnis (~35%)</span>
+      <span class="mono" style="color:var(--grn)">−${fm(ersparnis)} €</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--br);margin-top:4px">
+      <span style="color:var(--txt)">Effektivkosten für dich</span>
+      <span class="mono" style="color:var(--gold);font-size:16px">${fm(Math.max(0, effektiv))} €</span>
+    </div>
+    <div style="font-size:10px;color:var(--txt3);margin-top:6px;line-height:1.5">
+      Das Finanzamt trägt ${fm(ersparnis + vstRueck)} € (${Math.round((ersparnis + vstRueck) / betrag * 100)}%) mit.
+    </div>`;
+
+  // Update Zahlungslink mit Betrag
+  document.getElementById('bongPayLink').textContent = `→ ${fm(betrag)} € senden`;
+}
+
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: HOME RENDER
+// ════════════════════════════════════════════════════════
+async function renderHome(){
+  renderTacho(); // WHY: Synchron – sofort sichtbar, kein DB-Wait nötig
+  // WHY: try/catch damit ein Fehler hier nicht die ganze Home-View blockiert
+  try { await renderProgressionsSchutz(); } catch(e) { console.warn('ProgSchutz:', e); }
+
+  await updateRing();
+  const all=await dba(),now=new Date();
+  const yr=all.filter(b=>b.date&&new Date(b.date+'T00:00:00').getFullYear()===now.getFullYear());
+  const ar=yr.filter(b=>b.type==='ar'),er=yr.filter(b=>b.type==='er');
+  const arM=ar.reduce((s,b)=>s+(b.mwst||0),0),erM=er.reduce((s,b)=>s+(b.mwst||0),0),saldo=arM-erM;
+  const umsatz=ar.reduce((s,b)=>s+(b.brutto||0),0),ausg=er.reduce((s,b)=>s+(b.brutto||0),0);
+  if(profile.typ!=='ku'&&appMode==='biz'){
+    const hc=document.getElementById('heroCard'),hv=document.getElementById('heroVal');
+    document.getElementById('heroLbl').textContent='Aktueller '+cfg().steuerLabel+'-Stand';
+    if(saldo>=0){hc.className='hero zl';document.getElementById('saldoLbl').textContent='Zahllast';document.getElementById('hSaldo').style.color='var(--red)';}
+    else{hc.className='hero ex';document.getElementById('saldoLbl').textContent='Erstattung';document.getElementById('hSaldo').style.color='var(--grn)';}
+    hv.textContent=fm(Math.abs(saldo))+' '+cfg().currency;hv.style.color='';
+    document.getElementById('hAR').textContent=fm(arM)+' '+cfg().currency;
+    document.getElementById('hER').textContent=fm(erM)+' '+cfg().currency;
+    document.getElementById('hSaldo').textContent=fm(Math.abs(saldo))+' '+cfg().currency;
+    const tot=arM+erM;
+    document.getElementById('hbA').style.width=(tot>0?Math.round(arM/tot*100):50)+'%';
+    document.getElementById('hbE').style.width=(tot>0?Math.round(erM/tot*100):50)+'%';
+  }
+  document.getElementById('qsU').textContent=fmK(umsatz)+' '+cfg().currency;document.getElementById('qsUc').textContent=ar.length+' Rechnungen';
+  document.getElementById('qsA').textContent=fmK(ausg)+' '+cfg().currency;document.getElementById('qsAc').textContent=er.length+' Belege';
+
+  // Intelligenz-Layer rendern
+  await renderGarantieWaechter(all);
+  await renderAboDetektiv(all);
+
+  // Recent list
+  const sorted=[...all].sort((a,b)=>(b.savedAt||0)-(a.savedAt||0)).slice(0,6);
+  const rl=document.getElementById('recentList');
+  if(!sorted.length){rl.innerHTML='<div class="empty"><p>Noch keine Belege.<br>Tippe auf den Scanner-Button.</p></div>';return;}
+  rl.innerHTML=sorted.map(b=>`<div class="ri" onclick="showDetail(${b.id})">
+    <div class="ri-bar" style="background:${b.type==='er'?'var(--blu)':'var(--ylw)'}"></div>
+    <div class="ri-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
+    <div class="ri-inf">
+      <div class="ri-sh">${eh(b.shop||'Unbekannt')}</div>
+      <div class="ri-me"><span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type.toUpperCase()}</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--txt3)">${eh(b.belegNr||'')}</span>${b.garantieBis?`<span style="font-size:10px;color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">🛡️ ${fd(b.garantieBis)}</span>`:''}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
+    </div>
+    <div class="ri-r">
+      <div class="ri-am" style="color:${b.type==='er'?'var(--blu)':'var(--ylw)'}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
+      <div class="ri-dt">${fd(b.date)}</div>
+    </div></div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 1: GARANTIE-WÄCHTER
+// WHY: Elektrogeräte haben 24 Monate gesetzliche Gewährleistung.
+// Die App weiß wann gekauft wurde – also kann sie warnen.
+// Kein neues Datenfeld nötig: kaufdatum + kategorie = garantieBis
+// Elektronik-Keywords aus den bereits vorhandenen items/shop Feldern.
+// ════════════════════════════════════════════════════════
+const ELEKTRONIK_KEYWORDS=/samsung|apple|iphone|ipad|macbook|sony|lg|philips|bosch|miele|siemens|electrolux|dyson|dell|hp |lenovo|asus|acer|bose|jbl|garmin|fitbit|tv |fernseh|laptop|computer|tablet|drucker|kaffeemasch|waschmasch|spülmasch|kühlschrank|gefrier|mixer|toaster|mikrowelle|staubsaug|monitor|bildschirm|lautsprecher|headphone|kopfhörer|kamera|elektronik/i;
+const MOEBEL_KEYWORDS=/ikea|möbel|sofa|schrank|bett|tisch|stuhl|regal|kommode|matratze|mömax|poco möbel|home24/i;
+
+async function renderGarantieWaechter(all){
+  const now=new Date();
+  // Filtere alle ER die als Elektronik/Möbel erkannt wurden UND ein Kaufdatum haben
+  const mit=all.filter(b=>{
+    if(b.type!=='er'||!b.date)return false;
+    const shopText=(b.shop||'')+(b.items||[]).map(i=>i.name||'').join(' ');
+    return ELEKTRONIK_KEYWORDS.test(shopText)||MOEBEL_KEYWORDS.test(shopText)||b.garantieBis;
+  });
+  // Garantiebis berechnen falls noch nicht vorhanden: Kaufdatum + 24 Monate
+  const items=mit.map(b=>{
+    const bis=b.garantieBis?new Date(b.garantieBis):new Date(new Date(b.date+'T00:00:00').setMonth(new Date(b.date+'T00:00:00').getMonth()+24));
+    const daysLeft=Math.ceil((bis-now)/(864e5));
+    return{...b,_bis:bis,_days:daysLeft};
+  }).sort((a,b)=>a._days-b._days);
+  const card=document.getElementById('gwCard');
+  if(!items.length){card.style.display='none';return;}
+  card.style.display='block';
+  document.getElementById('gwList').innerHTML=items.slice(0,5).map(b=>{
+    const st=b._days<0?'urgent':b._days<60?'warn':'ok';
+    const lbl=b._days<0?`Abgelaufen vor ${Math.abs(b._days)} Tagen`:b._days===0?'Heute letzter Tag':`Noch ${b._days} Tage`;
+    return`<div class="gw-item ${st}">
+      <div class="gw-ico">${MOEBEL_KEYWORDS.test(b.shop||'')?'🛋️':'📱'}</div>
+      <div class="gw-inf">
+        <div class="gw-name">${eh(b.shop||'Gerät')}</div>
+        <div class="gw-date">Gekauft ${fd(b.date)} · ${fm(b.brutto||0)} ${cfg().currency}</div>
+      </div>
+      <span class="gw-badge ${st}">${lbl}</span>
+    </div>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 2: ABO-DETEKTIV
+// WHY: Abonnements sind das "stille Geld-Leck". Die App erkennt
+// wiederkehrende Zahlungen an denselben Händlern automatisch
+// aus den bereits vorhandenen shop/brutto/date Feldern –
+// ohne dass der Nutzer etwas markieren muss.
+// ════════════════════════════════════════════════════════
+const ABO_KEYWORDS=/netflix|spotify|amazon prime|prime video|disney|dazn|youtube premium|apple music|apple one|icloud|dropbox|adobe|microsoft 365|office 365|google one|notion|slack|zoom|github|aws|heroku|openai|anthropic|claude|chatgpt|xing|linkedin|audible|kindle unlimited|software|subscription|abo|monats|jahres/i;
+
+function detectAbos(all){
+  // WHY: Gleicher Händler, ähnlicher Betrag, mindestens 2x – das ist ein Abo
+  const byShop={};
+  all.filter(b=>b.date&&b.brutto).forEach(b=>{
+    const key=(b.shop||'unbekannt').toLowerCase().trim().substring(0,30);
+    if(!byShop[key])byShop[key]={shop:b.shop,belege:[],brutto:[]};
+    byShop[key].belege.push(b);
+    byShop[key].brutto.push(b.brutto);
+  });
+  const abos=[];
+  Object.values(byShop).forEach(g=>{
+    if(g.belege.length<2)return;
+    const looksLikeAbo=ABO_KEYWORDS.test(g.shop||'')||g.belege.some(b=>b.istAbo);
+    // Auch ohne Keyword: wenn Beträge sehr ähnlich (±5%) und mind. 2x = wahrscheinliches Abo
+    const avg=g.brutto.reduce((s,v)=>s+v,0)/g.brutto.length;
+    const consistent=g.brutto.every(v=>Math.abs(v-avg)/avg<0.05);
+    if(looksLikeAbo||consistent){
+      // Monatliche Kosten schätzen: Anzahl Buchungen / Monate Laufzeit
+      const dates=g.belege.map(b=>new Date(b.date+'T00:00:00')).sort((a,b)=>a-b);
+      const monate=Math.max(1,(dates[dates.length-1]-dates[0])/(864e5*30));
+      const monatlich=avg*(g.belege.length/Math.max(monate,1));
+      abos.push({shop:g.shop,count:g.belege.length,avg,monatlich:Math.min(monatlich,avg),belege:g.belege});
+    }
+  });
+  return abos.sort((a,b)=>b.monatlich-a.monatlich);
+}
+
+async function renderAboDetektiv(all){
+  const abos=detectAbos(all);
+  const card=document.getElementById('aboCard');
+  if(!abos.length){card.style.display='none';return;}
+  card.style.display='block';
+  document.getElementById('aboList').innerHTML=abos.slice(0,5).map(a=>`<div class="abo-item">
+    <div class="abo-ico">${ABO_KEYWORDS.test(a.shop||'')?'📺':'🔄'}</div>
+    <div class="abo-inf">
+      <div class="abo-name">${eh(a.shop)}</div>
+      <div class="abo-detail">${a.count}× erfasst · ∅ ${fm(a.avg)} ${cfg().currency}</div>
+    </div>
+    <div class="abo-amt">~${fm(a.monatlich)}/Mon</div>
+  </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 3: VITAL-CHECK
+// WHY: Positive Verstärkung für Lebensmittel-Einkäufe.
+// "Mehr Frisches gekauft" motiviert – ohne zu moralisieren.
+// Nutzt Items aus OCR-Daten wenn vorhanden, sonst Kategorie-Proxy.
+// ════════════════════════════════════════════════════════
+const FRISCH_KEYWORDS=/obst|gemüse|salat|tomate|apfel|banane|karotte|spinat|gurke|paprika|brokkoli|blaubeere|beere|mango|avocado|frisch|bio |organic/i;
+const VERARBEITET_KEYWORDS=/chips|cola|fanta|sprite|süßigkeit|schokolade|gummibär|convenience|fertigg|tiefkühl|instant/i;
+
+async function renderVitalCheck(){
+  const all=await dba();
+  const lebens=all.filter(b=>b.cat==='Lebensmittel'&&b.items?.length);
+  if(lebens.length<3){document.getElementById('vitalCard').style.display='none';return;}
+  let frischCount=0,verarbCount=0;
+  lebens.forEach(b=>(b.items||[]).forEach(it=>{
+    const n=it.name||'';
+    if(FRISCH_KEYWORDS.test(n))frischCount++;
+    if(VERARBEITET_KEYWORDS.test(n))verarbCount++;
+  }));
+  const total=Math.max(1,frischCount+verarbCount);
+  const frischPct=Math.round(frischCount/total*100);
+  const msg=frischPct>=60?'Großartig! Überwiegend frische Produkte 🌿':frischPct>=40?'Gute Mischung – mehr Frisches wäre ideal':'Mehr frische Produkte würden sich lohnen';
+  document.getElementById('vitalCard').style.display='block';
+  document.getElementById('vitalContent').innerHTML=`
+    <div class="vital-row"><span>Frische Produkte</span><span>${frischPct}%</span></div>
+    <div class="vital-bar"><div class="vital-fill" style="width:${frischPct}%;background:${frischPct>=60?'var(--grn)':frischPct>=40?'var(--ylw)':'var(--orn)'}"></div></div>
+    <p style="font-size:11px;font-weight:300;color:var(--txt2);line-height:1.55">${msg}</p>
+    <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:5px">${lebens.length} Lebensmittel-Belege · ${frischCount+verarbCount} erkannte Artikel</p>`;
+}
+
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 4: INFLATIONS-TRACKER
+// WHY: Gleiches Produkt, gleicher Händler – aber der Preis steigt.
+// Das spürt man, aber selten sieht man es schwarz auf weiß.
+// Nutzt items-Array aus OCR-Daten. Kein extra Datenfeld.
+// ════════════════════════════════════════════════════════
+async function renderInflationsTracker(){
+  const all=await dba();
+  // Sammle alle Artikel mit Preis und Datum aus OCR-Items
+  const byItem={};
+  all.forEach(b=>{
+    if(!b.date||!b.items?.length)return;
+    b.items.forEach(it=>{
+      if(!it.name||!it.price||it.price<0.5)return;
+      const key=it.name.toLowerCase().trim().substring(0,30);
+      if(!byItem[key])byItem[key]={name:it.name,preise:[]};
+      byItem[key].preise.push({datum:b.date,preis:it.price});
+    });
+  });
+  // Nur Artikel mit mind. 2 verschiedenen Käufen
+  const vergleiche=Object.values(byItem).filter(g=>g.preise.length>=2).map(g=>{
+    const sorted=g.preise.sort((a,b)=>a.datum.localeCompare(b.datum));
+    const alt=sorted[0].preis,neu=sorted[sorted.length-1].preis;
+    const delta=Math.round((neu-alt)/alt*100);
+    return{name:g.name,alt,neu,delta};
+  }).filter(g=>Math.abs(g.delta)>=5).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta)).slice(0,6);
+  const cc=document.getElementById('inflCC');
+  if(!vergleiche.length){cc.style.display='none';return;}
+  cc.style.display='block';
+  document.getElementById('inflList').innerHTML=vergleiche.map(v=>`<div class="inf-item">
+    <div class="inf-name">${eh(v.name)}</div>
+    <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-right:8px">${fm(v.alt)} → ${fm(v.neu)} ${cfg().currency}</div>
+    <div class="inf-delta ${v.delta>0?'up':'dn'}">${v.delta>0?'+':''}${v.delta}%</div>
+  </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 5: INSIGHT-BANNER (Privat-Modus)
+// WHY: Kontextbezogene "Aha-Momente" – nur wenn echtes Sparpotential
+// erkannt wurde. Kein Spam, kein Dauern-anzeigen.
+// ════════════════════════════════════════════════════════
+function renderInsightBanner(abos,potential){
+  const b=document.getElementById('insightBanner');
+  if(potential<5){b.style.display='none';return;}
+  // Finde den größten "vergessenen" Abo-Kandidaten
+  const top=abos.filter(a=>a.count<=2).sort((a,b)=>b.monatlich-a.monatlich)[0];
+  if(!top){b.style.display='none';return;}
+  b.style.display='block';
+  b.innerHTML=`<div class="insight">
+    <div class="ico">💡</div>
+    <div class="body">
+      <div class="head">${eh(top.shop)} – noch aktiv?</div>
+      <div class="desc">Nur ${top.count}× genutzt in deinen Belegen. Wenn du das Abo nicht aktiv nutzt, könntest du es kündigen.</div>
+      <div class="amt">Mögliche Ersparnis: ${fm(top.monatlich)} ${cfg().currency}/Mon · ${fm(top.monatlich*12)} ${cfg().currency}/Jahr</div>
+    </div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: SCANNER & KI-ERKENNUNG
+// WHY: Claude Vision ist in 2-3 Sek fertig und erkennt auch
+// Monitore, Dashboards und Screens sauber. Der erweiterte Prompt
+// extrahiert zusätzlich Garantie-relevante und Abo-Signale.
+// ════════════════════════════════════════════════════════
+function openScanner(){document.getElementById('scanOvl').classList.add('on');setScanType('er');}
+function closeScanner(){document.getElementById('scanOvl').classList.remove('on');stopCam();}
+function closeScanOuter(e){if(e.target===document.getElementById('scanOvl'))closeScanner();}
+function setScanType(t){scanType=t;['er','ar'].forEach(x=>{document.getElementById('tt'+x.toUpperCase()).className='seg-btn'+(t===x?' on':'');});}
+
+async function startCam(){
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920}}});
+    const v=document.getElementById('camStream');v.srcObject=camStream;v.style.display='block';
+    document.getElementById('camArea').style.display='block';
+    document.getElementById('camPH').style.display='none';
+    document.getElementById('camCtrls').style.display='flex';
+    document.getElementById('btnCap').disabled=false;
+    document.getElementById('shutI').style.background='var(--txt)';
+    document.getElementById('btnStop').style.display='inline-block';
+    document.getElementById('vfOvl').style.display='block';
+    document.getElementById('capImg').style.display='none';
+  }catch(e){toast('Kamera nicht verfügbar – bitte Foto aus Galerie wählen','er');}
+}
+function stopCam(){
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+  const v=document.getElementById('camStream');v.style.display='none';v.srcObject=null;
+  document.getElementById('btnCap').disabled=true;
+  document.getElementById('shutI').style.background='var(--s3)';
+  document.getElementById('btnStop').style.display='none';
+  document.getElementById('camCtrls').style.display='none';
+  document.getElementById('vfOvl').style.display='none';
+  if(!capB64){
+    document.getElementById('camArea').style.display='none';
+    document.getElementById('camPH').style.display='block';
+  }
+}
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BILD-KOMPRIMIERUNG
+// WHY: iPhone-Fotos sind 3–8 MB. Die Anthropic API hat ein
+// Limit und große Bilder sind langsam. Wir skalieren auf
+// max. 1024px und komprimieren auf ~200KB JPEG.
+// Für die gespeicherte Vorschau: nochmal kleiner (400px/30KB).
+// ════════════════════════════════════════════════════════
+function compressImage(b64, maxPx, qualityStart) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('Bild konnte nicht geladen werden'));
+    img.onload = () => {
+      // Seitenverhältnis behalten, längste Seite = maxPx
+      let w = img.width, h = img.height;
+      if (!w || !h) { reject(new Error('Bild hat keine Dimensionen')); return; }
+      if (w > maxPx || h > maxPx) {
+        if (w > h) { h = Math.round(h * maxPx / w); w = maxPx; }
+        else       { w = Math.round(w * maxPx / h); h = maxPx; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      // Weißen Hintergrund zeichnen (für PNGs mit Transparenz)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Qualität schrittweise reduzieren bis < 200KB
+      let q = qualityStart;
+      let result;
+      do {
+        result = canvas.toDataURL('image/jpeg', q);
+        q -= 0.05;
+      } while (result.length > 200 * 1024 && q > 0.2);
+
+      // Sicherheitscheck: leeres Canvas abfangen
+      if (!result || result === 'data:,' || result.length < 100) {
+        reject(new Error('Canvas ist leer – Bild evtl. zu groß für Speicher'));
+        return;
+      }
+      resolve(result);
+    };
+    img.src = b64;
+  });
+}
+
+function captureCam(){
+  const v=document.getElementById('camStream');
+  const c=document.createElement('canvas');c.width=v.videoWidth||800;c.height=v.videoHeight||600;
+  c.getContext('2d').drawImage(v,0,0);
+  const raw=c.toDataURL('image/jpeg',.9);
+  const im=document.getElementById('capImg');im.src=raw;im.style.display='block';
+  v.style.display='none';stopCam();
+  // Komprimieren dann verarbeiten
+  compressImage(raw, 1024, 0.82).then(compressed => {
+    capB64 = compressed;
+    im.src = compressed;
+    processImg(compressed);
+  });
+}
+
+function loadFile(inp){
+  const f=inp.files[0];if(!f)return;
+  setLog('🗜️ Bild wird komprimiert …');
+  document.getElementById('progWrap').style.display='block';
+  setP(10);
+  const r=new FileReader();
+  r.onload=async e=>{
+    const raw = e.target.result;
+    // Vorschau sofort anzeigen (unkomprimiert)
+    const im=document.getElementById('capImg');
+    im.src=raw; im.style.display='block';
+    document.getElementById('camArea').style.display='block';
+    document.getElementById('camPH').style.display='none';
+    document.getElementById('camCtrls').style.display='none';
+    stopCam();
+    setP(25); setLog('🗜️ Komprimiere …');
+    // Für API: auf 1024px / max ~200KB komprimieren
+    const compressed = await compressImage(raw, 1024, 0.82);
+    // Für Speicherung: 800px Vorschau – lesbar für Menschen, trotzdem klein
+    const thumb = await compressImage(raw, 800, 0.82);
+    capB64 = compressed;
+    capThumb = thumb; // wird beim Speichern als image verwendet
+    setP(40);
+    const kb = Math.round(compressed.length * 3/4 / 1024);
+    setLog(`✓ ${kb} KB – wird analysiert …`);
+    processImg(compressed);
+  };
+  r.readAsDataURL(f);
+}
+function resetScan(){
+  capB64=null;capThumb=null;curRes=null;
+  document.getElementById('capImg').style.display='none';
+  document.getElementById('camArea').style.display='none';
+  document.getElementById('camPH').style.display='block';
+  document.getElementById('camCtrls').style.display='none';
+  document.getElementById('resWrap').classList.remove('on');
+  document.getElementById('progWrap').style.display='none';
+  document.getElementById('btnStop').style.display='none';
+  // File-Inputs zurücksetzen damit dasselbe Foto nochmal wählbar ist
+  try{document.getElementById('fi').value='';document.getElementById('fiGal').value='';}catch(e){}
+}
+function setLog(m){document.getElementById('progLog').textContent=m;}
+function setP(p){document.getElementById('progFill').style.width=p+'%';}
+
+async function processImg(b64){
+  // WHY: Key immer frisch lesen – er könnte nach dem Seitenload gespeichert worden sein
+  apiKey = localStorage.getItem('cak') || apiKey || '';
+
+  // Nur anzeigen wenn noch nicht sichtbar (loadFile hat es evtl. schon gezeigt)
+  document.getElementById('progWrap').style.display='block';
+  document.getElementById('resWrap').classList.remove('on');
+
+  // Sicherheitscheck: Base64 muss valide sein
+  if(!b64 || b64 === 'data:,' || b64.length < 200){
+    setLog('❌ Bild ist leer oder beschädigt – bitte nochmal aufnehmen.');
+    setTimeout(()=>{document.getElementById('progWrap').style.display='none';},3000);
+    return;
+  }
+
+  if(!apiKey){
+    setLog('⚠️ Kein API Key – Daten manuell eingeben oder Key in Settings hinterlegen.');
+    setP(100);
+    setTimeout(()=>{document.getElementById('progWrap').style.display='none';setP(0);},800);
+    showManualForm();
+    return;
+  }
+
+  try{
+    setLog('📤 Bild wird gesendet …'); setP(15);
+    const res = await askClaude(b64);
+    setP(95); setLog('✓ Analyse abgeschlossen.');
+    incrKiScans();
+    curRes = res;
+    showRes(res);
+    setP(100);
+    setTimeout(()=>{document.getElementById('progWrap').style.display='none';setP(0);}, 600);
+  } catch(e) {
+    setP(100);
+    setLog('❌ ' + (e.message || 'Unbekannter Fehler'));
+    console.error('BelegScan KI-Fehler:', e);
+    setTimeout(()=>{
+      document.getElementById('progWrap').style.display='none';
+      setP(0);
+    }, 5000);
+    showManualForm();
+    toast(e.message || 'KI-Fehler – Felder manuell ausfüllen', 'er');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: CLAUDE VISION – BELEGANALYSE
+// WHY: Claude bekommt das Bild direkt als base64.
+// Der Prompt ist so gebaut dass er maximal präzise Zahlen
+// extrahiert – auch von schrägen, schlecht beleuchteten Fotos.
+// Robustes JSON-Parsing mit mehreren Fallback-Strategien.
+// ════════════════════════════════════════════════════════
+async function askClaude(b64){
+  // Bildformat erkennen (JPEG oder PNG)
+  const mt = b64.startsWith('data:image/png') ? 'image/png'
+           : b64.startsWith('data:image/webp') ? 'image/webp'
+           : 'image/jpeg';
+  // Nur den Base64-Datenteil senden, ohne den data:image/... Präfix
+  const imgData = b64.split(',')[1];
+
+  if(!imgData) throw new Error('Kein Bilddaten gefunden');
+
+  const prompt = `Du bist ein präziser Belegscanner für die DACH-Region (${cfg().name}).
+
+AUFGABE: Lies alle sichtbaren Daten von diesem Beleg/dieser Rechnung ab.
+
+Das Bild kann sein:
+- Papierbeleg / Kassenbon / Quittung
+- Gedruckte oder digitale Rechnung  
+- Monitor-Screenshot (YouTube, Stripe, PayPal, Online-Rechnung)
+- Handgeschriebener Beleg
+
+ANTWORTE AUSSCHLIESSLICH mit diesem JSON-Objekt, ohne Erklärung, ohne Markdown:
+{
+  "shop": "Name des Händlers, Unternehmens oder der Plattform",
+  "belegNrExtern": "Rechnungs- oder Belegnummer falls sichtbar, sonst null",
+  "date": "YYYY-MM-DD Format, z.B. 2025-03-15",
+  "net": 12.34,
+  "mwst": 2.34,
+  "brutto": 14.68,
+  "mwstRate": 19,
+  "items": [{"name": "Produktname", "price": 9.99}],
+  "category": "Lebensmittel",
+  "payment": "Karte",
+  "istAbo": false,
+  "garantieMonate": null,
+  "isDigitalScreen": false,
+  "screenType": null
+}
+
+WICHTIGE REGELN:
+1. Beträge IMMER als Dezimalzahl ohne Währungszeichen (14.68 nicht "14,68 €")
+2. Datum im Format YYYY-MM-DD (2025-03-15 nicht "15.03.2025")
+3. Wenn Netto und Brutto sichtbar: berechne MwSt = Brutto - Netto
+4. Wenn nur Brutto sichtbar und MwSt-Satz erkennbar: berechne Netto = Brutto / 1.${cfg().mwstH}
+5. mwstRate: nur die Zahl (19 nicht "19%")
+6. category muss GENAU einer dieser Werte sein: Lebensmittel, Restaurant, Elektronik, Kleidung, Tanken, Haushalt, Gesundheit, Dienstleistung, Software, Sonstiges
+7. payment muss GENAU einer dieser Werte sein: Karte, Bar, Überweisung, Online
+8. istAbo=true wenn monatliche/jährliche Gebühr erkennbar
+9. garantieMonate=24 für Elektronik/Geräte, 12 für Möbel, sonst null
+10. Fehlende oder unlesbare Felder: null (nicht 0, nicht "")`;
+
+  setLog('🤖 Claude analysiert Bild …'); setP(40);
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-5',   // WHY: Aktuelles Modell mit Vision-Support
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: { type: 'base64', media_type: mt, data: imgData }
+          },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+
+  setP(80);
+
+  // HTTP-Fehler abfangen
+  // WHY: resp.json() direkt aufzurufen kann in Safari mit SyntaxError crashen
+  // wenn die Antwort kein valides JSON ist (Timeout, Netzwerkfehler, etc.)
+  // Deshalb: zuerst Text lesen, dann sicher parsen
+  const respText = await resp.text().catch(() => '');
+
+  if(!resp.ok){
+    let detail = '';
+    try { detail = JSON.parse(respText)?.error?.message || ''; } catch(_) {}
+    let errMsg = `API Fehler ${resp.status}`;
+    if(resp.status === 401) errMsg = '🔑 API Key ungültig – bitte in Settings prüfen';
+    else if(resp.status === 429) errMsg = '⏳ Rate Limit – kurz warten und nochmal';
+    else if(resp.status === 400) errMsg = '⚠️ Anfrage-Fehler: ' + (detail || 'Bild evtl. zu groß');
+    else if(resp.status === 529) errMsg = '⏳ Claude überlastet – nochmal versuchen';
+    else if(resp.status === 0 || !respText) errMsg = '🌐 Keine Verbindung – Internet prüfen';
+    else errMsg = `API ${resp.status}: ${detail.substring(0, 80) || respText.substring(0, 60)}`;
+    throw new Error(errMsg);
+  }
+
+  // Sicher parsen – nie direkt resp.json() in Safari
+  let data;
+  try {
+    data = JSON.parse(respText);
+  } catch(e) {
+    throw new Error('Ungültige API-Antwort – möglicherweise Netzwerkproblem. Nochmal versuchen.');
+  }
+
+  setLog('📋 Antwort wird verarbeitet …'); setP(90);
+
+  if(!data.content || !Array.isArray(data.content)) {
+    throw new Error('Unerwartete API-Antwort – bitte nochmal versuchen.');
+  }
+
+  // Antwort-Text aus dem content-Array zusammensetzen
+  const rawText = data.content
+    .filter(c => c.type === 'text')
+    .map(c => c.text)
+    .join('');
+
+  if(!rawText) throw new Error('Leere Antwort von Claude');
+
+  // JSON robustissimo parsen: mehrere Fallback-Strategien
+  let parsed = null;
+
+  // Versuch 1: direkt parsen (wenn Claude sauber geantwortet hat)
+  try { parsed = JSON.parse(rawText.trim()); }
+  catch(_) {}
+
+  // Versuch 2: JSON-Block aus Markdown-Fences extrahieren
+  if(!parsed){
+    const fenced = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if(fenced) try { parsed = JSON.parse(fenced[1].trim()); } catch(_) {}
+  }
+
+  // Versuch 3: Erstes { ... } im Text suchen
+  if(!parsed){
+    const braces = rawText.match(/\{[\s\S]*\}/);
+    if(braces) try { parsed = JSON.parse(braces[0]); } catch(_) {}
+  }
+
+  if(!parsed) throw new Error('Konnte JSON nicht lesen. Claude-Antwort: ' + rawText.substring(0, 100));
+
+  // Typen sicherstellen – manchmal gibt Claude Strings zurück statt Zahlen
+  if(typeof parsed.net    === 'string') parsed.net    = parseFloat(parsed.net.replace(',','.'))    || null;
+  if(typeof parsed.mwst   === 'string') parsed.mwst   = parseFloat(parsed.mwst.replace(',','.'))   || null;
+  if(typeof parsed.brutto === 'string') parsed.brutto = parseFloat(parsed.brutto.replace(',','.')) || null;
+  if(typeof parsed.mwstRate === 'string') parsed.mwstRate = parseFloat(parsed.mwstRate) || cfg().mwstH;
+
+  return parsed;
+}
+
+function showRes(r){
+  if(!r)return;
+  document.getElementById('rShop').value=r.shop||'';
+  document.getElementById('rDate').value=r.date||new Date().toISOString().split('T')[0];
+  document.getElementById('rNet').value=r.net!=null?r.net.toFixed(2):'';
+  document.getElementById('rMwst').value=r.mwst!=null?r.mwst.toFixed(2):'';
+  document.getElementById('rBrutto').value=r.brutto!=null?r.brutto.toFixed(2):'';
+  if(r.mwstRate)document.getElementById('rRate').value=r.mwstRate;
+  if(r.category)document.getElementById('rCat').value=r.category;
+  if(r.payment)document.getElementById('rPay').value=r.payment;
+  const bd=document.getElementById('itemsB');bd.innerHTML='';
+  if(r.items&&r.items.length){
+    document.getElementById('itemsSec').style.display='block';
+    r.items.forEach(it=>{
+      const tr=document.createElement('tr');
+      // WHY: price kann null oder String sein – sicher als Zahl behandeln
+      const p = parseFloat(it.price) || 0;
+      tr.innerHTML=`<td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${p.toFixed(2)} ${cfg().currency}</td>`;
+      bd.appendChild(tr);
+    });
+  }else document.getElementById('itemsSec').style.display='none';
+  // KI-erneut-Button ausblenden wenn KI erfolgreich war
+  const rib = document.getElementById('retryKiBtn');
+  if(rib) rib.style.display='none';
+  document.getElementById('resWrap').classList.add('on');
+}
+
+// WHY: Zeigt leeres Formular zur manuellen Eingabe.
+// Wird aufgerufen wenn kein Key da ist oder KI fehlschlägt.
+// "KI erneut starten" Button erscheint sobald Key gesetzt wurde.
+function showManualForm(){
+  document.getElementById('rShop').value='';
+  document.getElementById('rDate').value=new Date().toISOString().split('T')[0];
+  document.getElementById('rNet').value='';
+  document.getElementById('rMwst').value='';
+  document.getElementById('rBrutto').value='';
+  document.getElementById('rRate').value=cfg().mwstH;
+  document.getElementById('itemsSec').style.display='none';
+
+  // Banner: Status erklären
+  apiKey = localStorage.getItem('cak') || apiKey || '';
+  const banner = document.getElementById('scanModeBanner');
+  if(banner){
+    if(apiKey){
+      banner.style.display='block';
+      banner.style.background='rgba(74,128,192,.1)';
+      banner.style.border='1px solid rgba(74,128,192,.25)';
+      banner.style.color='var(--txt2)';
+      banner.innerHTML='ℹ️ KI-Analyse fehlgeschlagen. Felder manuell ausfüllen oder unten erneut starten.';
+    } else {
+      banner.style.display='block';
+      banner.style.background='rgba(200,164,90,.08)';
+      banner.style.border='1px solid rgba(200,164,90,.25)';
+      banner.style.color='var(--txt2)';
+      banner.innerHTML='⚡ Kein API Key – Felder manuell ausfüllen. <span onclick="openApiSheet()" style="color:var(--gold);text-decoration:underline;cursor:pointer">Key jetzt einrichten →</span>';
+    }
+  }
+
+  // "KI erneut starten" Button anzeigen wenn Bild vorhanden
+  const rib = document.getElementById('retryKiBtn');
+  if(rib) rib.style.display = (capB64 && apiKey) ? 'inline-flex' : 'none';
+
+  document.getElementById('resWrap').classList.add('on');
+}
+
+// WHY: Startet KI-Analyse erneut mit dem bereits vorhandenen Bild.
+// Nützlich wenn Key erst nach dem Foto-Upload eingetragen wurde.
+function retryKi(){
+  apiKey = localStorage.getItem('cak') || '';
+  if(!apiKey){ openApiSheet(); return; }
+  if(!capB64){ toast('Kein Bild vorhanden – bitte neu scannen','er'); return; }
+  document.getElementById('resWrap').classList.remove('on');
+  processImg(capB64);
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BELEG SPEICHERN
+// ════════════════════════════════════════════════════════
+async function saveBeleg(){
+  const brutto=parseFloat(document.getElementById('rBrutto').value)||0;
+  const mwst=parseFloat(document.getElementById('rMwst').value)||0;
+  const net=parseFloat(document.getElementById('rNet').value)||0;
+  let nr;
+  // WHY: Bei AR von Monitor erkannte externe Rechnungsnummer verwenden
+  if(scanType==='ar'&&curRes?.belegNrExtern){
+    nr=curRes.belegNrExtern;arC++;localStorage.setItem('arc',arC);
+  }else{nr=nextNr(scanType);}
+
+  // WHY: Garantiedatum berechnen und speichern wenn Elektrogerät erkannt
+  let garantieBis=null;
+  if(curRes?.garantieMonate&&document.getElementById('rDate').value){
+    const kauf=new Date(document.getElementById('rDate').value+'T00:00:00');
+    kauf.setMonth(kauf.getMonth()+curRes.garantieMonate);
+    garantieBis=kauf.toISOString().split('T')[0];
+  }
+
+  const item={type:scanType,belegNr:nr,
+    shop:document.getElementById('rShop').value||'Unbekannt',
+    date:document.getElementById('rDate').value||new Date().toISOString().split('T')[0],
+    net,mwst,brutto,
+    mwstRate:parseFloat(document.getElementById('rRate').value)||cfg().mwstH,
+    cat:document.getElementById('rCat').value,payment:document.getElementById('rPay').value,
+    items:curRes?.items||[],image:capThumb||capB64,savedAt:Date.now(),
+    // WHY: Neue Intelligenz-Felder – aus OCR-Daten abgeleitet, kein manuelles Ausfüllen nötig
+    istAbo:curRes?.istAbo||false,
+    garantieBis,
+    isDigitalScreen:curRes?.isDigitalScreen||false,
+    screenType:curRes?.screenType||null
+  };
+  try{
+    await dbadd(item);
+    toast(nr+' gespeichert ✓','ok');
+    closeScanner();resetScan();updCounters();renderHome();
+
+    // WHY: Bong-Trigger bei relevanten Meilensteinen
+    // 10. Scan = erste große Zeiteinsparung sichtbar
+    if(kiScanCount === 10){
+      triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
+    }
+    // Hoher Betrag = mögliche große Steuererstattung
+    if(brutto >= 500 && scanType === 'er'){
+      const vstRueck = (item.mwst||0);
+      if(vstRueck >= 50){
+        triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');
+      }
+    }
+  }catch(e){toast('Fehler: '+e.message,'er');}
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BELEGE LIST
+// ════════════════════════════════════════════════════════
+async function renderBelege(){
+  const all=await dba();
+  const q=(document.getElementById('srch').value||'').toLowerCase();
+  const tf=document.getElementById('ftT').value,cf=document.getElementById('ftC').value;
+  let it=all.filter(b=>(!q||b.shop.toLowerCase().includes(q)||(b.belegNr||'').toLowerCase().includes(q))&&(!tf||b.type===tf)&&(!cf||b.cat===cf));
+  it.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
+  const l=document.getElementById('bList');
+  if(!it.length){l.innerHTML='<div class="empty"><div class="ico">🧾</div><p>Keine Belege gefunden.</p></div>';return;}
+  l.innerHTML=it.map(b=>`<div class="bc" onclick="showDetail(${b.id})">
+    <div class="bc-bar" style="background:${b.type==='er'?'var(--blu)':'var(--ylw)'}"></div>
+    <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
+    <div class="bc-inf">
+      <div class="bc-sh">${eh(b.shop||'Unbekannt')}</div>
+      <div class="bc-me"><span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type==='er'?'Eingang':'Ausgang'}</span>${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}${b.garantieBis?'<span style="font-size:9px;color:var(--grn)">🛡️</span>':''}${b.isDigitalScreen?'<span style="font-size:9px;color:var(--silv)">🖥️</span>':''}</div>
+      <div class="bc-nr">${eh(b.belegNr||'')}</div>
+    </div>
+    <div class="bc-r">
+      <div class="bc-am ${b.type}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
+      <div class="bc-dt">${fd(b.date)}</div>
+    </div></div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: DETAIL SHEET
+// ════════════════════════════════════════════════════════
+async function showDetail(id){
+  const all=await dba();const b=all.find(x=>x.id===id);if(!b)return;
+  curDet=b;const isER=b.type==='er';
+  const garantieInfo=b.garantieBis?`<div class="drow"><span class="dk">🛡️ Garantie bis</span><span class="dv" style="color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">${fd(b.garantieBis)}</span></div>`:'';
+  const aboInfo=b.istAbo?`<div class="drow"><span class="dk">Status</span><span class="dv"><span class="badge b-priv">Abo / wiederkehrend</span></span></div>`:'';
+  const screenInfo=b.isDigitalScreen?`<div class="drow"><span class="dk">Quelle</span><span class="dv" style="color:var(--silv)">🖥️ Digital Screen ${b.screenType?'('+b.screenType+')':''}</span></div>`:'';
+  document.getElementById('detContent').innerHTML=`
+    ${b.image?`<img src="${b.image}" alt="" class="det-img">`:''}
+    <div class="det-title">${eh(b.shop||'Unbekannt')}</div>
+    <div class="det-sub"><span class="badge ${isER?'b-er':'b-ar'}">${isER?'Eingangsrechnung':'Ausgangsrechnung'}</span><span class="mono" style="font-size:11px;color:var(--txt3)">${eh(b.belegNr||'')}</span></div>
+    <div class="drow"><span class="dk">Datum</span><span class="dv">${fd(b.date)}</span></div>
+    <div class="drow"><span class="dk">Netto</span><span class="dv">${b.net!=null?fm(b.net)+' '+cfg().currency:'–'}</span></div>
+    <div class="drow"><span class="dk">${cfg().steuerLabel} (${b.mwstRate||cfg().mwstH}%)</span><span class="dv">${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:'–'}</span></div>
+    <div class="drow"><span class="dk">Brutto</span><span class="dv">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</span></div>
+    <div class="drow"><span class="dk">Zahlungsart</span><span class="dv">${eh(b.payment||'–')}</span></div>
+    <div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'–')}</span></div>
+    ${garantieInfo}${aboInfo}${screenInfo}
+    <div class="drow"><span class="dk">Erfasst</span><span class="dv">${new Date(b.savedAt||0).toLocaleString('de-DE')}</span></div>
+    ${b.items&&b.items.length?`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`:''}
+    <div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap">
+      ${b.image?`<button class="btn btn-blu btn-sm" onclick="exportStamped()">PDF mit Stempel</button>`:''}
+      ${b.image?`<button class="btn btn-g btn-sm" onclick="exportSinglePDF()">PDF speichern</button>`:''}
+      <button class="btn btn-red btn-sm" onclick="delBeleg(${b.id})">Löschen</button>
+    </div>`;
+  document.getElementById('detOvl').classList.add('on');
+}
+function closeDet(){document.getElementById('detOvl').classList.remove('on');}
+function closeDetOuter(e){if(e.target===document.getElementById('detOvl'))closeDet();}
+async function delBeleg(id){if(!confirm('Beleg löschen?'))return;await dbdel(id);closeDet();renderBelege();renderHome();toast('Gelöscht','ok');}
+async function exportSinglePDF(){if(!curDet?.image){toast('Kein Bild','wr');return;}await exportBelegPDF(curDet,false);}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: MwSt ANALYTICS
+// ════════════════════════════════════════════════════════
+function setPeriod(p,btn){mwstPer=p;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderMwst();}
+function filterPer(all){
+  const now=new Date();
+  return all.filter(b=>{
+    if(!b.date)return mwstPer==='all';
+    const d=new Date(b.date+'T00:00:00');
+    if(mwstPer==='all')return true;
+    if(mwstPer==='year')return d.getFullYear()===now.getFullYear();
+    if(mwstPer==='month')return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+    if(mwstPer==='q'){const q=Math.ceil((now.getMonth()+1)/3);return d.getFullYear()===now.getFullYear()&&Math.ceil((d.getMonth()+1)/3)===q;}
+    return true;
+  });
+}
+async function renderMwst(){
+  const all=await dba(),fi=filterPer(all);
+  const ar=fi.filter(b=>b.type==='ar'),er=fi.filter(b=>b.type==='er');
+  const arM=ar.reduce((s,b)=>s+(b.mwst||0),0),erM=er.reduce((s,b)=>s+(b.mwst||0),0),saldo=arM-erM;
+  document.getElementById('mAR').textContent=fm(arM)+' '+cfg().currency;document.getElementById('mARs').textContent=ar.length+' AR';
+  document.getElementById('mER').textContent=fm(erM)+' '+cfg().currency;document.getElementById('mERs').textContent=er.length+' ER';
+  if(saldo>=0){document.getElementById('zlCard').style.display='';document.getElementById('exCard').style.display='none';document.getElementById('mZL').textContent=fm(saldo)+' '+cfg().currency;}
+  else{document.getElementById('zlCard').style.display='none';document.getElementById('exCard').style.display='';document.getElementById('mEX').textContent=fm(Math.abs(saldo))+' '+cfg().currency;}
+  const bm={};all.forEach(b=>{const mo=(b.date||'').substring(0,7);if(!mo)return;if(!bm[mo])bm[mo]={ar:0,er:0,arM:0,erM:0};if(b.type==='ar'){bm[mo].ar+=(b.brutto||0);bm[mo].arM+=(b.mwst||0);}else{bm[mo].er+=(b.brutto||0);bm[mo].erM+=(b.mwst||0);}});
+  const months=Object.keys(bm).sort().slice(-12);
+  const maxV=Math.max(1,...months.map(m=>Math.max(bm[m].ar,bm[m].er)));
+  document.getElementById('mChart').innerHTML=months.map(m=>{const aH=Math.round(bm[m].ar/maxV*74),eH=Math.round(bm[m].er/maxV*74);return`<div class="mcol"><div class="mcol-bars"><div class="mbar ar" style="height:${aH}px"></div><div class="mbar er" style="height:${eH}px"></div></div><div class="mbar-l">${m.substring(5)}</div></div>`;}).join('');
+  const ms=Object.keys(bm).sort().reverse();
+  document.getElementById('mTbl').innerHTML=ms.map(m=>{const r=bm[m],s=r.arM-r.erM,sc=s>0?'var(--red)':s<0?'var(--grn)':'var(--txt2)';return`<tr><td class="mo">${m}</td><td class="mo" style="color:var(--ylw)">${r.arM>0?fm(r.arM):'–'}</td><td class="mo" style="color:var(--blu)">${r.erM>0?fm(r.erM):'–'}</td><td class="mo" style="color:${sc}">${fm(Math.abs(s))}</td></tr>`;}).join('');
+  const byCat={};er.forEach(b=>{byCat[b.cat||'Sonstiges']=(byCat[b.cat||'Sonstiges']||0)+(b.brutto||0);});
+  const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,8);const maxC=cats[0]?.[1]||1;
+  document.getElementById('catChart').innerHTML=cats.map(([c,v])=>`<div class="barrow"><div class="bar-lbl">${eh(c)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxC*100)}%;background:rgba(74,128,192,.45)"></div></div><div class="bar-val">${fm(v)}</div></div>`).join('');
+  // Inflations-Tracker
+  await renderInflationsTracker();
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: EINKOMMENSTEUER §32a + GAUGE
+// ════════════════════════════════════════════════════════
+async function calcSteuer(){
+  const all=await dba(),now=new Date();
+  const ar=all.filter(b=>b.type==='ar'&&b.date&&new Date(b.date+'T00:00:00').getFullYear()===now.getFullYear());
+  const er=all.filter(b=>b.type==='er'&&b.date&&new Date(b.date+'T00:00:00').getFullYear()===now.getFullYear());
+  const einnahmen=ar.reduce((s,b)=>s+(b.net||0),0);
+  const betrAusg=er.reduce((s,b)=>s+(b.net||0),0);
+  const manuell=parseFloat(document.getElementById('stM')?.value||'0')||0;
+  const gewinn=Math.max(0,einnahmen-betrAusg-manuell);
+  const kinder=parseInt(document.getElementById('stKi')?.value||'0')||0;
+  const grundFB=parseInt(document.getElementById('stK')?.value||'1')===3?22458:11604;
+  const zvE=Math.max(0,gewinn-grundFB-kinder*9600);
+  let est=0;
+  if(zvE>277825)est=zvE*.45-17374.99;
+  else if(zvE>66760)est=zvE*.42-10636.31;
+  else if(zvE>17005)est=((192.59*zvE/10000)+2397)*(zvE/10000)+966.53;
+  else if(zvE>0)est=((979.18*zvE/10000)+1400)*(zvE/10000);
+  const soli=est>18130?est*.055:0;
+  const kirche=(parseFloat(document.getElementById('stKi2')?.value||'0')||0)*est;
+  const gesamt=Math.max(0,est+soli+kirche);
+  const effRate=gewinn>0?Math.round(gesamt/gewinn*100):0;
+  document.getElementById('estJahr').textContent=fmK(Math.round(gesamt))+' €';
+  document.getElementById('estG').textContent=fmK(Math.round(gewinn))+' €';
+  document.getElementById('estR').textContent=effRate+' %';
+  document.getElementById('estM').textContent=fmK(Math.round(gesamt/12))+' €';
+  document.getElementById('estSub').textContent=`Einnahmen ${fmK(Math.round(einnahmen))}€ − Ausgaben ${fmK(Math.round(betrAusg+manuell))}€ = Gewinn ${fmK(Math.round(gewinn))}€`;
+  const stufen=[{bis:11604,rate:0,col:'var(--grn)'},{bis:17005,rate:14,col:'var(--grn)'},{bis:66760,rate:24,col:'var(--ylw)'},{bis:277825,rate:42,col:'var(--orn)'},{bis:Infinity,rate:45,col:'var(--red)'}];
+  document.getElementById('gaugeM').style.left=Math.min(100,Math.round(zvE/300000*100))+'%';
+  let stufe=stufen.find(s=>zvE<=s.bis)||stufen[stufen.length-1];
+  document.getElementById('gaugeStufe').textContent=stufe.rate+' %';
+  document.getElementById('gaugeStufe').style.color=stufe.col;
+  const idx=stufen.indexOf(stufe);
+  if(idx<stufen.length-1){const next=stufen[idx+1];const diff=next.bis-zvE;document.getElementById('gaugeNext').textContent=`Noch ${fmK(Math.round(diff))} € Gewinn bis zum nächsten Steuersatz (${next.rate}%). Jeder weitere Euro: ${next.rate} Cent Steuer.`;}
+  else{document.getElementById('gaugeNext').textContent='Höchster Steuersatz: 45%. Jeder weitere Euro Gewinn: 45 Cent Steuer.';}
+  // Vital-Check nur rendern wenn Steuer-View geöffnet
+  await renderVitalCheck();
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: QUARTAL
+// ════════════════════════════════════════════════════════
+async function initQuartal(){
+  const qs=document.getElementById('qSel');qs.innerHTML='';
+  const y=new Date().getFullYear();
+  [y-1,y].forEach(yr=>{[1,2,3,4].forEach(q=>{
+    const b=document.createElement('button');b.className='qbtn'+(yr===qY&&q===qQ?' on':'');
+    b.textContent=`Q${q} ${yr}`;
+    b.onclick=()=>{qY=yr;qQ=q;document.querySelectorAll('.qbtn').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderQuartal();};
+    qs.appendChild(b);
+  });});
+  renderQuartal();
+}
+async function renderQuartal(){
+  const all=await dba();
+  const fi=all.filter(b=>{if(!b.date)return false;const d=new Date(b.date+'T00:00:00');return d.getFullYear()===qY&&Math.ceil((d.getMonth()+1)/3)===qQ;});
+  const ar=fi.filter(b=>b.type==='ar'),er=fi.filter(b=>b.type==='er');
+  const arSum=ar.reduce((s,b)=>s+(b.brutto||0),0),erSum=er.reduce((s,b)=>s+(b.brutto||0),0);
+  const arM=ar.reduce((s,b)=>s+(b.mwst||0),0),erM=er.reduce((s,b)=>s+(b.mwst||0),0),saldo=arM-erM;
+  document.getElementById('qSum').innerHTML=`
+    <div class="stitle">Q${qQ} ${qY} — ${fi.length} Belege</div>
+    <div class="qsum-grid">
+      <div class="qsum-item"><div class="l">Umsatz (AR brutto)</div><div class="v" style="color:var(--ylw)">${fm(arSum)} ${cfg().currency}</div></div>
+      <div class="qsum-item"><div class="l">Ausgaben (ER brutto)</div><div class="v" style="color:var(--blu)">${fm(erSum)} ${cfg().currency}</div></div>
+      <div class="qsum-item"><div class="l">${cfg().steuerLabel} eingenommen</div><div class="v" style="color:var(--ylw)">${fm(arM)} ${cfg().currency}</div></div>
+      <div class="qsum-item"><div class="l">Vorsteuer</div><div class="v" style="color:var(--blu)">${fm(erM)} ${cfg().currency}</div></div>
+    </div>
+    <div style="margin-top:13px;padding-top:13px;border-top:1px solid var(--br)">
+      <div style="font-size:10px;font-weight:300;letter-spacing:.5px;color:var(--txt3);text-transform:uppercase;margin-bottom:5px">${cfg().steuerLabel}-Zahllast</div>
+      <div class="mono" style="font-size:22px;font-weight:300;color:${saldo>=0?'var(--red)':'var(--grn)'}">${saldo>=0?'+':''}${fm(saldo)} ${cfg().currency}</div>
+    </div>`;
+  const ql=document.getElementById('qBList');
+  if(!fi.length){ql.innerHTML='<div class="empty" style="padding:16px 0"><p>Keine Belege in diesem Quartal.</p></div>';return;}
+  ql.innerHTML=[...fi].sort((a,b)=>(a.date||'')>(b.date||'')?1:-1).map(b=>`<div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--br);cursor:pointer" onclick="showDetail(${b.id})">
+    <div style="width:2px;height:34px;border-radius:1px;background:${b.type==='er'?'var(--blu)':'var(--ylw)'};opacity:.6;flex-shrink:0"></div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${eh(b.shop||'')}</div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3)" class="mono">${eh(b.belegNr||'')} · ${fd(b.date)}</div>
+    </div>
+    <div class="mono" style="font-size:12px;font-weight:300;color:${b.type==='er'?'var(--blu)':'var(--ylw)'};flex-shrink:0">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
+  </div>`).join('');
+}
+async function exportQCSV(){const all=await dba();const fi=all.filter(b=>{if(!b.date)return false;const d=new Date(b.date+'T00:00:00');return d.getFullYear()===qY&&Math.ceil((d.getMonth()+1)/3)===qQ;});if(!fi.length){toast('Keine Belege','wr');return;}exportCSVData(fi,`Q${qQ}_${qY}`);}
+async function exportQZip(){
+  if(typeof JSZip==='undefined'||typeof window.jspdf==='undefined'){toast('Bibliotheken nicht geladen','er');return;}
+  const all=await dba();
+  const fi=all.filter(b=>{if(!b.date)return false;const d=new Date(b.date+'T00:00:00');return d.getFullYear()===qY&&Math.ceil((d.getMonth()+1)/3)===qQ;});
+  if(!fi.length){toast('Keine Belege','wr');return;}
+  toast('ZIP wird erstellt …','wr');loadStamp();
+  const zip=new JSZip(),folder=zip.folder(`Q${qQ}_${qY}`);
+  const rows=[['Belegnummer','Typ','Datum','Händler','Netto',cfg().steuerLabel,'Brutto',cfg().steuerLabel+'%','Kategorie','Zahlung','Abo','Garantie bis']];
+  fi.forEach(b=>rows.push([b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',b.date||'',b.shop||'',b.net!=null?b.net.toFixed(2):'',b.mwst!=null?b.mwst.toFixed(2):'',b.brutto!=null?b.brutto.toFixed(2):'',b.mwstRate||'',b.cat||'',b.payment||'',b.istAbo?'Ja':'',b.garantieBis||'']));
+  folder.file(`Q${qQ}_${qY}_belege.csv`,'\uFEFF'+rows.map(r=>r.join(';')).join('\n'));
+  let count=0;
+  for(const b of fi){
+    if(!b.image)continue;
+    try{const bytes=await belegPDFBytes(b);if(!bytes)continue;folder.file(`${b.belegNr||'beleg'}_${(b.shop||'').replace(/[^a-z0-9]/gi,'_').substring(0,20)}.pdf`,bytes);count++;}catch(e){console.warn(e);}
+  }
+  const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`BelegScan_Q${qQ}_${qY}.zip`;a.click();URL.revokeObjectURL(url);
+  toast(`ZIP mit ${count} PDFs exportiert ✓`,'ok');
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: CSV & BACKUP
+// ════════════════════════════════════════════════════════
+async function exportCSV(){const all=await dba();if(!all.length){toast('Keine Belege','wr');return;}exportCSVData(all,`belege_${new Date().toISOString().split('T')[0]}`);}
+function exportCSVData(data,fn){
+  const rows=[['Belegnummer','Typ','Datum','Händler','Netto',cfg().steuerLabel,'Brutto',cfg().steuerLabel+'%','Kategorie','Zahlung','Erfasst','Abo','Garantie bis']];
+  [...data].sort((a,b)=>(a.date||'')>(b.date||'')?1:-1).forEach(b=>rows.push([b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',b.date||'',ec(b.shop||''),b.net!=null?b.net.toFixed(2):'',b.mwst!=null?b.mwst.toFixed(2):'',b.brutto!=null?b.brutto.toFixed(2):'',b.mwstRate||'',ec(b.cat||''),ec(b.payment||''),new Date(b.savedAt||0).toLocaleDateString('de-DE'),b.istAbo?'Ja':'',b.garantieBis||'']));
+  const blob=new Blob(['\uFEFF'+rows.map(r=>r.join(';')).join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fn+'.csv';a.click();URL.revokeObjectURL(url);
+  toast('CSV exportiert ✓','ok');
+}
+async function exportBackup(){
+  const all=await dba();
+  const blob=new Blob([JSON.stringify({version:4,exportDate:new Date().toISOString(),profile,belege:all})],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`belegscan_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(url);
+  toast('Backup exportiert ✓','ok');
+}
+async function importBackup(inp){
+  const f=inp.files[0];if(!f)return;
+  try{const data=JSON.parse(await f.text());if(!data.belege||!Array.isArray(data.belege))throw new Error('Ungültiges Format');if(!confirm(`${data.belege.length} Belege importieren?`))return;for(const b of data.belege){const{id:_,...rest}=b;await dbadd(rest);}toast(`${data.belege.length} Belege importiert ✓`,'ok');renderHome();}catch(e){toast('Import-Fehler: '+e.message,'er');}
+  inp.value='';
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PDF EXPORT
+// ════════════════════════════════════════════════════════
+async function exportBelegPDF(b,stamped=false){
+  if(typeof window.jspdf==='undefined'){toast('jsPDF nicht geladen','er');return;}
+  const{jsPDF}=window.jspdf;
+  const img=new Image();
+  await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=b.image;});
+  const sc=Math.min(1,1200/img.naturalWidth);
+  const cw=img.naturalWidth*sc,ch=img.naturalHeight*sc;
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+  const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,cw,ch);
+  if(stamped&&b.type==='er'){
+    const sw=300,sh=110,sx=cw-sw-12,sy=ch-sh-12;
+    ctx.fillStyle='rgba(255,255,255,.93)';ctx.fillRect(sx,sy,sw,sh);
+    const tmp=document.createElement('canvas');tmp.width=sw;tmp.height=sh;
+    drawStamp(tmp,stamp,b.belegNr||'ER-????',stampTpl);ctx.drawImage(tmp,sx,sy);
+  }
+  const imgData=cv.toDataURL('image/jpeg',.92);
+  const mmW=210,mmH=Math.round(mmW*(ch/cw));
+  const pdf=new jsPDF({orientation:mmH>mmW?'portrait':'landscape',unit:'mm',format:[mmW,mmH]});
+  pdf.addImage(imgData,'JPEG',0,0,mmW,mmH,undefined,'FAST');
+  const fh=11;pdf.setFillColor(255,255,255);pdf.rect(0,mmH-fh,mmW,fh,'F');
+  pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(80);
+  const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',`${cfg().steuerLabel} ${b.mwstRate||cfg().mwstH}%: ${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:''}`,b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  ·  ');
+  pdf.text(meta,3,mmH-3);
+  pdf.save(`${b.belegNr||'beleg'}.pdf`);
+  toast(b.belegNr+' als PDF gespeichert ✓','ok');
+}
+async function belegPDFBytes(b){
+  if(typeof window.jspdf==='undefined')return null;
+  const{jsPDF}=window.jspdf;
+  const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=b.image;});
+  const sc=Math.min(1,1200/img.naturalWidth);const cw=img.naturalWidth*sc,ch=img.naturalHeight*sc;
+  const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+  const ctx=cv.getContext('2d');ctx.drawImage(img,0,0,cw,ch);
+  if(b.type==='er'){
+    const sw=300,sh=110,sx=cw-sw-12,sy=ch-sh-12;ctx.fillStyle='rgba(255,255,255,.93)';ctx.fillRect(sx,sy,sw,sh);
+    const tmp=document.createElement('canvas');tmp.width=sw;tmp.height=sh;drawStamp(tmp,stamp,b.belegNr||'ER-????',stampTpl);ctx.drawImage(tmp,sx,sy);
+  }
+  const imgData=cv.toDataURL('image/jpeg',.92);const mmW=210,mmH=Math.round(mmW*(ch/cw));
+  const pdf=new jsPDF({orientation:mmH>mmW?'portrait':'landscape',unit:'mm',format:[mmW,mmH]});
+  pdf.addImage(imgData,'JPEG',0,0,mmW,mmH,undefined,'FAST');
+  const fh=11;pdf.setFillColor(255,255,255);pdf.rect(0,mmH-fh,mmW,fh,'F');
+  pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(80);
+  const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  ·  ');
+  pdf.text(meta,3,mmH-3);return pdf.output('arraybuffer');
+}
+async function exportStamped(){loadStamp();if(!curDet?.image){toast('Kein Bild','er');return;}await exportBelegPDF(curDet,true);}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: STEMPEL
+// ════════════════════════════════════════════════════════
+function loadStamp(){stamp.firma=localStorage.getItem('sf')||'';stamp.frei=localStorage.getItem('sfr')||'';stamp.color=localStorage.getItem('sc')||'#b71c1c';}
+function loadStampUI(){
+  loadStamp();document.getElementById('sFirma').value=stamp.firma;document.getElementById('sFrei').value=stamp.frei;
+  document.getElementById('cPick').value=stamp.color;document.querySelectorAll('.csw').forEach(s=>s.classList.toggle('on',s.dataset.c===stamp.color));
+  document.querySelectorAll('[id^=tpl]').forEach((el,i)=>el.classList.toggle('on',i===stampTpl));refreshStamp();
+}
+function pickTpl(i){stampTpl=i;localStorage.setItem('stpl',i);document.querySelectorAll('[id^=tpl]').forEach((el,j)=>el.classList.toggle('on',j===i));refreshStamp();}
+function pickCol(el){document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));el.classList.add('on');stamp.color=el.dataset.c;document.getElementById('cPick').value=stamp.color;refreshStamp();}
+function freeCol(inp){stamp.color=inp.value;document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));refreshStamp();}
+function refreshStamp(){stamp.firma=document.getElementById('sFirma').value;stamp.frei=document.getElementById('sFrei').value;drawStamp(document.getElementById('stmpC'),stamp,'ER-2026-0001',stampTpl);}
+function saveStamp(){localStorage.setItem('sf',stamp.firma);localStorage.setItem('sfr',stamp.frei);localStorage.setItem('sc',stamp.color);toast('Stempel gespeichert','ok');}
+function drawStamp(cv,cfg2,nr,tpl=0){
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,p=9,col=cfg2.color||'#b71c1c';
+  ctx.clearRect(0,0,W,H);ctx.save();ctx.fillStyle=col;
+  if(tpl===0){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.strokeRect(p,p,W-p*2,H-p*2);ctx.lineWidth=.6;ctx.strokeRect(p+3,p+3,W-p*2-6,H-p*2-6);ctx.textAlign='center';ctx.font=`bold 18px 'Courier New',monospace`;ctx.fillText(nr,W/2,p+28);if(cfg2.firma){ctx.font=`400 10px sans-serif`;ctx.fillText(cfg2.firma.substring(0,44),W/2,p+44);}if(cfg2.frei){ctx.font=`400 9px sans-serif`;ctx.fillText(cfg2.frei.substring(0,52),W/2,p+58);}ctx.font=`400 9px monospace`;ctx.fillText(new Date().toLocaleDateString('de-DE'),W/2,p+74);}
+  else if(tpl===1){ctx.fillRect(p,p,6,H-p*2);ctx.fillStyle=col+'15';ctx.fillRect(p+6,p,W-p*2-6,H-p*2);ctx.strokeStyle=col;ctx.lineWidth=.6;ctx.strokeRect(p,p,W-p*2,H-p*2);const lx=p+12;ctx.fillStyle=col;ctx.textAlign='left';ctx.font=`bold 16px monospace`;ctx.fillText(nr,lx,p+22);if(cfg2.firma){ctx.font=`400 10px sans-serif`;ctx.fillText(cfg2.firma.substring(0,40),lx,p+38);}if(cfg2.frei){ctx.font=`400 9px sans-serif`;ctx.fillText(cfg2.frei.substring(0,48),lx,p+52);}ctx.font=`400 9px monospace`;ctx.fillText(new Date().toLocaleDateString('de-DE'),lx,p+68);}
+  else{ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(p,p+1);ctx.lineTo(W-p,p+1);ctx.stroke();ctx.beginPath();ctx.moveTo(p,H-p-1);ctx.lineTo(W-p,H-p-1);ctx.stroke();ctx.textAlign='center';ctx.font=`bold 16px monospace`;ctx.fillText(nr,W/2,p+20);if(cfg2.firma){ctx.font=`400 10px sans-serif`;ctx.fillText(cfg2.firma.substring(0,44),W/2,p+36);}if(cfg2.frei){ctx.font=`400 9px sans-serif`;ctx.fillText(cfg2.frei.substring(0,52),W/2,p+50);}ctx.font=`400 9px monospace`;ctx.fillText(new Date().toLocaleDateString('de-DE'),W/2,p+66);}
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: API KEY SHEET
+// ════════════════════════════════════════════════════════
+function openApiSheet(){
+  const sheet=document.getElementById('apiOvl');
+  sheet.classList.add('on');
+  // Zeige aktuellen Status
+  if(apiKey){
+    document.getElementById('apiKeySheet').value=apiKey;
+    document.getElementById('apiSheetStat').style.display='block';
+    document.getElementById('apiRemoveBtn').style.display='inline-flex';
+  }else{
+    document.getElementById('apiKeySheet').value='';
+    document.getElementById('apiSheetStat').style.display='none';
+    document.getElementById('apiRemoveBtn').style.display='none';
+  }
+  setTimeout(()=>document.getElementById('apiKeySheet').focus(),300);
+}
+function closeApiSheet(){document.getElementById('apiOvl').classList.remove('on');}
+function closeApiOuter(e){if(e.target===document.getElementById('apiOvl'))closeApiSheet();}
+function saveApiKeySheet(){
+  const k=document.getElementById('apiKeySheet').value.trim();
+  if(!k){toast('Bitte einen API Key eingeben','er');return;}
+  if(!k.startsWith('sk-')){toast('Key muss mit sk- beginnen','er');return;}
+  apiKey=k;localStorage.setItem('cak',k);
+  document.getElementById('apiSheetStat').style.display='block';
+  document.getElementById('apiRemoveBtn').style.display='inline-flex';
+  updApiStat();updApiBanner();
+  // WHY: Wenn gerade ein Bild gescannt wurde aber kein Key da war,
+  // jetzt den "KI erneut starten" Button im Formular aktivieren
+  const rib = document.getElementById('retryKiBtn');
+  if(rib && capB64) rib.style.display='inline-flex';
+  const banner = document.getElementById('scanModeBanner');
+  if(banner && banner.style.display!=='none'){
+    banner.innerHTML='✅ Key gespeichert! Tippe auf "⚡ KI erneut starten" um das Bild zu analysieren.';
+    banner.style.background='rgba(58,175,112,.08)';
+    banner.style.border='1px solid rgba(58,175,112,.2)';
+    banner.style.color='var(--grn)';
+  }
+  toast('✓ KI-Erkennung aktiviert','ok');
+  setTimeout(closeApiSheet,1200);
+}
+function removeApiKey(){
+  if(!confirm('API Key entfernen?'))return;
+  apiKey='';localStorage.removeItem('cak');
+  document.getElementById('apiKeySheet').value='';
+  document.getElementById('apiSheetStat').style.display='none';
+  document.getElementById('apiRemoveBtn').style.display='none';
+  updApiStat();updApiBanner();
+  toast('Key entfernt','ok');
+}
+function updApiBanner(){
+  // Banner nur zeigen wenn kein Key vorhanden
+  const b=document.getElementById('apiBanner');
+  if(b)b.style.display=apiKey?'none':'block';
+}
+
+function saveApiKey(){apiKey=document.getElementById('apiKey').value.trim();if(apiKey)localStorage.setItem('cak',apiKey);updApiStat();updApiBanner();toast('API Key gespeichert','ok');}
+function updApiStat(){const s=document.getElementById('apiStat');if(s)s.textContent=apiKey?'✓ Claude API aktiv. Garantie-Wächter + Abo-Detektiv + Monitor-Erkennung aktiv.':'Kein Key – manuelle Eingabe. Intelligenz-Module eingeschränkt.';}
+function resetCounters(){if(!confirm('Zähler zurücksetzen?'))return;erC=0;arC=0;localStorage.setItem('erc','0');localStorage.setItem('arc','0');updCounters();toast('Zurückgesetzt','ok');}
+
+// ════════════════════════════════════════════════════════
+// ██ UTILS
+// ════════════════════════════════════════════════════════
+function fd(d){if(!d)return'–';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function fm(n){return(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmK(n){if(Math.abs(n)>=1000)return(n/1000).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1})+'k';return(n||0).toLocaleString('de-DE');}
+function eh(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function ec(s){s=String(s||'');if(/[;"'\n]/.test(s))return'"'+s.replace(/"/g,'""')+'"';return s;}
+function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className='show'+(type?' '+type:'');clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3200);}
+
+// ════════════════════════════════════════════════════════
+// ██ INIT
+// ════════════════════════════════════════════════════════
+function initApp(){
+  loadStamp();updCounters();updApiStat();updApiBanner();
+  // MwSt-Sätze für aktives Land setzen
+  const rRate=document.getElementById('rRate');
+  if(rRate)rRate.innerHTML=`<option value="${cfg().mwstH}">${cfg().mwstH} %</option><option value="${cfg().mwstL}">${cfg().mwstL} %</option><option value="0">0 %</option>`;
+  // Modus-Toggle initialisieren
+  setMode(appMode);
+}
+
+setupPWA();
+initDB().then(()=>{checkOnboarding();}).catch(e=>toast('DB Fehler: '+e.message,'er'));
+</script>
+</body>
+</html>
