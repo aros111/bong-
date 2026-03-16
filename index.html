@@ -99,6 +99,21 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .b-er{background:rgba(74,128,192,.15);color:var(--blu)}
 .b-ar{background:rgba(192,144,64,.15);color:var(--ylw)}
 .b-priv{background:rgba(136,153,170,.12);color:var(--silv)}
+.b-beleg-fehlt{background:rgba(192,64,64,.15);color:var(--red)}
+.b-beleg-vermutet{background:rgba(192,144,64,.18);color:var(--ylw)}
+.b-beleg-ok{background:rgba(58,175,112,.13);color:var(--grn)}
+
+/* ── EXPORT WARN BOX ── */
+.export-warn{background:rgba(192,112,48,.08);border:1px solid rgba(192,112,48,.3);
+  border-radius:var(--r12);padding:13px 16px;margin-bottom:12px}
+.export-warn.critical{background:rgba(192,64,64,.08);border-color:rgba(192,64,64,.3)}
+.export-warn .ew-title{font-size:12px;font-weight:300;color:var(--orn);margin-bottom:7px;display:flex;align-items:center;gap:6px}
+.export-warn.critical .ew-title{color:var(--red)}
+.export-warn ul{list-style:none;padding:0;margin:0}
+.export-warn li{font-size:11px;font-weight:300;color:var(--txt2);line-height:1.7;
+  display:flex;align-items:flex-start;gap:6px}
+.export-warn li::before{content:'→';color:var(--orn);flex-shrink:0}
+.export-warn.critical li::before{color:var(--red)}
 
 /* ── TOAST ── */
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-70px);
@@ -886,7 +901,13 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
       <div style="font-size:16px;font-weight:300;color:var(--txt)">Kontoauszug-Abgleich</div>
       <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="kontoStatusLbl">Noch keine Buchungen geladen</div>
     </div>
-    <button class="btn btn-g btn-sm" onclick="kontoAllesLoeschen()" style="font-size:11px">Leeren</button>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-g btn-sm" onclick="kontoKiGesamt()" style="font-size:11px;display:flex;align-items:center;gap:5px"
+        title="KI vergleicht alle offenen Buchungen mit allen Belegen">
+        🤖 Alles vergleichen
+      </button>
+      <button class="btn btn-g btn-sm" onclick="kontoAllesLoeschen()" style="font-size:11px">Leeren</button>
+    </div>
   </div>
 
   <!-- Bank-Eingabe -->
@@ -1177,6 +1198,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 <div class="view" id="v-export-preview">
   <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
   <div class="stitle">Export-Vorschau für Steuerberater</div>
+  <!-- Warn-Box: fehlende Belege / Ungereimtheiten -->
+  <div id="exportWarnBox" style="display:none"></div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Jahresübersicht</div>
     <div id="exportYearSummary"></div>
@@ -1391,9 +1414,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     <div class="sh"></div>
     <button class="sc-btn" onclick="closeScanner()">✕</button>
     <!-- WHY: Kein Privat-Tab hier – der Modus kommt vom Toggle auf der Startseite -->
-    <div id="bizSeg" class="seg" style="grid-template-columns:1fr 1fr">
+    <div id="bizSeg" class="seg" style="grid-template-columns:1fr 1fr 1fr">
       <button class="seg-btn on" id="ttER" onclick="setScanType('er')">📥 Eingangsrechnung</button>
       <button class="seg-btn" id="ttAR" onclick="setScanType('ar')">📤 Ausgangsrechnung</button>
+      <button class="seg-btn" id="ttManual" onclick="setScanType('manual')">✏️ Manuell</button>
     </div>
     <!-- Privat-Modus Banner: zeigt aktuellen Modus, kein manuelles Umschalten -->
     <div id="privScanHint" style="display:none;background:rgba(136,153,170,.07);border:1px solid rgba(136,153,170,.18);border-radius:10px;padding:9px 12px;font-size:11px;font-weight:300;color:var(--silv);line-height:1.55;margin-bottom:4px">
@@ -1488,6 +1512,45 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
           <option>Sonstiges</option></select></div>
         <div class="field"><label>Zahlung</label><select id="pPay"><option>Karte</option><option>Bar</option><option>Online</option></select></div>
       </div>
+
+      <!-- Manuelle Eingabe (manual) – mit Spracheingabe -->
+      <div class="res-fields" id="manualFields" style="display:none">
+        <!-- Spracheingabe -->
+        <div id="manualSprachWrap" style="margin-bottom:14px">
+          <button id="manualMicBtn" onclick="toggleManualMic()"
+            style="width:100%;background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);
+            padding:14px;display:flex;align-items:center;justify-content:center;gap:10px;
+            cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300;transition:all .2s">
+            <svg id="manualMicIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
+            </svg>
+            <span id="manualMicLbl">🎤 Sprechen für Business-Beleg</span>
+          </button>
+          <div id="manualMicTranscript" style="display:none;background:var(--s2);border:1px solid var(--br2);
+            border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
+            color:var(--txt2);margin-top:8px;min-height:36px;line-height:1.5"></div>
+        </div>
+
+        <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">— oder manuell ausfüllen —</div>
+
+        <div class="field"><label>Händler / Aussteller</label><input id="mShop" type="text" placeholder="z.B. Bürobedarf Müller"></div>
+        <div class="field"><label>Datum</label><input id="mDate" type="date"></div>
+        <div class="field"><label>Brutto</label><input id="mBrutto" type="text" placeholder="0.00" inputmode="decimal"></div>
+        <div class="field"><label>Netto (optional)</label><input id="mNet" type="text" placeholder="0.00" inputmode="decimal"></div>
+        <div class="field"><label>MwSt (optional)</label><input id="mMwst" type="text" placeholder="0.00" inputmode="decimal"></div>
+        <div class="field"><label>MwSt-Satz</label><select id="mRate">
+          <option value="19">19% (Standard)</option>
+          <option value="7">7% (ermäßigt)</option>
+          <option value="0">0% (Reverse Charge)</option></select></div>
+        <div class="field"><label>Kategorie</label><select id="mCat">
+          <option>Bürobedarf</option><option>Software</option><option>Beratung</option>
+          <option>Marketing</option><option>Reisen</option><option>Fortbildung</option>
+          <option>Fahrzeug</option><option>Telefon/Internet</option><option>Sonstiges</option></select></div>
+        <div class="field"><label>Zahlung</label><select id="mPay">
+          <option>Überweisung</option><option>Karte</option><option>Bar</option><option>Lastschrift</option></select></div>
+      </div>
+
       <div id="itemsSec" style="display:none;margin-bottom:12px">
         <p class="stitle" style="margin-bottom:8px">Erkannte Positionen</p>
         <table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody id="itemsB"></tbody></table>
@@ -2158,8 +2221,9 @@ const ABO_KEYWORDS = new RegExp(localStorage.getItem('aboKeywords') || 'netflix|
 const RC_PROVIDERS = ['anthropic', 'openai', 'claude', 'chatgpt', 'github', 'adobe', 'aws', 'heroku', 'google', 'microsoft', 'apple', 'dropbox', 'notion', 'slack', 'zoom', 'xing', 'linkedin'];
 
 function isReverseCharge(beleg) {
-  if (beleg.mwst && beleg.mwst > 0) return false; // Hat ausgewiesene MwSt
   const shop = (beleg.shop || '').toLowerCase();
+  const hasMwst = beleg.mwst && beleg.mwst > 0;
+  // Reverse Charge gilt für RC-Anbieter, unabhängig von ausgewiesener MwSt
   return RC_PROVIDERS.some(provider => shop.includes(provider));
 }
 
@@ -2304,18 +2368,23 @@ function closeScanner(){document.getElementById('scanOvl').classList.remove('on'
 function closeScanOuter(e){if(e.target===document.getElementById('scanOvl'))closeScanner();}
 function setScanType(t){
   scanType=t;
-  // WHY: Nur ER/AR Buttons toggeln – kein PRIV-Button mehr im Scanner
-  ['er','ar'].forEach(x=>{
-    const el=document.getElementById('tt'+x.toUpperCase());
+  // WHY: ER/AR/Manual Buttons toggeln
+  ['er','ar','manual'].forEach(x=>{
+    const el=document.getElementById('tt'+(x==='manual'?'Manual':x.toUpperCase()));
     if(el) el.className='seg-btn'+(t===x?' on':'');
   });
   const isPriv=t==='priv';
+  const isManual=t==='manual';
   // Seg-Buttons und Privat-Hinweis je nach Modus ein/ausblenden
   const seg=document.getElementById('bizSeg');
   if(seg) seg.style.display=isPriv?'none':'grid';
-  document.getElementById('bizFields').style.display=isPriv?'none':'grid';
+  document.getElementById('bizFields').style.display=(isPriv||isManual)?'none':'grid';
   document.getElementById('privFields').style.display=isPriv?'grid':'none';
+  document.getElementById('manualFields').style.display=isManual?'grid':'none';
   document.getElementById('privScanHint').style.display=isPriv?'block':'none';
+  document.getElementById('camPH').style.display=(isManual||isPriv)?'none':'block';
+  document.getElementById('camArea').style.display=(isManual||isPriv)?'none':'none'; // Versteckt wenn kein Bild
+  document.getElementById('resWrap').style.display=isManual?'block':'none';
 }
 
 async function startCam(){
@@ -2923,9 +2992,9 @@ async function saveBeleg(){
 
   // ── REVERSE CHARGE BEHANDLUNG ──
   const shop = document.getElementById('rShop').value || 'Unbekannt';
-  const isRC = scanType === 'er' && isReverseCharge({shop, mwst});
+  const isRC = scanType === 'er' && isReverseCharge({shop});
   if (isRC) {
-    // Bei Reverse Charge: MwSt selbst berechnen (19% auf Brutto)
+    // Bei Reverse Charge: MwSt selbst berechnen (19% auf Brutto), unabhängig von ausgewiesener MwSt
     mwst = Math.round(brutto * 0.19 * 100) / 100;
     net = brutto - mwst;
     mwstRate = 19;
@@ -2934,6 +3003,20 @@ async function saveBeleg(){
     document.getElementById('rMwst').value = mwst.toFixed(2);
     document.getElementById('rRate').value = '19';
     toast('Reverse Charge erkannt – MwSt selbst berechnet (19%)', 'wr');
+  } else if (scanType === 'er' && mwst === 0) {
+    // MwSt nicht ausgewiesen - normale Berechnung
+    if (net > 0 && brutto > 0) {
+      // Netto und Brutto gegeben - MwSt = Brutto - Netto
+      mwst = brutto - net;
+    } else if (brutto > 0) {
+      // Nur Brutto gegeben - MwSt berechnen aus Rate
+      mwst = Math.round(brutto / (1 + mwstRate / 100) * (mwstRate / 100) * 100) / 100;
+      net = brutto - mwst;
+      // UI aktualisieren
+      document.getElementById('rNet').value = net.toFixed(2);
+      document.getElementById('rMwst').value = mwst.toFixed(2);
+    }
+    toast('MwSt nicht ausgewiesen – automatisch berechnet', 'wr');
   }
 
   let nr;
@@ -2968,6 +3051,23 @@ async function saveBeleg(){
     if(appMode==='biz') renderMwst();
     if(kiScanCount===10) triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
     if(brutto>=500&&scanType==='er'){const vstRueck=(item.mwst||0);if(vstRueck>=50)triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');}
+    // WHY: Wenn der Scan aus dem Konto-Tab kam (fehlende Beleg), den neuen Beleg direkt zuordnen
+    if(_aktiverKontoBuchungId){
+      try{
+        const alle = await dbKontoBuchungen();
+        const buchung = alle.find(x => String(x.id) === String(_aktiverKontoBuchungId));
+        if(buchung){
+          await dbAddKontoBuchung({...buchung,
+            belegStatus: 'bestaetigt',
+            vorschlagBelegNr: nr,
+            vorschlagBelegShop: item.shop
+          });
+          await dbDelKontoBuchung(buchung.id);
+          toast('Beleg automatisch zugeordnet ✓', 'ok');
+        }
+      }catch(_){}
+      _aktiverKontoBuchungId = null;
+    }
   }catch(e){toast('Fehler: '+e.message,'er');}
 }
 
@@ -3494,6 +3594,9 @@ async function importBackup(inp){
 }
 
 async function loadExportPreview(){
+  // Show warnings about missing receipts / VAT issues first
+  await renderExportWarnBox();
+
   const all = await dba();
   const year = new Date().getFullYear();
   const yearBelege = all.filter(b => b.date && new Date(b.date).getFullYear() === year);
@@ -4079,44 +4182,94 @@ async function kontoAbgleichAlle(){
 
 async function renderKontoBuchungen(){
   const alle = await dbKontoBuchungen();
-  const unbekannt = alle.filter(t => t.status === 'offen' && t.typ !== 'eingang');
-  const abgeglichen = alle.filter(t => t.status === 'abgeglichen');
+  // Separate by new status values
+  const fehlt     = alle.filter(t => t.status === 'offen'       && t.typ !== 'eingang' && !t.belegStatus ||
+                                     t.status === 'offen'       && t.typ !== 'eingang' && t.belegStatus === 'kein_beleg');
+  const vermutet  = alle.filter(t => t.belegStatus === 'vermutet');
+  const bestaetigt= alle.filter(t => t.belegStatus === 'bestaetigt' || t.status === 'abgeglichen');
+  const eingaenge = alle.filter(t => t.typ === 'eingang');
 
   const uSec=document.getElementById('kontoUnknownSec');
   const mSec=document.getElementById('kontoMatchedSec');
 
-  if(unbekannt.length){
+  // --- Offene / Kein-Beleg Buchungen ---
+  if(fehlt.length){
     uSec.style.display='block';
-    document.getElementById('kontoUnknownCount').textContent=unbekannt.length+' offen';
-    document.getElementById('kontoUnknownList').innerHTML=unbekannt.map(t=>{
+    document.getElementById('kontoUnknownCount').textContent=fehlt.length+' ohne Beleg';
+    document.getElementById('kontoUnknownList').innerHTML=fehlt.map(t=>{
       const id=t.id;
       const v=t.vorschlag||{kat:'Sonstiges',typ:'priv'};
-      return `<div id="ku_${id}" style="background:var(--s2);border:1px solid rgba(192,112,48,.25);
+      return `<div id="ku_${id}" style="background:var(--s2);border:1px solid rgba(192,64,64,.25);
         border-radius:var(--r8);padding:10px 12px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
           <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+              <span class="badge b-beleg-fehlt">🔴 Kein Beleg</span>
+              ${t.bankName?`<span style="font-size:10px;color:var(--txt3)">${eh(t.bankName)}</span>`:''}
+            </div>
             <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
             <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Vorschlag: ${v.kat} (${v.typ==='biz'?'Business':'Privat'})</div>
           </div>
-          <div style="font-size:13px;font-weight:300;color:var(--orn);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
+          <div style="font-size:13px;font-weight:300;color:var(--red);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-sm" style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:11px" onclick="kontoErfasse('${id}','priv')">🏠 Privat</button>
-          <button class="btn btn-sm" style="background:rgba(74,128,192,.1);border:1px solid rgba(74,128,192,.25);color:var(--blu);font-size:11px" onclick="kontoErfasse('${id}','biz')">💼 Business</button>
+          <button class="btn btn-sm" style="background:rgba(200,164,90,.1);border:1px solid rgba(200,164,90,.3);color:var(--gold);font-size:11px" onclick="kontoBelegScannen('${id}')">📷 Beleg scannen</button>
+          <button class="btn btn-sm" style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:11px" onclick="kontoErfasse('${id}','priv')">🏠 Privat erfassen</button>
+          <button class="btn btn-sm" style="background:rgba(74,128,192,.1);border:1px solid rgba(74,128,192,.25);color:var(--blu);font-size:11px" onclick="kontoErfasse('${id}','biz')">💼 Business erfassen</button>
           <button class="btn btn-sm" style="background:transparent;border:1px solid var(--br);color:var(--txt3);font-size:11px" onclick="kontoIgnoriere('${id}')">— Ignorieren</button>
         </div>
       </div>`;
     }).join('');
   } else { uSec.style.display='none'; }
 
-  if(abgeglichen.length){
+  // --- Vermutete Belege (KI-Vorschlag, unbestätigt) ---
+  let vermSec = document.getElementById('kontoVermSec');
+  if(!vermSec){
+    vermSec = document.createElement('div');
+    vermSec.id = 'kontoVermSec';
+    vermSec.style.marginBottom = '16px';
+    uSec.insertAdjacentElement('afterend', vermSec);
+  }
+  if(vermutet.length){
+    vermSec.style.display='block';
+    vermSec.innerHTML = `<div style="font-size:11px;font-weight:300;color:var(--ylw);margin-bottom:8px;letter-spacing:.3px;display:flex;justify-content:space-between">
+      <span>🟡 BELEG VERMUTET (unbestätigt)</span><span style="color:var(--txt3)">${vermutet.length}</span></div>` +
+    vermutet.map(t=>{
+      const id=t.id;
+      const vbNr  = t.vorschlagBelegNr  || '';
+      const vbShop= t.vorschlagBelegShop|| t.beschreibung || '';
+      return `<div id="kv_${id}" style="background:var(--s2);border:1px solid rgba(192,144,64,.3);
+        border-radius:var(--r8);padding:10px 12px;margin-bottom:8px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+              <span class="badge b-beleg-vermutet">🟡 Beleg vermutet</span>
+            </div>
+            <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
+            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)}${vbShop?' · Vermutet: '+eh(vbShop):''} ${vbNr?'('+eh(vbNr)+')':''}</div>
+          </div>
+          <div style="font-size:13px;font-weight:300;color:var(--ylw);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-sm" style="background:rgba(58,175,112,.1);border:1px solid rgba(58,175,112,.3);color:var(--grn);font-size:11px" onclick="kontoBestaetigenBeleg('${id}')">✓ Bestätigen</button>
+          <button class="btn btn-sm" style="background:rgba(192,64,64,.08);border:1px solid rgba(192,64,64,.2);color:var(--red);font-size:11px" onclick="kontoVermutungAblehnen('${id}')">✗ Ablehnen</button>
+        </div>
+      </div>`;
+    }).join('');
+  } else { vermSec.style.display='none'; }
+
+  // --- Abgeglichen / Bestätigt ---
+  if(bestaetigt.length){
     mSec.style.display='block';
-    document.getElementById('kontoMatchedList').innerHTML=abgeglichen.map(t=>`
+    document.getElementById('kontoMatchedList').innerHTML=bestaetigt.map(t=>`
       <div style="background:var(--s2);border:1px solid rgba(58,175,112,.15);border-radius:var(--r8);
         padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
         <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
+            <span class="badge b-beleg-ok">🟢 ${t.belegStatus==='bestaetigt'?'Bestätigt':'Abgeglichen'}</span>
+          </div>
           <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
-          <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Beleg: ${eh(t.belegShop||'')} ${eh(t.belegNr||'')}</div>
+          <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Beleg: ${eh(t.belegShop||t.vorschlagBelegShop||'')} ${eh(t.belegNr||t.vorschlagBelegNr||'')}</div>
         </div>
         <div style="color:var(--grn);font-size:13px;margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
       </div>`).join('');
@@ -4181,7 +4334,191 @@ async function kontoAllesLoeschen(){
 }
 
 // ════════════════════════════════════════════════════════
-// ██ MODUL: SCHNELLEINGABE (Privat ohne Foto)
+// ██ MODUL: BELEG-STATUS FUNKTIONEN
+// WHY: Jede Kontobuchung bekommt expliziten Beleg-Status:
+// kein_beleg → vermutet → bestaetigt
+// ════════════════════════════════════════════════════════
+
+// Merkt die aktuelle KontoBuchung-ID für nachträgliches Einsortieren
+let _aktiverKontoBuchungId = null;
+
+function kontoBelegScannen(buchungId){
+  // Buchung-ID merken, damit saveBeleg() danach zuordnen kann
+  _aktiverKontoBuchungId = buchungId;
+  // Scanner öffnen
+  openScanner();
+  toast('Bitte den fehlenden Beleg scannen …', 'wr');
+}
+
+async function kontoBestaetigenBeleg(id){
+  const alle = await dbKontoBuchungen();
+  const t = alle.find(x => String(x.id) === String(id));
+  if(!t) return;
+  await dbAddKontoBuchung({...t, belegStatus: 'bestaetigt'});
+  await dbDelKontoBuchung(t.id);
+  toast('Beleg bestätigt ✓', 'ok');
+  renderKontoBuchungen();
+  updKontoStatus();
+}
+
+async function kontoVermutungAblehnen(id){
+  const alle = await dbKontoBuchungen();
+  const t = alle.find(x => String(x.id) === String(id));
+  if(!t) return;
+  // Zurück auf offen / kein_beleg setzen
+  await dbAddKontoBuchung({...t, belegStatus: 'kein_beleg', vorschlagBelegId: null, vorschlagBelegNr: null, vorschlagBelegShop: null});
+  await dbDelKontoBuchung(t.id);
+  toast('Zuordnung abgelehnt – Buchung zurück auf "Kein Beleg"', 'wr');
+  renderKontoBuchungen();
+  updKontoStatus();
+}
+
+// ════════════════════════════════════════════════════════
+// ██ KI-GESAMT-ABGLEICH: Alle offenen Buchungen vs. alle Belege
+// WHY: Nutzer kann jederzeit auf Knopfdruck alle noch offenen
+// Buchungen durch Claude mit allen Belegen abgleichen lassen.
+// Claude gibt Paarungen zurück → belegStatus='vermutet'
+// ════════════════════════════════════════════════════════
+async function kontoKiGesamt(){
+  apiKey = localStorage.getItem('cak') || apiKey || '';
+  if(!apiKey){ toast('Bitte erst API Key hinterlegen', 'er'); openApiSheet(); return; }
+
+  const alle = await dbKontoBuchungen();
+  const offene = alle.filter(t => (t.status === 'offen' || !t.belegStatus) && t.typ !== 'eingang');
+  if(!offene.length){ toast('Keine offenen Buchungen zum Abgleichen', 'wr'); return; }
+
+  const belege = await dba();
+  const bizBelege = belege.filter(b => b.type !== 'priv');
+  if(!bizBelege.length){ toast('Keine Belege vorhanden', 'wr'); return; }
+
+  toast('🤖 KI vergleicht alles …', 'wr');
+
+  // Buchungen und Belege als kompakte Listen für Claude
+  const buchungsListe = offene.map((t,i) => `B${i+1}: ${t.datum||'?'} | ${fm(Math.abs(t.betrag))} € | ${(t.beschreibung||'').substring(0,50)}`).join('\n');
+  const belegListe = bizBelege.slice(0, 80).map((b,i) => `R${i+1}: ${b.date||'?'} | ${fm(b.brutto||0)} € | ${(b.shop||'').substring(0,40)} | ${b.belegNr||''}`).join('\n');
+
+  const prompt = `Du bist ein Buchhalter-Assistent. Gleiche Konteauszug-Buchungen mit Belegen ab.
+
+KONTOBUCHUNGEN (B1-B${offene.length}):
+${buchungsListe}
+
+BELEGE (R1-R${Math.min(bizBelege.length,80)}):
+${belegListe}
+
+Antworte NUR mit einem JSON-Array von Paarungen, ohne Erklärung, ohne Markdown:
+[{"buchung":"B1","beleg":"R3","sicher":true},{"buchung":"B2","beleg":"R7","sicher":false}]
+
+REGELN:
+- Nur wenn Betrag ±1€ UND Datum ±5 Tage passen → Paarung
+- sicher:true wenn Betrag exakt und Datum ±2 Tage
+- Wenn keine passende Paarung: nicht aufnehmen
+- Antwort: nur das JSON-Array, nichts anderes`;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({model:'claude-sonnet-4-5',max_tokens:1000,messages:[{role:'user',content:prompt}]})
+    });
+    trackApiCost('ki_abgleich');
+    const txt = await resp.text().catch(() => '');
+    if(!resp.ok){ toast('KI-Fehler beim Abgleich', 'er'); return; }
+    let data; try{ data = JSON.parse(txt); } catch(_){ toast('Antwort-Fehler', 'er'); return; }
+    const rawText = data.content?.filter(c => c.type==='text').map(c => c.text).join('') || '';
+    let paarungen = null;
+    try{ paarungen = JSON.parse(rawText.trim()); } catch(_){}
+    if(!paarungen){ const m = rawText.match(/\[[\s\S]*\]/); if(m) try{ paarungen = JSON.parse(m[0]); } catch(_){} }
+    if(!paarungen || !paarungen.length){ toast('KI hat keine Paarungen gefunden', 'wr'); return; }
+
+    let found = 0;
+    for(const p of paarungen){
+      const bi = parseInt((p.buchung||'').replace('B','')) - 1;
+      const ri = parseInt((p.beleg||'').replace('R','')) - 1;
+      if(bi < 0 || ri < 0 || bi >= offene.length || ri >= bizBelege.length) continue;
+      const buchung = offene[bi];
+      const beleg   = bizBelege[ri];
+      // Update buchung → belegStatus vermutet
+      await dbAddKontoBuchung({...buchung,
+        belegStatus: 'vermutet',
+        vorschlagBelegId: beleg.id,
+        vorschlagBelegNr: beleg.belegNr,
+        vorschlagBelegShop: beleg.shop
+      });
+      await dbDelKontoBuchung(buchung.id);
+      found++;
+    }
+    toast(`🤖 ${found} Paarung${found!==1?'en':''} gefunden – bitte bestätigen`, found>0?'ok':'wr');
+    renderKontoBuchungen();
+    updKontoStatus();
+  } catch(e){
+    toast('KI-Fehler: ' + e.message, 'er');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// ██ MODUL: EXPORT-FEHLER-CHECK
+// WHY: Vor dem Absenden an den Steuerberater muss alles stimmen.
+// Fehlende Belege, unbestätigte Vorschläge, MwSt-Fehler – alles
+// wird geprüft und dem Nutzer klar angezeigt.
+// ════════════════════════════════════════════════════════
+async function checkExportFehler(){
+  const alle    = await dbKontoBuchungen();
+  const belege  = await dba();
+  const fehler  = [];
+  const warnungen = [];
+
+  // 1. Buchungen ohne Beleg
+  const ohneBeleg = alle.filter(t => (t.status === 'offen' || t.belegStatus === 'kein_beleg') && t.typ !== 'eingang');
+  if(ohneBeleg.length){
+    fehler.push(`${ohneBeleg.length} Kontobuchung${ohneBeleg.length!==1?'en':''} ohne zugeordneten Beleg`);
+  }
+
+  // 2. Unbestätigte KI-Vermutungen
+  const unbestaetigt = alle.filter(t => t.belegStatus === 'vermutet');
+  if(unbestaetigt.length){
+    warnungen.push(`${unbestaetigt.length} Beleg-Zuordnung${unbestaetigt.length!==1?'en':''} noch nicht bestätigt`);
+  }
+
+  // 3. Business-Belege ohne MwSt-Betrag (aber kein Kleinunternehmer)
+  if(profile.typ !== 'ku'){
+    const ohneMwst = belege.filter(b => b.type !== 'priv' && (b.mwst == null || b.mwst === 0) && b.brutto > 10);
+    if(ohneMwst.length){
+      warnungen.push(`${ohneMwst.length} Beleg${ohneMwst.length!==1?'e':''} ohne MwSt-Betrag (bitte prüfen)`);
+    }
+
+    // 4. MwSt-Rechenfehler (Netto × (1+Satz/100) ≠ Brutto, Abweichung > 0.10€)
+    const mwstFehler = belege.filter(b => {
+      if(b.type === 'priv' || !b.brutto || !b.net || !b.mwstRate) return false;
+      const expected = Math.round(b.net * (1 + b.mwstRate / 100) * 100) / 100;
+      return Math.abs(expected - (b.brutto||0)) > 0.10;
+    });
+    if(mwstFehler.length){
+      warnungen.push(`${mwstFehler.length} Beleg${mwstFehler.length!==1?'e':''} mit MwSt-Rechenfehler (Netto × Satz ≠ Brutto)`);
+    }
+  }
+
+  return { fehler, warnungen };
+}
+
+async function renderExportWarnBox(){
+  const box = document.getElementById('exportWarnBox');
+  if(!box) return;
+  const { fehler, warnungen } = await checkExportFehler();
+  if(!fehler.length && !warnungen.length){ box.style.display = 'none'; return; }
+
+  const isCritical = fehler.length > 0;
+  box.style.display = 'block';
+  box.innerHTML = `<div class="export-warn ${isCritical?'critical':''}">
+    <div class="ew-title">${isCritical?'⚠️':'ℹ️'} ${isCritical?'Fehler vor Export':'Hinweise vor Export'}</div>
+    <ul>
+      ${fehler.map(f  => `<li style="color:var(--red)">${eh(f)}</li>`).join('')}
+      ${warnungen.map(w => `<li>${eh(w)}</li>`).join('')}
+    </ul>
+    ${isCritical?`<div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.5">
+      Fehlende Belege im Konto-Tab nachscannen oder als "Ignorieren" markieren.</div>`:''}
+  </div>`;
+}
+
 // WHY: Kleine Bar-Ausgaben, Eis, Trinkgeld etc. haben keine Quittung.
 // Spracheingabe über Web Speech API (nativ in iOS Safari).
 // ════════════════════════════════════════════════════════
@@ -4258,6 +4595,38 @@ function parseSprachEingabe(text){
   // Shop-Name: alles vor dem Betrag
   const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|€|eur)?/i,'').replace(/\s+/g,' ').trim();
   if(shopRaw) document.getElementById('sShop').value=shopRaw.charAt(0).toUpperCase()+shopRaw.slice(1);
+}
+
+function parseManualSprachEingabe(text){
+  const t=text.toLowerCase();
+
+  // Betrag extrahieren
+  const betragMatch=t.match(/(\d+[.,]\d{1,2}|\d+)\s*(?:euro|€|eur)?/);
+  if(betragMatch){
+    const betrag=parseFloat(betragMatch[1].replace(',','.'));
+    if(betrag>0) document.getElementById('mBrutto').value=betrag.toFixed(2);
+  }
+
+  // Kategorie erkennen (Business-Kategorien)
+  const v=guessBusinessKategorie(text);
+  document.getElementById('mCat').value=v.kat;
+
+  // Shop-Name: alles vor dem Betrag
+  const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|€|eur)?/i,'').replace(/\s+/g,' ').trim();
+  if(shopRaw) document.getElementById('mShop').value=shopRaw.charAt(0).toUpperCase()+shopRaw.slice(1);
+}
+
+function guessBusinessKategorie(text){
+  const t=text.toLowerCase();
+  if(t.includes('büro')||t.includes('papier')||t.includes('drucker')) return {kat:'Bürobedarf'};
+  if(t.includes('software')||t.includes('lizenz')||t.includes('programm')) return {kat:'Software'};
+  if(t.includes('beratung')||t.includes('consulting')) return {kat:'Beratung'};
+  if(t.includes('marketing')||t.includes('werbung')) return {kat:'Marketing'};
+  if(t.includes('reise')||t.includes('flug')||t.includes('hotel')) return {kat:'Reisen'};
+  if(t.includes('fortbildung')||t.includes('seminar')||t.includes('schulung')) return {kat:'Fortbildung'};
+  if(t.includes('auto')||t.includes('fahrzeug')||t.includes('reparatur')) return {kat:'Fahrzeug'};
+  if(t.includes('telefon')||t.includes('internet')||t.includes('mobilfunk')) return {kat:'Telefon/Internet'};
+  return {kat:'Sonstiges'};
 }
 
 async function saveSchnell(){
