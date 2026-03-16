@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -72,6 +72,10 @@
 
 <!-- ── HOME ── -->
 <div class="view on" id="v-home">
+  <!-- Top-Right Toolbar -->
+  <div style="position:absolute;top:16px;right:16px;z-index:90">
+    <button class="btn btn-g btn-sm" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.06);border-color:var(--br2);font-size:18px" onclick="showView('settings')">⚙</button>
+  </div>
 
   <!-- API Key Banner – erscheint nur wenn kein Key hinterlegt ist -->
   <div id="apiBanner" style="display:none" onclick="openApiSheet()">
@@ -89,7 +93,7 @@
        WHY: Macht den Wert der KI-Nutzung sofort sichtbar.
        Formel: 120s (manuell) - 5s (KI) = 115s pro Scan gespart.
        Hochgerechnet auf alle Scans = gesparte Lebenszeit. -->
-  <div class="tacho-card" id="tachoCard">
+  <div class="tacho-card" id="tachoCard" style="display:none">
     <div class="tacho-title">KI-Effizienz seit Start</div>
     <div class="tacho-grid">
       <div class="tacho-item">
@@ -112,14 +116,10 @@
        Gibt konkreten Investitions-Tipp um Steuerlast zu senken. -->
   <div id="progSchutzBanner" style="display:none"></div>
 
-  <!-- Business ↔ Privat Toggle -->
-  <div class="mode-toggle">
-    <button class="mode-btn on biz" id="modeBiz" onclick="setMode('biz')">💼 Business</button>
-    <button class="mode-btn priv" id="modePriv" onclick="setMode('priv')">🏠 Privat</button>
-  </div>
+
 
   <!-- Potential-Ring – ändert Farbe und Bedeutung je nach Modus -->
-  <div class="ring-wrap">
+  <div class="ring-wrap" style="margin-bottom:6px">
     <div class="ring-c">
       <svg class="ring-svg" viewBox="0 0 130 130">
         <circle class="ring-bg" cx="65" cy="65" r="57"/>
@@ -132,6 +132,12 @@
     </div>
     <div class="ring-sub" id="ringSub">–</div>
     <div class="ring-date mono" id="ringDate">–</div>
+  </div>
+
+  <!-- Business ↔ Privat Toggle -->
+  <div class="mode-toggle" style="margin-bottom:14px;box-shadow:none">
+    <button class="mode-btn on biz" id="modeBiz" onclick="setMode('biz')">💼 Business</button>
+    <button class="mode-btn priv" id="modePriv" onclick="setMode('priv')">🏠 Privat</button>
   </div>
 
   <!-- Business-Content (Standard) -->
@@ -592,10 +598,11 @@
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Mein Profil</div>
-    <div class="info-row"><span class="k">Land</span><span class="val" id="settLand">–</span></div>
-    <div class="info-row"><span class="k">Status</span><span class="val" id="settTyp">–</span></div>
-    <div class="info-row"><span class="k">Belegnummer-Format</span><span class="val" id="settFmt">–</span></div>
-    <button class="btn btn-g btn-sm" onclick="resetOnboarding()" style="margin-top:10px">Neu einrichten</button>
+    <div class="field" style="margin-bottom:8px"><label>Land</label><select id="settLandInp" onchange="updateProfileSettings()"><option value="de">Deutschland</option><option value="at">Österreich</option><option value="ch">Schweiz</option><option value="other">Anderes Land</option></select></div>
+    <div class="field" style="margin-bottom:8px"><label>Status</label><select id="settTypInp" onchange="updateProfileSettings()"><option value="frei">Freiberufler</option><option value="ku">Kleinunternehmer §19</option><option value="gew">Gewerbetreibender</option></select></div>
+    <div class="field" style="margin-bottom:8px"><label>Formart Belegnummer</label><select id="settFmtInp" onchange="updateProfileSettings()"><option value="A">ER-2026-0001 (empfohlen)</option><option value="B">2026-Q1-ER-0001</option><option value="C">2026-ER-0001</option></select></div>
+    <div class="field" style="margin-bottom:8px"><label>Steuernummer (optional)</label><input type="text" class="inp" id="settTaxNr" placeholder="z.B. 12/345/67890" oninput="updateProfileSettings()" style="margin-top:4px"></div>
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);line-height:1.6">Änderungen werden sofort übernommen. <a href="#" onclick="resetOnboarding()" style="color:var(--gold)">App neu einrichten</a></p>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">KI-Verbindung</div>
@@ -882,14 +889,14 @@
         <!-- Spracheingabe -->
         <div id="manualSprachWrap" style="margin-bottom:14px">
           <button id="manualMicBtn" onclick="toggleManualMic()"
-            style="width:100%;background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);
+            style="width:100%;background:rgba(74, 158, 107, 0.15);border:1px solid rgba(74, 158, 107, 0.4);border-radius:var(--r12);
             padding:14px;display:flex;align-items:center;justify-content:center;gap:10px;
-            cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300;transition:all .2s">
+            cursor:pointer;color:var(--grn);font-size:13px;font-weight:300;transition:all .2s">
             <svg id="manualMicIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
             </svg>
-            <span id="manualMicLbl">🎤 Sprechen für Business-Beleg</span>
+            <span id="manualMicLbl">🎤 Aufnahme starten</span>
           </button>
           <div id="manualMicTranscript" style="display:none;background:var(--s2);border:1px solid var(--br2);
             border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;

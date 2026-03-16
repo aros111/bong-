@@ -202,42 +202,79 @@ async function saveBeleg(){
     if (!confirmed) return; // Abbruch bei Ungereimtheiten
   }
 
-  // ── PRIVAT-BELEG: komplett andere Logik ──
-  if(scanType==='priv'){
-    const item={
-      type:'priv',
-      belegNr:null,  // WHY: Privat-Belege bekommen KEINE Nummer
-      shop:document.getElementById('pShop').value||'Unbekannt',
-      date:document.getElementById('pDate').value||new Date().toISOString().split('T')[0],
-      brutto:parseFloat(document.getElementById('pBrutto').value)||0,
-      net:null, mwst:null, mwstRate:null,  // WHY: MwSt irrelevant bei Privat
-      cat:document.getElementById('pCat').value,
-      payment:document.getElementById('pPay').value,
-      items:curRes?.items||[],
-      image:capThumb||capB64,
-      savedAt:Date.now(),
-      istAbo:curRes?.istAbo||false,
-      garantieBis:null,
-      isDigitalScreen:curRes?.isDigitalScreen||false,
-      screenType:curRes?.screenType||null
+  // ── BESTIMME ZIEL-TYP UND QUELLE ──
+  let targetType = scanType;
+  let sShop, sDate, sBrutto, sNet, sMwst, sRate, sCat, sPay;
+
+  if (scanType === 'manual') {
+    // Wenn 'manual' gewählt (oder nach KI-Scan in Manual gewechselt)
+    // Ziel: abhängig davon ob Nutzer gerade im Privat- oder Business-Modus ist
+    targetType = appMode === 'priv' ? 'priv' : 'er'; 
+    sShop = document.getElementById('mShop').value || 'Unbekannt';
+    sDate = document.getElementById('mDate').value || new Date().toISOString().split('T')[0];
+    sBrutto = parseFloat(document.getElementById('mBrutto').value) || 0;
+    sNet = parseFloat(document.getElementById('mNet').value) || 0;
+    sMwst = parseFloat(document.getElementById('mMwst').value) || 0;
+    sRate = parseFloat(document.getElementById('mRate').value) || cfg().mwstH;
+    sCat = document.getElementById('mCat').value;
+    sPay = document.getElementById('mPay').value;
+  } else if (scanType === 'priv') {
+    targetType = 'priv';
+    sShop = document.getElementById('pShop').value || 'Unbekannt';
+    sDate = document.getElementById('pDate').value || new Date().toISOString().split('T')[0];
+    sBrutto = parseFloat(document.getElementById('pBrutto').value) || 0;
+    sNet = null; sMwst = null; sRate = null;
+    sCat = document.getElementById('pCat').value;
+    sPay = document.getElementById('pPay').value;
+  } else {
+    // Business (er / ar) via Standard-Felder (falls die direkt genutzt würden)
+    targetType = scanType;
+    sShop = document.getElementById('rShop').value || 'Unbekannt';
+    sDate = document.getElementById('rDate').value || new Date().toISOString().split('T')[0];
+    sBrutto = parseFloat(document.getElementById('rBrutto').value) || 0;
+    sNet = parseFloat(document.getElementById('rNet').value) || 0;
+    sMwst = parseFloat(document.getElementById('rMwst').value) || 0;
+    sRate = parseFloat(document.getElementById('rRate').value) || cfg().mwstH;
+    sCat = document.getElementById('rCat').value;
+    sPay = document.getElementById('rPay').value;
+  }
+
+  // ── PRIVAT-BELEG: Logik ──
+  if (targetType === 'priv') {
+    const item = {
+      type: 'priv',
+      belegNr: null,  // Privat-Belege bekommen KEINE Nummer
+      shop: sShop,
+      date: sDate,
+      brutto: sBrutto,
+      net: null, mwst: null, mwstRate: null,
+      cat: sCat,
+      payment: sPay,
+      items: curRes?.items || [],
+      image: capThumb || capB64,
+      savedAt: Date.now(),
+      istAbo: curRes?.istAbo || false,
+      garantieBis: null,
+      isDigitalScreen: curRes?.isDigitalScreen || false,
+      screenType: curRes?.screenType || null
     };
-    try{
+    try {
       await dbadd(item);
-      toast('Privat-Beleg gespeichert ✓','ok');
-      closeScanner();resetScan();renderHome();
-    }catch(e){toast('Fehler: '+e.message,'er');}
+      toast('Privat-Beleg gespeichert ✓', 'ok');
+      closeScanner(); resetScan(); renderHome();
+    } catch (e) { toast('Fehler: ' + e.message, 'er'); }
     return;
   }
 
   // ── BUSINESS-BELEG (er/ar): bisherige Logik ──
-  const brutto=parseFloat(document.getElementById('rBrutto').value)||0;
-  let mwst=parseFloat(document.getElementById('rMwst').value)||0;
-  let net=parseFloat(document.getElementById('rNet').value)||0;
-  let mwstRate=parseFloat(document.getElementById('rRate').value)||cfg().mwstH;
+  const brutto = sBrutto;
+  let mwst = sMwst;
+  let net = sNet;
+  let mwstRate = sRate;
 
   // ── REVERSE CHARGE BEHANDLUNG ──
-  const shop = document.getElementById('rShop').value || 'Unbekannt';
-  const isRC = scanType === 'er' && isReverseCharge({shop});
+  const shop = sShop;
+  const isRC = targetType === 'er' && isReverseCharge({shop});
   if (isRC) {
     // Bei Reverse Charge: MwSt selbst berechnen (19% auf Brutto), unabhängig von ausgewiesener MwSt
     mwst = Math.round(brutto * 0.19 * 100) / 100;
@@ -248,7 +285,7 @@ async function saveBeleg(){
     document.getElementById('rMwst').value = mwst.toFixed(2);
     document.getElementById('rRate').value = '19';
     toast('Reverse Charge erkannt – MwSt selbst berechnet (19%)', 'wr');
-  } else if (scanType === 'er' && mwst === 0) {
+  } else if (targetType === 'er' && mwst === 0) {
     // MwSt nicht ausgewiesen - normale Berechnung
     if (net > 0 && brutto > 0) {
       // Netto und Brutto gegeben - MwSt = Brutto - Netto
@@ -265,23 +302,23 @@ async function saveBeleg(){
   }
 
   let nr;
-  if(scanType==='ar'&&curRes?.belegNrExtern){
-    nr=curRes.belegNrExtern;arC++;localStorage.setItem('arc',arC);
-  }else{nr=nextNr(scanType);}
+  if (targetType === 'ar' && curRes?.belegNrExtern) {
+    nr = curRes.belegNrExtern; arC++; localStorage.setItem('arc', arC);
+  } else { nr = nextNr(targetType); }
 
   let garantieBis=null;
-  if(curRes?.garantieMonate&&document.getElementById('rDate').value){
-    const kauf=new Date(document.getElementById('rDate').value+'T00:00:00');
+  if(curRes?.garantieMonate&&sDate){
+    const kauf=new Date(sDate+'T00:00:00');
     kauf.setMonth(kauf.getMonth()+curRes.garantieMonate);
     garantieBis=kauf.toISOString().split('T')[0];
   }
 
-  const item={type:scanType,belegNr:nr,
-    shop:document.getElementById('rShop').value||'Unbekannt',
-    date:document.getElementById('rDate').value||new Date().toISOString().split('T')[0],
+  const item={type:targetType,belegNr:nr,
+    shop:sShop,
+    date:sDate,
     net,mwst,brutto,
     mwstRate,
-    cat:document.getElementById('rCat').value,payment:document.getElementById('rPay').value,
+    cat:sCat,payment:sPay,
     items:curRes?.items||[],image:capThumb||capB64,savedAt:Date.now(),
     istAbo:curRes?.istAbo||false,
     garantieBis,
@@ -295,7 +332,7 @@ async function saveBeleg(){
     // WHY: MwSt-Tab sofort aktuell halten – egal ob gerade geöffnet oder nicht
     if(appMode==='biz') renderMwst();
     if(kiScanCount===10) triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
-    if(brutto>=500&&scanType==='er'){const vstRueck=(item.mwst||0);if(vstRueck>=50)triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');}
+    if(brutto>=500&&targetType==='er'){const vstRueck=(item.mwst||0);if(vstRueck>=50)triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');}
     // WHY: Wenn der Scan aus dem Konto-Tab kam (fehlende Beleg), den neuen Beleg direkt zuordnen
     if(_aktiverKontoBuchungId){
       try{

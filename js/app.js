@@ -124,19 +124,29 @@ function resetApiCost(){
   toast('Verbrauch zurückgesetzt','ok');
 }
 function updSettingsInfo(){
-  const c=cfg();
-  document.getElementById('settLand').textContent=c.flag+' '+c.name;
-  document.getElementById('settTyp').textContent=profile.typ==='ku'?'Kleinunternehmer §19':profile.typ==='gew'?'Gewerbetreibender':'Freiberufler';
-  // WHY: Key immer ins Feld laden damit Nutzer ihn sehen/ändern kann
+  document.getElementById('settLandInp').value=profile.land||'de';
+  document.getElementById('settTypInp').value=profile.typ||'frei';
+  document.getElementById('settFmtInp').value=profile.fmt||'A';
+  document.getElementById('settTaxNr').value=profile.taxNr||'';
+  
   const keyInp=document.getElementById('apiKey');
   if(keyInp) keyInp.value=localStorage.getItem('cak')||'';
   updApiCostDisplay();
-  const fmtEx={A:'ER-2026-0001',B:'2026-Q1-ER-0001',C:'2026-ER-0001'};
-  document.getElementById('settFmt').textContent=fmtEx[profile.fmt]||'–';
-  if(apiKey)document.getElementById('apiKey').value=apiKey;
   updApiStat();
   loadAboKeywords();
 }
+
+window.updateProfileSettings = function(){
+  profile.land = document.getElementById('settLandInp').value;
+  profile.typ = document.getElementById('settTypInp').value;
+  profile.fmt = document.getElementById('settFmtInp').value;
+  profile.taxNr = document.getElementById('settTaxNr').value;
+  localStorage.setItem('p_land', profile.land);
+  localStorage.setItem('p_typ', profile.typ);
+  localStorage.setItem('p_fmt', profile.fmt);
+  localStorage.setItem('p_taxNr', profile.taxNr);
+  if(typeof renderHome === 'function') renderHome();
+};
 
 // ════════════════════════════════════════════════════════
 // ██ MODUL: BELEGNUMMER – GoBD-konform

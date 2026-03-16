@@ -2032,6 +2032,91 @@ function parseManualSprachEingabe(text){
   if(shopRaw) document.getElementById('mShop').value=shopRaw.charAt(0).toUpperCase()+shopRaw.slice(1);
 }
 
+function parsePrivatSprachEingabe(text){
+  const t=text.toLowerCase();
+
+  // Betrag extrahieren
+  const betragMatch=t.match(/(\d+[.,]\d{1,2}|\d+)\s*(?:euro|€|eur)?/);
+  if(betragMatch){
+    const betrag=parseFloat(betragMatch[1].replace(',','.'));
+    if(betrag>0) document.getElementById('pBrutto').value=betrag.toFixed(2);
+  }
+
+  // Kategorie erkennen (Privat)
+  const v=guessKategorie(text);
+  document.getElementById('pCat').value=v.kat;
+
+  // Shop-Name: alles vor dem Betrag
+  const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|€|eur)?/i,'').replace(/\s+/g,' ').trim();
+  if(shopRaw) document.getElementById('pShop').value=shopRaw.charAt(0).toUpperCase()+shopRaw.slice(1);
+}
+
+let manualMicActive = false;
+let manualRecognition = null;
+
+function toggleManualMic() {
+  if (manualMicActive) stopManualMic();
+  else startManualMic();
+}
+
+function startManualMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { toast('Spracheingabe in diesem Browser nicht unterstützt', 'er'); return; }
+  
+  const labelPrefix = appMode === 'priv' ? 'Privat-Ausgabe' : 'Business-Beleg';
+  try {
+    manualRecognition = new SR();
+    manualRecognition.lang = 'de-DE';
+    manualRecognition.continuous = false;
+    manualRecognition.interimResults = true;
+    
+    manualRecognition.onstart = () => {
+      manualMicActive = true;
+      document.getElementById('manualMicBtn').style.background = 'rgba(192,64,64,.15)';
+      document.getElementById('manualMicBtn').style.borderColor = 'rgba(192,64,64,.4)';
+      document.getElementById('manualMicBtn').style.color = 'var(--red)';
+      document.getElementById('manualMicLbl').textContent = '🔴 Aufnahme für ' + labelPrefix + ' läuft …';
+      document.getElementById('manualMicTranscript').style.display = 'block';
+      document.getElementById('manualMicTranscript').textContent = '...';
+    };
+    
+    manualRecognition.onresult = e => {
+      const transcript = Array.from(e.results).map(r => r[0].transcript).join('');
+      document.getElementById('manualMicTranscript').textContent = transcript;
+      if (e.results[e.results.length - 1].isFinal) {
+        if (appMode === 'priv') parsePrivatSprachEingabe(transcript);
+        else parseManualSprachEingabe(transcript);
+        stopManualMic();
+      }
+    };
+    
+    manualRecognition.onerror = () => stopManualMic();
+    manualRecognition.onend = () => stopManualMic();
+    manualRecognition.start();
+  } catch (err) {
+    if (err.name === 'NotAllowedError') {
+      toast('Mikrofon-Zugriff verweigert', 'er');
+    } else {
+      toast('Spracherkennung Fehler: ' + err.message, 'er');
+    }
+  }
+}
+
+function stopManualMic() {
+  manualMicActive = false;
+  if (manualRecognition) {
+    try { manualRecognition.stop(); } catch(e) {}
+  }
+  manualRecognition = null;
+  
+  const btn = document.getElementById('manualMicBtn');
+  btn.style.background = 'rgba(74, 158, 107, 0.15)';
+  btn.style.borderColor = 'rgba(74, 158, 107, 0.4)';
+  btn.style.color = 'var(--grn)';
+  document.getElementById('manualMicLbl').textContent = '🎤 Aufnahme starten';
+}
+
+
 function guessBusinessKategorie(text){
   const t=text.toLowerCase();
   if(t.includes('büro')||t.includes('papier')||t.includes('drucker')) return {kat:'Bürobedarf'};

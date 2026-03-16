@@ -192,67 +192,89 @@ function addNewItemField(name='', price='') {
 }
 
 function showRes(r){
-  if(!r)return;
-  // WHY: Bei Privat-Scan Privat-Felder + Items befüllen
-  if(scanType==='priv'){
-    document.getElementById('pShop').value=r.shop||'';
-    document.getElementById('pDate').value=r.date||new Date().toISOString().split('T')[0];
-    document.getElementById('pBrutto').value=r.brutto!=null?r.brutto.toFixed(2):'';
-    if(r.category)document.getElementById('pCat').value=r.category;
-    if(r.payment)document.getElementById('pPay').value=r.payment;
-    // WHY: Items immer neu befüllen – sonst bleibt vorheriger Scan stehen
-    const pbd=document.getElementById('itemsB');
-    if(pbd) pbd.innerHTML='';
-    if(r.items&&r.items.length){
-      document.getElementById('itemsSec').style.display='block';
-      r.items.forEach(it=>{
-        addNewItemField(it.name || '', it.price ? parseFloat(it.price).toFixed(2) : '');
-      });
-      const appendBtn = document.createElement('tr');
-      appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
-      if(pbd) pbd.appendChild(appendBtn);
-    } else {
-      document.getElementById('itemsSec').style.display='none';
-    }
-    const rib=document.getElementById('retryKiBtn');if(rib)rib.style.display='none';
-    document.getElementById('resWrap').classList.add('on');
-    return;
-  }
-  document.getElementById('rShop').value=r.shop||'';
-  document.getElementById('rDate').value=r.date||new Date().toISOString().split('T')[0];
-  document.getElementById('rNet').value=r.net!=null?r.net.toFixed(2):'';
-  document.getElementById('rMwst').value=r.mwst!=null?r.mwst.toFixed(2):'';
-  document.getElementById('rBrutto').value=r.brutto!=null?r.brutto.toFixed(2):'';
+  if(!r) return;
   
-  // Attach change listeners to manual edits on core fields
+  // SWITCH TO MANUAL MODE so the user can easily edit the AI-extracted fields
+  // Set scanType manually to reveal the #manualFields
+  setScanType('manual');
+  
+  // Also clear the scanner overlay states if any
+  document.getElementById('resWrap').classList.add('on');
+  const rib = document.getElementById('retryKiBtn');
+  if(rib) rib.style.display = 'none';
+
+  // 1. BEFÜLLE DIE MANUELLEN FELDER (Die neuen "Bearbeiten"-Felder)
+  document.getElementById('mShop').value = r.shop || '';
+  document.getElementById('mDate').value = r.date || new Date().toISOString().split('T')[0];
+  document.getElementById('mNet').value = r.net != null ? r.net.toFixed(2) : '';
+  document.getElementById('mMwst').value = r.mwst != null ? r.mwst.toFixed(2) : '';
+  document.getElementById('mBrutto').value = r.brutto != null ? r.brutto.toFixed(2) : '';
+  if(r.mwstRate != null) document.getElementById('mRate').value = r.mwstRate;
+  if(r.category) document.getElementById('mCat').value = r.category;
+  if(r.payment) document.getElementById('mPay').value = r.payment;
+
+  // 2. BEFÜLLE SICHERHEITSHALBER AUCH DIE BUSINESS / PRIVAT FELDER BACKSTAGE
+  // (Falls bestehender Code sich auf rShop / pShop stützt)
+  
+  // Business Felder (rShop, etc.)
+  document.getElementById('rShop').value = r.shop || '';
+  document.getElementById('rDate').value = r.date || new Date().toISOString().split('T')[0];
+  document.getElementById('rNet').value = r.net != null ? r.net.toFixed(2) : '';
+  document.getElementById('rMwst').value = r.mwst != null ? r.mwst.toFixed(2) : '';
+  document.getElementById('rBrutto').value = r.brutto != null ? r.brutto.toFixed(2) : '';
+  if(r.mwstRate != null) document.getElementById('rRate').value = r.mwstRate;
+  if(r.category) document.getElementById('rCat').value = r.category;
+  if(r.payment) document.getElementById('rPay').value = r.payment;
+
+  // Privat Felder (pShop, etc.)
+  document.getElementById('pShop').value = r.shop || '';
+  document.getElementById('pDate').value = r.date || new Date().toISOString().split('T')[0];
+  document.getElementById('pBrutto').value = r.brutto != null ? r.brutto.toFixed(2) : '';
+  if(r.category) document.getElementById('pCat').value = r.category;
+  if(r.payment) document.getElementById('pPay').value = r.payment;
+  
+  // Event-Listener für Live-Rechnung auch auf die M-Felder binden
+  const mBruttoInp = document.getElementById('mBrutto');
+  const mRateInp = document.getElementById('mRate');
+  if(mBruttoInp) mBruttoInp.oninput = autoCalcManualMwst;
+  if(mRateInp) mRateInp.onchange = autoCalcManualMwst;
+
+  // Attach change listeners to manual edits on core fields (Business)
   const rb = document.getElementById('rBrutto');
   const rr = document.getElementById('rRate');
   if(rb) rb.oninput = autoCalcMwst;
   if(rr) rr.onchange = autoCalcMwst;
 
-  if(r.mwstRate)document.getElementById('rRate').value=r.mwstRate;
-  if(r.category)document.getElementById('rCat').value=r.category;
-  if(r.payment)document.getElementById('rPay').value=r.payment;
-  const bd=document.getElementById('itemsB');bd.innerHTML='';
-  if(r.items&&r.items.length){
-    document.getElementById('itemsSec').style.display='block';
-    r.items.forEach(it=>{
-      addNewItemField(it.name || '', it.price ? parseFloat(it.price).toFixed(2) : '');
-    });
-    const appendBtn = document.createElement('tr');
-    appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
-    bd.appendChild(appendBtn);
-  }else {
-    document.getElementById('itemsSec').style.display='block';
-    const appendBtn = document.createElement('tr');
-    appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
-    bd.appendChild(appendBtn);
+  // 3. ITEMS (Positionen) EINFÜGEN
+  const bd = document.getElementById('itemsB');
+  if(bd) {
+    bd.innerHTML = '';
+    if(r.items && r.items.length){
+      document.getElementById('itemsSec').style.display = 'block';
+      r.items.forEach(it => {
+        addNewItemField(it.name || '', it.price ? parseFloat(it.price).toFixed(2) : '');
+      });
+      const appendBtn = document.createElement('tr');
+      appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
+      bd.appendChild(appendBtn);
+    } else {
+      document.getElementById('itemsSec').style.display = 'block';
+      const appendBtn = document.createElement('tr');
+      appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
+      bd.appendChild(appendBtn);
+    }
   }
-  
-  // KI-erneut-Button ausblenden wenn KI erfolgreich war
-  const rib = document.getElementById('retryKiBtn');
-  if(rib) rib.style.display='none';
-  document.getElementById('resWrap').classList.add('on');
+}
+
+function autoCalcManualMwst() {
+  const brutto = parseFloat(document.getElementById('mBrutto').value.replace(',', '.')) || 0;
+  const rate = parseFloat(document.getElementById('mRate').value) || 0;
+  if(brutto > 0 && rate >= 0) {
+    const netto = brutto / (1 + rate / 100);
+    const mwst = brutto - netto;
+    document.getElementById('mNet').value = netto.toFixed(2);
+    document.getElementById('mMwst').value = mwst.toFixed(2);
+  }
 }
 
 // WHY: Zeigt leeres Formular zur manuellen Eingabe.
