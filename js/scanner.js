@@ -1,8 +1,8 @@
-// â–ˆâ–ˆ MODUL: SCANNER & KI-ERKENNUNG
+// ██ MODUL: SCANNER & KI-ERKENNUNG
 // WHY: Claude Vision ist in 2-3 Sek fertig und erkennt auch
 // Monitore, Dashboards und Screens sauber. Der erweiterte Prompt
-// extrahiert zusÃ¤tzlich Garantie-relevante und Abo-Signale.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// extrahiert zusätzlich Garantie-relevante und Abo-Signale.
+// ════════════════════════════════════════════════════════
 function openScanner(){document.getElementById('scanOvl').classList.add('on');setScanType(appMode==='priv'?'priv':'er');}
 function closeScanner(){document.getElementById('scanOvl').classList.remove('on');stopCam();}
 function closeScanOuter(e){if(e.target===document.getElementById('scanOvl'))closeScanner();}
@@ -39,7 +39,7 @@ async function startCam(){
     document.getElementById('btnStop').style.display='inline-block';
     document.getElementById('vfOvl').style.display='block';
     document.getElementById('capImg').style.display='none';
-  }catch(e){toast('Kamera nicht verfÃ¼gbar â€“ bitte Foto aus Galerie wÃ¤hlen','er');}
+  }catch(e){toast('Kamera nicht verfügbar – bitte Foto aus Galerie wählen','er');}
 }
 function stopCam(){
   if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
@@ -54,19 +54,19 @@ function stopCam(){
     document.getElementById('camPH').style.display='block';
   }
 }
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: BILD-KOMPRIMIERUNG
-// WHY: iPhone-Fotos sind 3â€“8 MB. Die Anthropic API hat ein
-// Limit und groÃŸe Bilder sind langsam. Wir skalieren auf
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BILD-KOMPRIMIERUNG
+// WHY: iPhone-Fotos sind 3–8 MB. Die Anthropic API hat ein
+// Limit und große Bilder sind langsam. Wir skalieren auf
 // max. 1024px und komprimieren auf ~200KB JPEG.
-// FÃ¼r die gespeicherte Vorschau: nochmal kleiner (400px/30KB).
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Für die gespeicherte Vorschau: nochmal kleiner (400px/30KB).
+// ════════════════════════════════════════════════════════
 function compressImage(b64, maxPx, qualityStart) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onerror = () => reject(new Error('Bild konnte nicht geladen werden'));
     img.onload = () => {
-      // SeitenverhÃ¤ltnis behalten, lÃ¤ngste Seite = maxPx
+      // Seitenverhältnis behalten, längste Seite = maxPx
       let w = img.width, h = img.height;
       if (!w || !h) { reject(new Error('Bild hat keine Dimensionen')); return; }
       if (w > maxPx || h > maxPx) {
@@ -76,12 +76,12 @@ function compressImage(b64, maxPx, qualityStart) {
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d');
-      // WeiÃŸen Hintergrund zeichnen (fÃ¼r PNGs mit Transparenz)
+      // Weißen Hintergrund zeichnen (für PNGs mit Transparenz)
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
 
-      // QualitÃ¤t schrittweise reduzieren bis < 200KB
+      // Qualität schrittweise reduzieren bis < 200KB
       let q = qualityStart;
       let result;
       do {
@@ -91,7 +91,7 @@ function compressImage(b64, maxPx, qualityStart) {
 
       // Sicherheitscheck: leeres Canvas abfangen
       if (!result || result === 'data:,' || result.length < 100) {
-        reject(new Error('Canvas ist leer â€“ Bild evtl. zu groÃŸ fÃ¼r Speicher'));
+        reject(new Error('Canvas ist leer – Bild evtl. zu groß für Speicher'));
         return;
       }
       resolve(result);
@@ -117,7 +117,7 @@ function captureCam(){
 
 function loadFile(inp){
   const f=inp.files[0];if(!f)return;
-  setLog('ðŸ—œï¸ Bild wird komprimiert â€¦');
+  setLog('🗜️ Bild wird komprimiert …');
   document.getElementById('progWrap').style.display='block';
   setP(10);
   const r=new FileReader();
@@ -130,16 +130,16 @@ function loadFile(inp){
     document.getElementById('camPH').style.display='none';
     document.getElementById('camCtrls').style.display='none';
     stopCam();
-    setP(25); setLog('ðŸ—œï¸ Komprimiere â€¦');
-    // FÃ¼r API: auf 1024px / max ~200KB komprimieren
+    setP(25); setLog('🗜️ Komprimiere …');
+    // Für API: auf 1024px / max ~200KB komprimieren
     const compressed = await compressImage(raw, 1024, 0.82);
-    // FÃ¼r Speicherung: 800px Vorschau â€“ lesbar fÃ¼r Menschen, trotzdem klein
+    // Für Speicherung: 800px Vorschau – lesbar für Menschen, trotzdem klein
     const thumb = await compressImage(raw, 800, 0.82);
     capB64 = compressed;
     capThumb = thumb; // wird beim Speichern als image verwendet
     setP(40);
     const kb = Math.round(compressed.length * 3/4 / 1024);
-    setLog(`âœ“ ${kb} KB â€“ wird analysiert â€¦`);
+    setLog(`✓ ${kb} KB – wird analysiert …`);
     processImg(compressed);
   };
   r.readAsDataURL(f);
@@ -153,19 +153,19 @@ function resetScan(){
   document.getElementById('resWrap').classList.remove('on');
   document.getElementById('progWrap').style.display='none';
   document.getElementById('btnStop').style.display='none';
-  // WHY: Items-Tabelle immer leeren â€“ sonst bleibt vorheriger Scan stehen
+  // WHY: Items-Tabelle immer leeren – sonst bleibt vorheriger Scan stehen
   const bd=document.getElementById('itemsB');if(bd)bd.innerHTML='';
   const sec=document.getElementById('itemsSec');if(sec)sec.style.display='none';
   // Privat-Felder auch leeren
   try{document.getElementById('pShop').value='';document.getElementById('pBrutto').value='';}catch(e){}
-  // File-Inputs zurÃ¼cksetzen damit dasselbe Foto nochmal wÃ¤hlbar ist
+  // File-Inputs zurücksetzen damit dasselbe Foto nochmal wählbar ist
   try{document.getElementById('fi').value='';document.getElementById('fiGal').value='';}catch(e){}
 }
 function setLog(m){document.getElementById('progLog').textContent=m;}
 function setP(p){document.getElementById('progFill').style.width=p+'%';}
 
 async function processImg(b64){
-  // WHY: Key immer frisch lesen â€“ er kÃ¶nnte nach dem Seitenload gespeichert worden sein
+  // WHY: Key immer frisch lesen – er könnte nach dem Seitenload gespeichert worden sein
   apiKey = localStorage.getItem('cak') || apiKey || '';
 
   // Nur anzeigen wenn noch nicht sichtbar (loadFile hat es evtl. schon gezeigt)
@@ -174,13 +174,13 @@ async function processImg(b64){
 
   // Sicherheitscheck: Base64 muss valide sein
   if(!b64 || b64 === 'data:,' || b64.length < 200){
-    setLog('âŒ Bild ist leer oder beschÃ¤digt â€“ bitte nochmal aufnehmen.');
+    setLog('❌ Bild ist leer oder beschädigt – bitte nochmal aufnehmen.');
     setTimeout(()=>{document.getElementById('progWrap').style.display='none';},3000);
     return;
   }
 
   if(!apiKey){
-    setLog('âš ï¸ Kein API Key â€“ Daten manuell eingeben oder Key in Settings hinterlegen.');
+    setLog('⚠️ Kein API Key – Daten manuell eingeben oder Key in Settings hinterlegen.');
     setP(100);
     setTimeout(()=>{document.getElementById('progWrap').style.display='none';setP(0);},800);
     showManualForm();
@@ -188,10 +188,10 @@ async function processImg(b64){
   }
 
   try{
-    setLog('ðŸ“¤ Bild wird gesendet â€¦'); setP(15);
+    setLog('📤 Bild wird gesendet …'); setP(15);
     const res = await askClaude(b64);
     trackApiCost('scan', b64.length);
-    setP(95); setLog('âœ“ Analyse abgeschlossen.');
+    setP(95); setLog('✓ Analyse abgeschlossen.');
     incrKiScans();
     curRes = res;
     showRes(res);
@@ -199,21 +199,21 @@ async function processImg(b64){
     setTimeout(()=>{document.getElementById('progWrap').style.display='none';setP(0);}, 600);
   } catch(e) {
     setP(100);
-    setLog('âŒ ' + (e.message || 'Unbekannter Fehler'));
+    setLog('❌ ' + (e.message || 'Unbekannter Fehler'));
     console.error('BelegScan KI-Fehler:', e);
     setTimeout(()=>{
       document.getElementById('progWrap').style.display='none';
       setP(0);
     }, 5000);
     showManualForm();
-    toast(e.message || 'KI-Fehler â€“ Felder manuell ausfÃ¼llen', 'er');
+    toast(e.message || 'KI-Fehler – Felder manuell ausfüllen', 'er');
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
-// â–ˆâ–ˆ OFFLINE SYNC
-// â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• â• 
+// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// ██ OFFLINE SYNC
+// ════════════════════════════════════════════════════════
 window.addEventListener('online', async () => {
   try {
     const offlineScans = await dbOfflineScans();

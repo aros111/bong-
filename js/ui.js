@@ -1,10 +1,10 @@
-// â–ˆâ–ˆ MODUL: POTENTIAL-RING
+// ██ MODUL: POTENTIAL-RING
 // WHY: Das visuelle Zentrum der App. Je nach Modus und Nutzertyp
-// zeigt er die relevanteste Zahl â€“ kein verschwendeter Platz.
-// Business+MwSt-Pflicht â†’ Tage bis Voranmeldung
-// Business+KU â†’ Umsatz-% bis zur Grenze
-// Privat â†’ Optimierbares Geld in Prozent genutzt
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// zeigt er die relevanteste Zahl – kein verschwendeter Platz.
+// Business+MwSt-Pflicht → Tage bis Voranmeldung
+// Business+KU → Umsatz-% bis zur Grenze
+// Privat → Optimierbares Geld in Prozent genutzt
+// ════════════════════════════════════════════════════════
 async function updateRing(){
   const circ=358.14;
   const rf=document.getElementById('ringF');
@@ -23,12 +23,12 @@ async function updateRing(){
     rf.style.strokeDashoffset=circ*(1-pct);
     document.getElementById('ringBig').textContent=fm(Math.round(potential));
     document.getElementById('ringBig').style.color=col;
-    document.getElementById('ringTag').textContent='â‚¬/Mon sparen';
-    document.getElementById('ringSub').textContent=abos.length+' Abos erkannt Â· '+abos.filter(a=>a.count<=2).length+' selten genutzt';
-    document.getElementById('ringDate').textContent='Abo-Gesamtlast: '+fm(totalAbo)+' â‚¬/Mon';
+    document.getElementById('ringTag').textContent='€/Mon sparen';
+    document.getElementById('ringSub').textContent=abos.length+' Abos erkannt · '+abos.filter(a=>a.count<=2).length+' selten genutzt';
+    document.getElementById('ringDate').textContent='Abo-Gesamtlast: '+fm(totalAbo)+' €/Mon';
     // Privat-Hero updaten
     document.getElementById('heroPrivVal').textContent=fm(potential*12)+' '+cfg().currency;
-    document.getElementById('heroPrivSub').textContent=`${abos.filter(a=>a.count<=2).length} Abos selten genutzt â€“ mÃ¶gliche Jahrersparnis`;
+    document.getElementById('heroPrivSub').textContent=`${abos.filter(a=>a.count<=2).length} Abos selten genutzt – mögliche Jahrersparnis`;
     document.getElementById('heroPriv').className='hero priv';
     // Insight-Banner wenn Sparpotential > 0
     renderInsightBanner(abos,potential);
@@ -38,7 +38,7 @@ async function updateRing(){
   // BUSINESS-MODUS
   rf.style.stroke='var(--gold)';
   if(profile.typ==='ku'){
-    // KU-UmsatzwÃ¤chter
+    // KU-Umsatzwächter
     const all=await dba(),now=new Date();
     const yr=all.filter(b=>b.type==='ar'&&b.date&&new Date(b.date+'T00:00:00').getFullYear()===now.getFullYear());
     const umsatz=yr.reduce((s,b)=>s+(b.brutto||0),0);
@@ -57,8 +57,8 @@ async function updateRing(){
     document.getElementById('kuBarFill').style.background=col;
     document.getElementById('kuBarLeft').textContent='Umsatz '+fmK(umsatz)+' '+cfg().currency;
     document.getElementById('kuBarRight').textContent='Grenze '+fmK(limit);
-    if(pct>=.9){document.getElementById('kuBarHint').textContent='âš ï¸ MwSt-Pflichtgrenze fast erreicht! Steuerberater kontaktieren.';document.getElementById('kuBarHint').style.color='var(--red)';}
-    else if(pct>=.75){document.getElementById('kuBarHint').textContent='Noch '+fmK(rest)+' '+cfg().currency+' Puffer â€“ plane voraus.';document.getElementById('kuBarHint').style.color='var(--orn)';}
+    if(pct>=.9){document.getElementById('kuBarHint').textContent='⚠️ MwSt-Pflichtgrenze fast erreicht! Steuerberater kontaktieren.';document.getElementById('kuBarHint').style.color='var(--red)';}
+    else if(pct>=.75){document.getElementById('kuBarHint').textContent='Noch '+fmK(rest)+' '+cfg().currency+' Puffer – plane voraus.';document.getElementById('kuBarHint').style.color='var(--orn)';}
     else{document.getElementById('kuBarHint').textContent='Noch '+fmK(rest)+' '+cfg().currency+' Puffer.';document.getElementById('kuBarHint').style.color='var(--txt3)';}
     document.getElementById('heroLbl').textContent='Einnahmen dieses Jahr';
     document.getElementById('heroCols').style.display='none';
@@ -84,62 +84,62 @@ async function updateRing(){
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: EFFIZIENZ-TACHO
+// ════════════════════════════════════════════════════════
+// ██ MODUL: EFFIZIENZ-TACHO
 // WHY: Macht den ROI der KI-Nutzung transparent.
 // Formel aus der Spezifikation:
 //   Zeit_manuell (120s) - Zeit_KI (5s) = 115s pro Scan gespart
-//   Steuerberater: ~150â‚¬/h = 0,0417â‚¬/s â†’ gespart: 115s Ã— 0,0417â‚¬ = ~4,80â‚¬ pro Scan
-// Der Tacho zÃ¤hlt alle KI-Scans und rechnet hoch.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+//   Steuerberater: ~150€/h = 0,0417€/s → gespart: 115s × 0,0417€ = ~4,80€ pro Scan
+// Der Tacho zählt alle KI-Scans und rechnet hoch.
+// ════════════════════════════════════════════════════════
 
-// Konstanten fÃ¼r die Berechnung (aus Master-Spezifikation)
-const SECS_MANUELL  = 120;  // Sekunden fÃ¼r manuelle Eingabe
-const SECS_KI       = 5;    // Sekunden fÃ¼r KI-Scan
+// Konstanten für die Berechnung (aus Master-Spezifikation)
+const SECS_MANUELL  = 120;  // Sekunden für manuelle Eingabe
+const SECS_KI       = 5;    // Sekunden für KI-Scan
 const SECS_GESPART  = SECS_MANUELL - SECS_KI; // = 115s pro Scan
 const STBR_PRO_STD  = 150;  // Steuerberater-Stundenhonorar (DACH-Durchschnitt)
-const STBR_PRO_SEK  = STBR_PRO_STD / 3600;    // = ~0,0417â‚¬ pro Sekunde
+const STBR_PRO_SEK  = STBR_PRO_STD / 3600;    // = ~0,0417€ pro Sekunde
 
-// KI-Scan-ZÃ¤hler aus localStorage (wird bei jedem erfolgreichen Scan erhÃ¶ht)
+// KI-Scan-Zähler aus localStorage (wird bei jedem erfolgreichen Scan erhöht)
 let kiScanCount = parseInt(localStorage.getItem('kiScans') || '0');
 
 function incrKiScans() {
-  // WHY: Nur zÃ¤hlen wenn wirklich die KI gearbeitet hat (nicht manuell)
+  // WHY: Nur zählen wenn wirklich die KI gearbeitet hat (nicht manuell)
   kiScanCount++;
   localStorage.setItem('kiScans', kiScanCount);
 }
 
 function renderTacho() {
-  // Gesparte Zeit: Anzahl KI-Scans Ã— 115 Sekunden
+  // Gesparte Zeit: Anzahl KI-Scans × 115 Sekunden
   const sekundenGespart = kiScanCount * SECS_GESPART;
   const minutenGespart  = Math.round(sekundenGespart / 60);
 
   // Gesparte Kosten vs. Steuerberater
   const euroGespart = kiScanCount * SECS_GESPART * STBR_PRO_SEK;
 
-  // Darstellung: unter 60min = "X Min", darÃ¼ber = "X Std"
+  // Darstellung: unter 60min = "X Min", darüber = "X Std"
   const zeitText = minutenGespart < 60
     ? minutenGespart + ' Min'
     : (minutenGespart / 60).toFixed(1) + ' Std';
 
   document.getElementById('tachoScans').textContent = kiScanCount;
   document.getElementById('tachoZeit').textContent  = zeitText;
-  document.getElementById('tachoGeld').textContent  = fmK(Math.round(euroGespart)) + ' â‚¬';
+  document.getElementById('tachoGeld').textContent  = fmK(Math.round(euroGespart)) + ' €';
 
   // Tacho nur anzeigen wenn mindestens 1 Scan gemacht wurde
-  // WHY: Leere Nullen wÃ¤ren kein motivierendes Bild
+  // WHY: Leere Nullen wären kein motivierendes Bild
   document.getElementById('tachoCard').style.display = kiScanCount > 0 ? 'block' : 'none';
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: PROGRESSIONS-SCHUTZ
-// WHY: Warnt proaktiv bevor der Nutzer in die nÃ¤chste
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PROGRESSIONS-SCHUTZ
+// WHY: Warnt proaktiv bevor der Nutzer in die nächste
 // Steuerprogression rutscht. Gibt konkreten Investitions-Tipp
 // damit er jetzt noch handeln kann.
-// Steuerstufen DE nach Â§32a EStG (zu versteuerndes Einkommen):
-//   0-11.604â‚¬ = 0%, 11.605-17.005â‚¬ = 14-24%, 17.006-66.760â‚¬ = 24-42%
-//   66.761-277.825â‚¬ = 42%, >277.825â‚¬ = 45%
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Steuerstufen DE nach §32a EStG (zu versteuerndes Einkommen):
+//   0-11.604€ = 0%, 11.605-17.005€ = 14-24%, 17.006-66.760€ = 24-42%
+//   66.761-277.825€ = 42%, >277.825€ = 45%
+// ════════════════════════════════════════════════════════
 async function renderProgressionsSchutz() {
   const banner = document.getElementById('progSchutzBanner');
 
@@ -152,18 +152,18 @@ async function renderProgressionsSchutz() {
   const ausg = er.reduce((s, b) => s + (b.net || 0), 0);
   const gewinn = Math.max(0, ein - ausg);
 
-  // Grundfreibetrag abziehen â†’ zu versteuerndes Einkommen
+  // Grundfreibetrag abziehen → zu versteuerndes Einkommen
   const grundFB = 11604;
   const zvE = Math.max(0, gewinn - grundFB);
 
   // Stufengrenzen (zvE-Werte) und Warnschwellen
-  // WHY: Wir warnen wenn man innerhalb 5.000â‚¬ einer Stufengrenze ist
+  // WHY: Wir warnen wenn man innerhalb 5.000€ einer Stufengrenze ist
   const stufen = [
-    { grenze: 17005,   rate: 24, naechste: 42, label: '24â€“42 %' },
+    { grenze: 17005,   rate: 24, naechste: 42, label: '24–42 %' },
     { grenze: 66760,   rate: 42, naechste: 45, label: '42 %'    },
     { grenze: 277825,  rate: 45, naechste: 45, label: '45 %'    },
   ];
-  const WARN_ABSTAND = 5000; // Warnen wenn noch <5.000â‚¬ bis zur nÃ¤chsten Stufe
+  const WARN_ABSTAND = 5000; // Warnen wenn noch <5.000€ bis zur nächsten Stufe
 
   let gefunden = null;
   for (const s of stufen) {
@@ -177,49 +177,49 @@ async function renderProgressionsSchutz() {
   if (!gefunden) { banner.style.display = 'none'; return; }
 
   // Investitions-Tipp: Steuer-optimale Ausgaben die jetzt noch Sinn ergeben
-  // WHY: Konkreter Tipp > abstrakte Warnung. Nutzer weiÃŸ was er tun soll.
+  // WHY: Konkreter Tipp > abstrakte Warnung. Nutzer weiß was er tun soll.
   const tipps = [
     'Laptop oder externes Display kaufen',
-    'Software-Lizenzen fÃ¼r das nÃ¤chste Jahr voraus bezahlen',
+    'Software-Lizenzen für das nächste Jahr voraus bezahlen',
     'Fachliteratur und Weiterbildung buchen',
-    'BÃ¼romÃ¶bel oder Ergonomie-Ausstattung anschaffen',
-    'Reparaturen und Wartung jetzt durchfÃ¼hren lassen',
+    'Büromöbel oder Ergonomie-Ausstattung anschaffen',
+    'Reparaturen und Wartung jetzt durchführen lassen',
   ];
   const tipp = tipps[Math.floor(zvE / 1000) % tipps.length];
 
   banner.style.display = 'block';
   banner.innerHTML = `<div class="prog-schutz">
-    <div class="head">âš ï¸ Progressions-Warnung: Noch ${fmK(gefunden.abstand)} â‚¬ Puffer</div>
+    <div class="head">⚠️ Progressions-Warnung: Noch ${fmK(gefunden.abstand)} € Puffer</div>
     <div class="body">
-      Du nÃ¤hert dich dem ${gefunden.label}-Steuersatz. Jeder weitere Euro Gewinn
+      Du nähert dich dem ${gefunden.label}-Steuersatz. Jeder weitere Euro Gewinn
       kostet dich dann bis zu <strong style="color:var(--orn)">${gefunden.naechste} Cent Steuern</strong>.
       <br><br>
-      Aktuelles zvE: <span class="mono" style="color:var(--txt)">${fmK(gefunden.zvE)} â‚¬</span> Â·
-      Stufengrenze: <span class="mono" style="color:var(--orn)">${fmK(gefunden.grenze)} â‚¬</span>
+      Aktuelles zvE: <span class="mono" style="color:var(--txt)">${fmK(gefunden.zvE)} €</span> ·
+      Stufengrenze: <span class="mono" style="color:var(--orn)">${fmK(gefunden.grenze)} €</span>
     </div>
     <div class="tipp">
-      ðŸ’¡ <strong style="font-weight:300">Investitions-Tipp:</strong> ${tipp} â€“
-      das senkt deinen Gewinn und hÃ¤lt dich in der gÃ¼nstigeren Steuerzone.
+      💡 <strong style="font-weight:300">Investitions-Tipp:</strong> ${tipp} –
+      das senkt deinen Gewinn und hält dich in der günstigeren Steuerzone.
       Als Betriebsausgabe 100% absetzbar.
     </div>
   </div>`;
 
   // WHY: Progressions-Warnung = echter Aha-Moment = Bong-Trigger
   triggerBong(
-    `Du nÃ¤hert dich dem ${gefunden.label}-Steuersatz. Noch ${fmK(gefunden.abstand)} â‚¬ Puffer.`,
+    `Du nähert dich dem ${gefunden.label}-Steuersatz. Noch ${fmK(gefunden.abstand)} € Puffer.`,
     'progression'
   );
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: BONG-BUTTON
-// WHY: Erscheint NICHT stÃ¤ndig. Nur nach echten "Aha-Momenten":
-// - GroÃŸer Steuerspar-Tipp wurde angezeigt
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BONG-BUTTON
+// WHY: Erscheint NICHT ständig. Nur nach echten "Aha-Momenten":
+// - Großer Steuerspar-Tipp wurde angezeigt
 // - KU-Grenze sicher unterschritten (Nutzer ist safe)
 // - Meilenstein erreicht (z.B. 10. Scan)
 // Der Nutzer sieht die Live-Kalkulation: Trinkgeld ist fast gratis
-// weil 100% absetzbar + MwSt-RÃ¼ckerstattung.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// weil 100% absetzbar + MwSt-Rückerstattung.
+// ════════════════════════════════════════════════════════
 
 // Verhindert Spam: Bong nur 1x alle 24h zeigen
 function canShowBong() {
@@ -263,7 +263,7 @@ function closeBongSheet() { document.getElementById('bongOvl').classList.remove(
 function closeBongOuter(e) { if (e.target === document.getElementById('bongOvl')) closeBongSheet(); }
 
 function calcBongLive() {
-  // WHY: Live-Kalkulation zeigt dem Nutzer die tatsÃ¤chlichen Netto-Kosten
+  // WHY: Live-Kalkulation zeigt dem Nutzer die tatsächlichen Netto-Kosten
   // nach Steuerersparnis. Das Finanzamt "zahlt" einen Teil mit.
   const betrag = parseFloat(document.getElementById('bongAmount').value) || 0;
   if (betrag <= 0) {
@@ -283,34 +283,34 @@ function calcBongLive() {
   c.innerHTML = `
     <div style="display:flex;justify-content:space-between;margin-bottom:4px">
       <span style="color:var(--txt3)">Brutto-Betrag</span>
-      <span class="mono">${fm(betrag)} â‚¬</span>
+      <span class="mono">${fm(betrag)} €</span>
     </div>
     ${profile.typ !== 'ku' ? `<div style="display:flex;justify-content:space-between;margin-bottom:4px">
-      <span style="color:var(--txt3)">âˆ’ Vorsteuer (${cfg().mwstH}%)</span>
-      <span class="mono" style="color:var(--grn)">âˆ’${fm(vstRueck)} â‚¬</span>
+      <span style="color:var(--txt3)">− Vorsteuer (${cfg().mwstH}%)</span>
+      <span class="mono" style="color:var(--grn)">−${fm(vstRueck)} €</span>
     </div>` : ''}
     <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-      <span style="color:var(--txt3)">âˆ’ ESt-Ersparnis (~35%)</span>
-      <span class="mono" style="color:var(--grn)">âˆ’${fm(ersparnis)} â‚¬</span>
+      <span style="color:var(--txt3)">− ESt-Ersparnis (~35%)</span>
+      <span class="mono" style="color:var(--grn)">−${fm(ersparnis)} €</span>
     </div>
     <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid var(--br);margin-top:4px">
-      <span style="color:var(--txt)">Effektivkosten fÃ¼r dich</span>
-      <span class="mono" style="color:var(--gold);font-size:16px">${fm(Math.max(0, effektiv))} â‚¬</span>
+      <span style="color:var(--txt)">Effektivkosten für dich</span>
+      <span class="mono" style="color:var(--gold);font-size:16px">${fm(Math.max(0, effektiv))} €</span>
     </div>
     <div style="font-size:10px;color:var(--txt3);margin-top:6px;line-height:1.5">
-      Das Finanzamt trÃ¤gt ${fm(ersparnis + vstRueck)} â‚¬ (${Math.round((ersparnis + vstRueck) / betrag * 100)}%) mit.
+      Das Finanzamt trägt ${fm(ersparnis + vstRueck)} € (${Math.round((ersparnis + vstRueck) / betrag * 100)}%) mit.
     </div>`;
 
   // Update Zahlungslink mit Betrag
-  document.getElementById('bongPayLink').textContent = `â†’ ${fm(betrag)} â‚¬ senden`;
+  document.getElementById('bongPayLink').textContent = `→ ${fm(betrag)} € senden`;
 }
 
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: HOME RENDER
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: HOME RENDER
+// ════════════════════════════════════════════════════════
 async function renderHome(){
-  renderTacho(); // WHY: Synchron â€“ sofort sichtbar, kein DB-Wait nÃ¶tig
+  renderTacho(); // WHY: Synchron – sofort sichtbar, kein DB-Wait nötig
   // WHY: try/catch damit ein Fehler hier nicht die ganze Home-View blockiert
   try { await renderProgressionsSchutz(); } catch(e) { console.warn('ProgSchutz:', e); }
 
@@ -340,13 +340,13 @@ async function renderHome(){
   await renderGarantieWaechter(all);
   await renderAboDetektiv(all);
 
-  // Recent list â€“ WHY: Je nach Modus nur passende Belege zeigen
+  // Recent list – WHY: Je nach Modus nur passende Belege zeigen
   const sortedAll=[...all].sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
   const sorted=appMode==='priv'
     ? sortedAll.filter(b=>b.type==='priv').slice(0,6)
     : sortedAll.filter(b=>b.type!=='priv').slice(0,6);
 
-  // WHY: Im Privat-Modus GesamtÃ¼bersicht auf Home
+  // WHY: Im Privat-Modus Gesamtübersicht auf Home
   {
     let phEl=document.getElementById('privHomeTotal');
     if(appMode==='priv'){
@@ -357,7 +357,7 @@ async function renderHome(){
       const monthTotal=thisMonth.reduce((s,b)=>s+(b.brutto||0),0);
       const rlp2=document.getElementById('recentList');
       if(!phEl&&rlp2){phEl=document.createElement('div');phEl.id='privHomeTotal';phEl.style.cssText='background:rgba(136,153,170,.06);border:1px solid rgba(136,153,170,.18);border-radius:var(--r12);padding:14px 16px;margin-bottom:14px';rlp2.parentNode.insertBefore(phEl,rlp2);}
-      if(phEl){phEl.style.display='block';phEl.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">Gesamt Privatausgaben</div><div style="font-size:28px;font-weight:200;color:var(--silv)">'+fm(privTotal)+' â‚¬</div><div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:2px">'+privAll.length+' Belege</div></div><div style="text-align:right"><div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:4px">Dieser Monat</div><div style="font-size:18px;font-weight:200;color:var(--silv)">'+fm(monthTotal)+' â‚¬</div><div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:2px">'+thisMonth.length+' Belege</div></div></div>';}
+      if(phEl){phEl.style.display='block';phEl.innerHTML='<div style="display:flex;justify-content:space-between;align-items:flex-end"><div><div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">Gesamt Privatausgaben</div><div style="font-size:28px;font-weight:200;color:var(--silv)">'+fm(privTotal)+' €</div><div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:2px">'+privAll.length+' Belege</div></div><div style="text-align:right"><div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:4px">Dieser Monat</div><div style="font-size:18px;font-weight:200;color:var(--silv)">'+fm(monthTotal)+' €</div><div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:2px">'+thisMonth.length+' Belege</div></div></div>';}
     } else if(phEl){phEl.style.display='none';}
   }
 
@@ -367,35 +367,35 @@ async function renderHome(){
     const isPriv=b.type==='priv';
     const barCol=isPriv?'var(--silv)':b.type==='er'?'var(--blu)':'var(--ylw)';
     const amCol=isPriv?'var(--silv)':b.type==='er'?'var(--blu)':'var(--ylw)';
-    const badge=isPriv?'<span class="badge" style="background:rgba(136,153,170,.15);color:var(--silv)">ðŸ </span>'
+    const badge=isPriv?'<span class="badge" style="background:rgba(136,153,170,.15);color:var(--silv)">🏠</span>'
       :`<span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type.toUpperCase()}</span>`;
     const nrSpan=isPriv?'':`<span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--txt3)">${eh(b.belegNr||'')}</span>`;
     return `<div class="ri" onclick="showDetail(${b.id})">
     <div class="ri-bar" style="background:${barCol}"></div>
-    <div class="ri-th">${b.image?`<img src="${b.image}" alt="">`:'ðŸ§¾'}</div>
+    <div class="ri-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
     <div class="ri-inf">
       <div class="ri-sh">${eh(b.shop||'Unbekannt')}</div>
-      <div class="ri-me">${badge}${nrSpan}${b.garantieBis?`<span style="font-size:10px;color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">ðŸ›¡ï¸ ${fd(b.garantieBis)}</span>`:''}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
+      <div class="ri-me">${badge}${nrSpan}${b.garantieBis?`<span style="font-size:10px;color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">🛡️ ${fd(b.garantieBis)}</span>`:''}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
     </div>
     <div class="ri-r">
-      <div class="ri-am" style="color:${amCol}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'â€“'}</div>
+      <div class="ri-am" style="color:${amCol}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
       <div class="ri-dt">${fd(b.date)}</div>
     </div></div>`;}).join('');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ INTELLIGENZ-MODUL 1: GARANTIE-WÃ„CHTER
-// WHY: ElektrogerÃ¤te haben 24 Monate gesetzliche GewÃ¤hrleistung.
-// Die App weiÃŸ wann gekauft wurde â€“ also kann sie warnen.
-// Kein neues Datenfeld nÃ¶tig: kaufdatum + kategorie = garantieBis
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 1: GARANTIE-WÄCHTER
+// WHY: Elektrogeräte haben 24 Monate gesetzliche Gewährleistung.
+// Die App weiß wann gekauft wurde – also kann sie warnen.
+// Kein neues Datenfeld nötig: kaufdatum + kategorie = garantieBis
 // Elektronik-Keywords aus den bereits vorhandenen items/shop Feldern.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-const ELEKTRONIK_KEYWORDS=/samsung|apple|iphone|ipad|macbook|sony|lg|philips|bosch|miele|siemens|electrolux|dyson|dell|hp |lenovo|asus|acer|bose|jbl|garmin|fitbit|tv |fernseh|laptop|computer|tablet|drucker|kaffeemasch|waschmasch|spÃ¼lmasch|kÃ¼hlschrank|gefrier|mixer|toaster|mikrowelle|staubsaug|monitor|bildschirm|lautsprecher|headphone|kopfhÃ¶rer|kamera|elektronik/i;
-const MOEBEL_KEYWORDS=/ikea|mÃ¶bel|sofa|schrank|bett|tisch|stuhl|regal|kommode|matratze|mÃ¶max|poco mÃ¶bel|home24/i;
+// ════════════════════════════════════════════════════════
+const ELEKTRONIK_KEYWORDS=/samsung|apple|iphone|ipad|macbook|sony|lg|philips|bosch|miele|siemens|electrolux|dyson|dell|hp |lenovo|asus|acer|bose|jbl|garmin|fitbit|tv |fernseh|laptop|computer|tablet|drucker|kaffeemasch|waschmasch|spülmasch|kühlschrank|gefrier|mixer|toaster|mikrowelle|staubsaug|monitor|bildschirm|lautsprecher|headphone|kopfhörer|kamera|elektronik/i;
+const MOEBEL_KEYWORDS=/ikea|möbel|sofa|schrank|bett|tisch|stuhl|regal|kommode|matratze|mömax|poco möbel|home24/i;
 
 async function renderGarantieWaechter(all){
   const now=new Date();
-  // Filtere alle ER die als Elektronik/MÃ¶bel erkannt wurden UND ein Kaufdatum haben
+  // Filtere alle ER die als Elektronik/Möbel erkannt wurden UND ein Kaufdatum haben
   const mit=all.filter(b=>{
     if(b.type!=='er'||!b.date)return false;
     const shopText=(b.shop||'')+(b.items||[]).map(i=>i.name||'').join(' ');
@@ -414,23 +414,23 @@ async function renderGarantieWaechter(all){
     const st=b._days<0?'urgent':b._days<60?'warn':'ok';
     const lbl=b._days<0?`Abgelaufen vor ${Math.abs(b._days)} Tagen`:b._days===0?'Heute letzter Tag':`Noch ${b._days} Tage`;
     return`<div class="gw-item ${st}">
-      <div class="gw-ico">${MOEBEL_KEYWORDS.test(b.shop||'')?'ðŸ›‹ï¸':'ðŸ“±'}</div>
+      <div class="gw-ico">${MOEBEL_KEYWORDS.test(b.shop||'')?'🛋️':'📱'}</div>
       <div class="gw-inf">
-        <div class="gw-name">${eh(b.shop||'GerÃ¤t')}</div>
-        <div class="gw-date">Gekauft ${fd(b.date)} Â· ${fm(b.brutto||0)} ${cfg().currency}</div>
+        <div class="gw-name">${eh(b.shop||'Gerät')}</div>
+        <div class="gw-date">Gekauft ${fd(b.date)} · ${fm(b.brutto||0)} ${cfg().currency}</div>
       </div>
       <span class="gw-badge ${st}">${lbl}</span>
     </div>`;
   }).join('');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ INTELLIGENZ-MODUL 2: ABO-DETEKTIV
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 2: ABO-DETEKTIV
 // WHY: Abonnements sind das "stille Geld-Leck". Die App erkennt
-// wiederkehrende Zahlungen an denselben HÃ¤ndlern automatisch
-// aus den bereits vorhandenen shop/brutto/date Feldern â€“
+// wiederkehrende Zahlungen an denselben Händlern automatisch
+// aus den bereits vorhandenen shop/brutto/date Feldern –
 // ohne dass der Nutzer etwas markieren muss.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 const ABO_KEYWORDS = new RegExp(localStorage.getItem('aboKeywords') || 'netflix|spotify|amazon prime|prime video|disney|dazn|youtube premium|apple music|apple one|icloud|dropbox|adobe|microsoft 365|office 365|google one|notion|slack|zoom|github|aws|heroku|openai|anthropic|claude|chatgpt|xing|linkedin|audible|kindle unlimited|software|subscription|abo|monats|jahres', 'i');
 
 // Reverse Charge Anbieter (nicht-EU, keine ausgewiesene MwSt)
@@ -439,12 +439,12 @@ const RC_PROVIDERS = ['anthropic', 'openai', 'claude', 'chatgpt', 'github', 'ado
 function isReverseCharge(beleg) {
   const shop = (beleg.shop || '').toLowerCase();
   const hasMwst = beleg.mwst && beleg.mwst > 0;
-  // Reverse Charge gilt fÃ¼r RC-Anbieter, unabhÃ¤ngig von ausgewiesener MwSt
+  // Reverse Charge gilt für RC-Anbieter, unabhängig von ausgewiesener MwSt
   return RC_PROVIDERS.some(provider => shop.includes(provider));
 }
 
 function detectAbos(all){
-  // WHY: Gleicher HÃ¤ndler, Ã¤hnlicher Betrag, mindestens 2x â€“ das ist ein Abo
+  // WHY: Gleicher Händler, ähnlicher Betrag, mindestens 2x – das ist ein Abo
   const byShop={};
   all.filter(b=>b.date&&b.brutto).forEach(b=>{
     const key=(b.shop||'unbekannt').toLowerCase().trim().substring(0,30);
@@ -456,11 +456,11 @@ function detectAbos(all){
   Object.values(byShop).forEach(g=>{
     if(g.belege.length<2)return;
     const looksLikeAbo=ABO_KEYWORDS.test(g.shop||'')||g.belege.some(b=>b.istAbo);
-    // Auch ohne Keyword: wenn BetrÃ¤ge sehr Ã¤hnlich (Â±5%) und mind. 2x = wahrscheinliches Abo
+    // Auch ohne Keyword: wenn Beträge sehr ähnlich ( ±5%) und mind. 2x = wahrscheinliches Abo
     const avg=g.brutto.reduce((s,v)=>s+v,0)/g.brutto.length;
     const consistent=g.brutto.every(v=>Math.abs(v-avg)/avg<0.05);
     if(looksLikeAbo||consistent){
-      // Monatliche Kosten schÃ¤tzen: Anzahl Buchungen / Monate Laufzeit
+      // Monatliche Kosten schätzen: Anzahl Buchungen / Monate Laufzeit
       const dates=g.belege.map(b=>new Date(b.date+'T00:00:00')).sort((a,b)=>a-b);
       const monate=Math.max(1,(dates[dates.length-1]-dates[0])/(864e5*30));
       const monatlich=avg*(g.belege.length/Math.max(monate,1));
@@ -476,23 +476,23 @@ async function renderAboDetektiv(all){
   if(!abos.length){card.style.display='none';return;}
   card.style.display='block';
   document.getElementById('aboList').innerHTML=abos.slice(0,5).map(a=>`<div class="abo-item">
-    <div class="abo-ico">${ABO_KEYWORDS.test(a.shop||'')?'ðŸ“º':'ðŸ”„'}</div>
+    <div class="abo-ico">${ABO_KEYWORDS.test(a.shop||'')?'📺':'🔄'}</div>
     <div class="abo-inf">
       <div class="abo-name">${eh(a.shop)}</div>
-      <div class="abo-detail">${a.count}Ã— erfasst Â· âˆ… ${fm(a.avg)} ${cfg().currency}</div>
+      <div class="abo-detail">${a.count}× erfasst · ∅ ${fm(a.avg)} ${cfg().currency}</div>
     </div>
     <div class="abo-amt">~${fm(a.monatlich)}/Mon</div>
   </div>`).join('');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ INTELLIGENZ-MODUL 3: VITAL-CHECK
-// WHY: Positive VerstÃ¤rkung fÃ¼r Lebensmittel-EinkÃ¤ufe.
-// "Mehr Frisches gekauft" motiviert â€“ ohne zu moralisieren.
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 3: VITAL-CHECK
+// WHY: Positive Verstärkung für Lebensmittel-Einkäufe.
+// "Mehr Frisches gekauft" motiviert – ohne zu moralisieren.
 // Nutzt Items aus OCR-Daten wenn vorhanden, sonst Kategorie-Proxy.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-const FRISCH_KEYWORDS=/obst|gemÃ¼se|salat|tomate|apfel|banane|karotte|spinat|gurke|paprika|brokkoli|blaubeere|beere|mango|avocado|frisch|bio |organic/i;
-const VERARBEITET_KEYWORDS=/chips|cola|fanta|sprite|sÃ¼ÃŸigkeit|schokolade|gummibÃ¤r|convenience|fertigg|tiefkÃ¼hl|instant/i;
+// ════════════════════════════════════════════════════════
+const FRISCH_KEYWORDS=/obst|gemüse|salat|tomate|apfel|banane|karotte|spinat|gurke|paprika|brokkoli|blaubeere|beere|mango|avocado|frisch|bio |organic/i;
+const VERARBEITET_KEYWORDS=/chips|cola|fanta|sprite|süßigkeit|schokolade|gummibär|convenience|fertigg|tiefkühl|instant/i;
 
 async function renderVitalCheck(){
   const all=await dba();
@@ -506,21 +506,21 @@ async function renderVitalCheck(){
   }));
   const total=Math.max(1,frischCount+verarbCount);
   const frischPct=Math.round(frischCount/total*100);
-  const msg=frischPct>=60?'GroÃŸartig! Ãœberwiegend frische Produkte ðŸŒ¿':frischPct>=40?'Gute Mischung â€“ mehr Frisches wÃ¤re ideal':'Mehr frische Produkte wÃ¼rden sich lohnen';
+  const msg=frischPct>=60?'Großartig! Überwiegend frische Produkte 🌿':frischPct>=40?'Gute Mischung – mehr Frisches wäre ideal':'Mehr frische Produkte würden sich lohnen';
   document.getElementById('vitalCard').style.display='block';
   document.getElementById('vitalContent').innerHTML=`
     <div class="vital-row"><span>Frische Produkte</span><span>${frischPct}%</span></div>
     <div class="vital-bar"><div class="vital-fill" style="width:${frischPct}%;background:${frischPct>=60?'var(--grn)':frischPct>=40?'var(--ylw)':'var(--orn)'}"></div></div>
     <p style="font-size:11px;font-weight:300;color:var(--txt2);line-height:1.55">${msg}</p>
-    <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:5px">${lebens.length} Lebensmittel-Belege Â· ${frischCount+verarbCount} erkannte Artikel</p>`;
+    <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:5px">${lebens.length} Lebensmittel-Belege · ${frischCount+verarbCount} erkannte Artikel</p>`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ INTELLIGENZ-MODUL 4: INFLATIONS-TRACKER
-// WHY: Gleiches Produkt, gleicher HÃ¤ndler â€“ aber der Preis steigt.
-// Das spÃ¼rt man, aber selten sieht man es schwarz auf weiÃŸ.
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 4: INFLATIONS-TRACKER
+// WHY: Gleiches Produkt, gleicher Händler – aber der Preis steigt.
+// Das spürt man, aber selten sieht man es schwarz auf weiß.
 // Nutzt items-Array aus OCR-Daten. Kein extra Datenfeld.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 async function renderInflationsTracker(){
   const all=await dba();
   // Sammle alle Artikel mit Preis und Datum aus OCR-Items
@@ -534,7 +534,7 @@ async function renderInflationsTracker(){
       byItem[key].preise.push({datum:b.date,preis:it.price});
     });
   });
-  // Nur Artikel mit mind. 2 verschiedenen KÃ¤ufen
+  // Nur Artikel mit mind. 2 verschiedenen Käufen
   const vergleiche=Object.values(byItem).filter(g=>g.preise.length>=2).map(g=>{
     const sorted=g.preise.sort((a,b)=>a.datum.localeCompare(b.datum));
     const alt=sorted[0].preis,neu=sorted[sorted.length-1].preis;
@@ -546,40 +546,40 @@ async function renderInflationsTracker(){
   cc.style.display='block';
   document.getElementById('inflList').innerHTML=vergleiche.map(v=>`<div class="inf-item">
     <div class="inf-name">${eh(v.name)}</div>
-    <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-right:8px">${fm(v.alt)} â†’ ${fm(v.neu)} ${cfg().currency}</div>
+    <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-right:8px">${fm(v.alt)} → ${fm(v.neu)} ${cfg().currency}</div>
     <div class="inf-delta ${v.delta>0?'up':'dn'}">${v.delta>0?'+':''}${v.delta}%</div>
   </div>`).join('');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ INTELLIGENZ-MODUL 5: INSIGHT-BANNER (Privat-Modus)
-// WHY: Kontextbezogene "Aha-Momente" â€“ nur wenn echtes Sparpotential
+// ════════════════════════════════════════════════════════
+// ██ INTELLIGENZ-MODUL 5: INSIGHT-BANNER (Privat-Modus)
+// WHY: Kontextbezogene "Aha-Momente" – nur wenn echtes Sparpotential
 // erkannt wurde. Kein Spam, kein Dauern-anzeigen.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 function renderInsightBanner(abos,potential){
   const b=document.getElementById('insightBanner');
   if(potential<5){b.style.display='none';return;}
-  // Finde den grÃ¶ÃŸten "vergessenen" Abo-Kandidaten
+  // Finde den größten "vergessenen" Abo-Kandidaten
   const top=abos.filter(a=>a.count<=2).sort((a,b)=>b.monatlich-a.monatlich)[0];
   if(!top){b.style.display='none';return;}
   b.style.display='block';
   b.innerHTML=`<div class="insight">
-    <div class="ico">ðŸ’¡</div>
+    <div class="ico">💡</div>
     <div class="body">
-      <div class="head">${eh(top.shop)} â€“ noch aktiv?</div>
-      <div class="desc">Nur ${top.count}Ã— genutzt in deinen Belegen. Wenn du das Abo nicht aktiv nutzt, kÃ¶nntest du es kÃ¼ndigen.</div>
-      <div class="amt">MÃ¶gliche Ersparnis: ${fm(top.monatlich)} ${cfg().currency}/Mon Â· ${fm(top.monatlich*12)} ${cfg().currency}/Jahr</div>
+      <div class="head">${eh(top.shop)} – noch aktiv?</div>
+      <div class="desc">Nur ${top.count}× genutzt in deinen Belegen. Wenn du das Abo nicht aktiv nutzt, könntest du es kündigen.</div>
+      <div class="amt">Mögliche Ersparnis: ${fm(top.monatlich)} ${cfg().currency}/Mon · ${fm(top.monatlich*12)} ${cfg().currency}/Jahr</div>
     </div>
   </div>`;
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: BELEGE LIST
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// WHY: Artikel-Zeile fÃ¼r Belege-Listen â€“ kompakt, max 3 Items
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BELEGE LIST
+// ════════════════════════════════════════════════════════
+// WHY: Artikel-Zeile für Belege-Listen – kompakt, max 3 Items
 function renderItemsLine(items){
   if(!items||!items.length) return '';
-  const names=items.slice(0,3).map(i=>eh(i.name||'â€“')).join(' Â· ');
+  const names=items.slice(0,3).map(i=>eh(i.name||'–')).join(' · ');
   const mehr=items.length>3?` +${items.length-3}`:'';
   return `<div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${names}${mehr}</div>`;
 }
@@ -587,32 +587,32 @@ async function renderBelege(){
   const all=await dba();
   const q=(document.getElementById('srch').value||'').toLowerCase();
   const tf=document.getElementById('ftT').value,cf=document.getElementById('ftC').value;
-  // WHY: Privat-Belege (type='priv') gehÃ¶ren NICHT in die Business-Liste
+  // WHY: Privat-Belege (type='priv') gehören NICHT in die Business-Liste
   let it=all.filter(b=>b.type!=='priv'&&(!q||b.shop.toLowerCase().includes(q)||(b.belegNr||'').toLowerCase().includes(q))&&(!tf||b.type===tf)&&(!cf||b.cat===cf));
   it.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
   const l=document.getElementById('bList');
-  if(!it.length){l.innerHTML='<div class="empty"><div class="ico">ðŸ§¾</div><p>Keine Belege gefunden.</p></div>';return;}
+  if(!it.length){l.innerHTML='<div class="empty"><div class="ico">🧾</div><p>Keine Belege gefunden.</p></div>';return;}
   renderPrivatChart(it);
   l.innerHTML=it.map(b=>`<div class="bc" onclick="showDetail(${b.id})">
     <div class="bc-bar" style="background:${b.type==='er'?'var(--blu)':'var(--ylw)'}"></div>
-    <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'ðŸ§¾'}</div>
+    <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
     <div class="bc-inf">
       <div class="bc-sh">${eh(b.shop||'Unbekannt')}</div>
-      <div class="bc-me"><span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type==='er'?'Eingang':'Ausgang'}</span>${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}${b.garantieBis?'<span style="font-size:9px;color:var(--grn)">ðŸ›¡ï¸</span>':''}${b.isDigitalScreen?'<span style="font-size:9px;color:var(--silv)">ðŸ–¥ï¸</span>':''}</div>
+      <div class="bc-me"><span class="badge ${b.type==='er'?'b-er':'b-ar'}">${b.type==='er'?'Eingang':'Ausgang'}</span>${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}${b.garantieBis?'<span style="font-size:9px;color:var(--grn)">🛡️</span>':''}${b.isDigitalScreen?'<span style="font-size:9px;color:var(--silv)">🖥️</span>':''}</div>
       <div class="bc-nr">${eh(b.belegNr||'')}</div>
       ${renderItemsLine(b.items)}
     </div>
     <div class="bc-r">
-      <div class="bc-am ${b.type}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'â€“'}</div>
+      <div class="bc-am ${b.type}">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
       <div class="bc-dt">${fd(b.date)}</div>
     </div></div>`).join('');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: PRIVAT-BELEGE LIST + KI-ANALYSE
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PRIVAT-BELEGE LIST + KI-ANALYSE
 // WHY: Komplett getrennt von Business. Nur Gesamtbetrag,
 // keine Belegnummer, keine MwSt. KI-Analyse optional auf Knopfdruck.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 async function renderPrivatBelege(){
   const all=await dba();
   // WHY: Nur Privat-Belege (type='priv')
@@ -623,7 +623,7 @@ async function renderPrivatBelege(){
   if(mf) it=it.filter(b=>(b.date||'').substring(5,7)===mf);
   it.sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
 
-  // Summe + ZÃ¤hler
+  // Summe + Zähler
   const total=it.reduce((s,b)=>s+(b.brutto||0),0);
   const td=document.getElementById('privTotalDisp'),cd=document.getElementById('privCountDisp');
   if(td)td.textContent=fm(total)+' '+cfg().currency;
@@ -631,16 +631,16 @@ async function renderPrivatBelege(){
 
   const l=document.getElementById('pList');
   if(!it.length){
-    l.innerHTML='<div class="empty"><div class="ico">ðŸ </div><p>Noch keine privaten Belege.<br>Im Privat-Modus scannen oder Schnelleingabe nutzen.</p></div>';
+    l.innerHTML='<div class="empty"><div class="ico">🏠</div><p>Noch keine privaten Belege.<br>Im Privat-Modus scannen oder Schnelleingabe nutzen.</p></div>';
     renderPrivatChart([]);
     return;
   }
   l.innerHTML=it.map(b=>`<div class="bc" onclick="showDetail(${b.id})">
     <div class="bc-bar" style="background:var(--silv)"></div>
-    <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'ðŸ§¾'}</div>
+    <div class="bc-th">${b.image?`<img src="${b.image}" alt="">`:'🧾'}</div>
     <div class="bc-inf">
       <div class="bc-sh">${eh(b.shop||'Unbekannt')}</div>
-      <div class="bc-me"><span class="badge" style="background:rgba(136,153,170,.12);color:var(--silv)">ðŸ  Privat</span> ${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
+      <div class="bc-me"><span class="badge" style="background:rgba(136,153,170,.12);color:var(--silv)">🏠 Privat</span> ${eh(b.cat||'')}${b.istAbo?'<span class="badge b-priv">Abo</span>':''}</div>
       ${renderItemsLine(b.items)}
     </div>
     <div class="bc-r">
@@ -649,15 +649,15 @@ async function renderPrivatBelege(){
     </div></div>`).join('');
 }
 
-// WHY: Auf Knopfdruck â€“ analysiert IMMER den aktuellen Monat.
-// Der Nutzer bekommt eine klare MonatsÃ¼bersicht ohne manuellen Filter.
+// WHY: Auf Knopfdruck – analysiert IMMER den aktuellen Monat.
+// Der Nutzer bekommt eine klare Monatsübersicht ohne manuellen Filter.
 async function analysePrivatMonat(){
   apiKey=localStorage.getItem('cak')||apiKey||'';
   if(!apiKey){toast('Bitte erst API Key in Settings hinterlegen','er');openApiSheet();return;}
 
-  // WHY: Sofort visuelles Feedback â€“ Button deaktivieren + Spinner
+  // WHY: Sofort visuelles Feedback – Button deaktivieren + Spinner
   const btn=document.querySelector('[onclick="analysePrivatMonat()"]');
-  if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.innerHTML=btn.innerHTML.replace('KI-Analyse','â³ LÃ¤dt â€¦');}
+  if(btn){btn.disabled=true;btn.style.opacity='0.5';btn.innerHTML=btn.innerHTML.replace('KI-Analyse','⏳ Lädt …');}
 
   const now=new Date();
   const monat=String(now.getMonth()+1).padStart(2,'0');
@@ -668,21 +668,21 @@ async function analysePrivatMonat(){
   const it=all.filter(b=>b.type==='priv'&&(b.date||'').startsWith(`${jahr}-${monat}`));
 
   if(!it.length){
-    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=btn.innerHTML.replace('â³ LÃ¤dt â€¦','KI-Analyse');}
-    toast(`Keine privaten Belege fÃ¼r ${monatName}`,'wr');
+    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=btn.innerHTML.replace('⏳ Lädt …','KI-Analyse');}
+    toast(`Keine privaten Belege für ${monatName}`,'wr');
     return;
   }
 
   const card=document.getElementById('privAnalyseCard');
   card.style.display='block';
-  card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;color:var(--txt3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".2"/><path d="M12 3a9 9 0 019 9"/></svg><span>Analysiere ${it.length} Belege aus ${monatName} â€¦</span></div>`;
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:10px;color:var(--txt3)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity=".2"/><path d="M12 3a9 9 0 019 9"/></svg><span>Analysiere ${it.length} Belege aus ${monatName} …</span></div>`;
 
-  const summary=it.map(b=>`- ${fd(b.date)}: ${b.shop||'?'} | ${b.cat||'?'} | ${fm(b.brutto||0)} â‚¬ | Artikel: ${(b.items||[]).map(i=>i.name).join(', ')||'â€“'}`).join('\n');
+  const summary=it.map(b=>`- ${fd(b.date)}: ${b.shop||'?'} | ${b.cat||'?'} | ${fm(b.brutto||0)} € | Artikel: ${(b.items||[]).map(i=>i.name).join(', ')||'–'}`).join('\n');
   const total=it.reduce((s,b)=>s+(b.brutto||0),0);
   const byCat={};it.forEach(b=>{byCat[b.cat||'?']=(byCat[b.cat||'?']||0)+(b.brutto||0);});
-  const catSummary=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`${c}: ${fm(v)} â‚¬`).join(', ');
+  const catSummary=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`${c}: ${fm(v)} €`).join(', ');
 
-  const prompt=`Du bist ein persÃ¶nlicher Finanzassistent fÃ¼r Privatausgaben im deutschsprachigen Raum.\n\nAnalysiere meine privaten Ausgaben fÃ¼r ${monatName} und gib konkrete Tipps auf Deutsch:\n\nMONAT: ${monatName}\nGESAMTAUSGABEN: ${fm(total)} â‚¬\nNACH KATEGORIE: ${catSummary}\n\nBELEGE DIESES MONATS:\n${summary}\n\nDEINE ANALYSE:\n1. ðŸ·ï¸ TOP-AUSGABEN: Was kostet am meisten â€“ ist das angemessen?\n2. ðŸ’¡ SPARPOTENTIAL: Wo kÃ¶nnte ich konkret sparen? Keine allgemeinen Tipps.\n3. ðŸ¥— LEBENSMITTEL & GESUNDHEIT (falls Belege vorhanden): Sind die Produkte ausgewogen? Was fehlt oder ist zu viel?\n4. ðŸ”„ MUSTER: Wiederkehrende Ausgaben oder mÃ¶gliche Abos die ich kÃ¼ndigen kÃ¶nnte?\n5. â­ MEIN TIPP FÃœR NÃ„CHSTEN MONAT: Die eine konkrete MaÃŸnahme mit dem grÃ¶ÃŸten Effekt.\n\nAntworte direkt und praktisch auf Deutsch. Maximal 250 WÃ¶rter.`;
+  const prompt=`Du bist ein persönlicher Finanzassistent für Privatausgaben im deutschsprachigen Raum.\n\nAnalysiere meine privaten Ausgaben für ${monatName} und gib konkrete Tipps auf Deutsch:\n\nMONAT: ${monatName}\nGESAMTAUSGABEN: ${fm(total)} €\nNACH KATEGORIE: ${catSummary}\n\nBELEGE DIESES MONATS:\n${summary}\n\nDEINE ANALYSE:\n1. 🏷️ TOP-AUSGABEN: Was kostet am meisten – ist das angemessen?\n2. 💡 SPARPOTENTIAL: Wo könnte ich konkret sparen? Keine allgemeinen Tipps.\n3. 🥗 LEBENSMITTEL & GESUNDHEIT (falls Belege vorhanden): Sind die Produkte ausgewogen? Was fehlt oder ist zu viel?\n4. 🔄 MUSTER: Wiederkehrende Ausgaben oder mögliche Abos die ich kündigen könnte?\n5. ⭐ MEIN TIPP FÜR NÄCHSTEN MONAT: Die eine konkrete Maßnahme mit dem größten Effekt.\n\nAntworte direkt und praktisch auf Deutsch. Maximal 250 Wörter.`;
 
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
@@ -692,20 +692,20 @@ async function analysePrivatMonat(){
     });
     const respText=await resp.text().catch(()=>'');
     trackApiCost('analyse');
-    if(!resp.ok){card.textContent='âŒ API Fehler '+resp.status;return;}
-    let data;try{data=JSON.parse(respText);}catch(e){card.textContent='âŒ Netzwerkfehler â€“ nochmal versuchen';return;}
+    if(!resp.ok){card.textContent='❌ API Fehler '+resp.status;return;}
+    let data;try{data=JSON.parse(respText);}catch(e){card.textContent='❌ Netzwerkfehler – nochmal versuchen';return;}
     const text=data.content?.filter(c=>c.type==='text').map(c=>c.text).join('')||'Keine Antwort';
-    card.innerHTML=`<div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">${monatName} Â· ${fm(total)} â‚¬ Â· ${it.length} Belege</div><div style="white-space:pre-wrap">${eh(text)}</div>`;
+    card.innerHTML=`<div style="font-size:10px;font-weight:300;color:var(--txt3);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase">${monatName} · ${fm(total)} € · ${it.length} Belege</div><div style="white-space:pre-wrap">${eh(text)}</div>`;
   }catch(e){
-    card.textContent='âŒ '+e.message;
+    card.textContent='❌ '+e.message;
   }finally{
-    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=btn.innerHTML.replace('â³ LÃ¤dt â€¦','KI-Analyse');}
+    if(btn){btn.disabled=false;btn.style.opacity='';btn.innerHTML=btn.innerHTML.replace('⏳ Lädt …','KI-Analyse');}
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: DETAIL SHEET
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: DETAIL SHEET
+// ════════════════════════════════════════════════════════
 async function showDetail(id){
   const all=await dba();const b=all.find(x=>x.id===id);if(!b)return;
   curDet=b;
@@ -717,35 +717,35 @@ async function showDetail(id){
   html+=`<div class="det-title">${eh(b.shop||'Unbekannt')}</div>`;
 
   if(isPriv){
-    // WHY: Privat-Detail â€“ keine Belegnummer, keine MwSt, kein Stempel
-    html+=`<div class="det-sub"><span class="badge" style="background:rgba(136,153,170,.12);color:var(--silv)">ðŸ  Privat-Ausgabe</span></div>`;
+    // WHY: Privat-Detail – keine Belegnummer, keine MwSt, kein Stempel
+    html+=`<div class="det-sub"><span class="badge" style="background:rgba(136,153,170,.12);color:var(--silv)">🏠 Privat-Ausgabe</span></div>`;
     html+=`<div class="drow"><span class="dk">Datum</span><span class="dv">${fd(b.date)}</span></div>`;
-    html+=`<div class="drow"><span class="dk">Betrag</span><span class="dv" style="color:var(--silv)">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'â€“'}</span></div>`;
-    html+=`<div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'â€“')}</span></div>`;
-    html+=`<div class="drow"><span class="dk">Zahlung</span><span class="dv">${eh(b.payment||'â€“')}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Betrag</span><span class="dv" style="color:var(--silv)">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'–')}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Zahlung</span><span class="dv">${eh(b.payment||'–')}</span></div>`;
     if(b.istAbo) html+=`<div class="drow"><span class="dk">Status</span><span class="dv"><span class="badge b-priv">Abo / wiederkehrend</span></span></div>`;
-    if(b.items&&b.items.length) html+=`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'â€“')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`;
+    if(b.items&&b.items.length) html+=`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`;
     html+=`<div class="drow"><span class="dk">Erfasst</span><span class="dv">${new Date(b.savedAt||0).toLocaleString('de-DE')}</span></div>`;
-    html+=`<div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-red btn-sm" onclick="delBeleg(${b.id})">LÃ¶schen</button></div>`;
+    html+=`<div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-red btn-sm" onclick="delBeleg(${b.id})">Löschen</button></div>`;
   } else {
     // Business-Detail (er/ar)
-    const garantieInfo=b.garantieBis?`<div class="drow"><span class="dk">ðŸ›¡ï¸ Garantie bis</span><span class="dv" style="color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">${fd(b.garantieBis)}</span></div>`:'';
+    const garantieInfo=b.garantieBis?`<div class="drow"><span class="dk">🛡️ Garantie bis</span><span class="dv" style="color:${new Date(b.garantieBis)<new Date()?'var(--red)':'var(--grn)'}">${fd(b.garantieBis)}</span></div>`:'';
     const aboInfo=b.istAbo?`<div class="drow"><span class="dk">Status</span><span class="dv"><span class="badge b-priv">Abo / wiederkehrend</span></span></div>`:'';
-    const screenInfo=b.isDigitalScreen?`<div class="drow"><span class="dk">Quelle</span><span class="dv" style="color:var(--silv)">ðŸ–¥ï¸ Digital Screen ${b.screenType?'('+b.screenType+')':''}</span></div>`:'';
+    const screenInfo=b.isDigitalScreen?`<div class="drow"><span class="dk">Quelle</span><span class="dv" style="color:var(--silv)">🖥️ Digital Screen ${b.screenType?'('+b.screenType+')':''}</span></div>`:'';
     html+=`<div class="det-sub"><span class="badge ${isER?'b-er':'b-ar'}">${isER?'Eingangsrechnung':'Ausgangsrechnung'}</span><span class="mono" style="font-size:11px;color:var(--txt3)">${eh(b.belegNr||'')}</span></div>`;
     html+=`<div class="drow"><span class="dk">Datum</span><span class="dv">${fd(b.date)}</span></div>`;
-    html+=`<div class="drow"><span class="dk">Netto</span><span class="dv">${b.net!=null?fm(b.net)+' '+cfg().currency:'â€“'}</span></div>`;
-    html+=`<div class="drow"><span class="dk">${cfg().steuerLabel} (${b.mwstRate||cfg().mwstH}%)</span><span class="dv">${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:'â€“'}</span></div>`;
-    html+=`<div class="drow"><span class="dk">Brutto</span><span class="dv">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'â€“'}</span></div>`;
-    html+=`<div class="drow"><span class="dk">Zahlungsart</span><span class="dv">${eh(b.payment||'â€“')}</span></div>`;
-    html+=`<div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'â€“')}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Netto</span><span class="dv">${b.net!=null?fm(b.net)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">${cfg().steuerLabel} (${b.mwstRate||cfg().mwstH}%)</span><span class="dv">${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Brutto</span><span class="dv">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Zahlungsart</span><span class="dv">${eh(b.payment||'–')}</span></div>`;
+    html+=`<div class="drow"><span class="dk">Kategorie</span><span class="dv">${eh(b.cat||'–')}</span></div>`;
     html+=garantieInfo+aboInfo+screenInfo;
     html+=`<div class="drow"><span class="dk">Erfasst</span><span class="dv">${new Date(b.savedAt||0).toLocaleString('de-DE')}</span></div>`;
-    if(b.items&&b.items.length) html+=`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'â€“')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`;
+    if(b.items&&b.items.length) html+=`<div style="margin-top:10px"><table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody>${b.items.map(it=>`<tr><td>${eh(it.name||'–')}</td><td style="text-align:right" class="mono">${(parseFloat(it.price)||0).toFixed(2)} ${cfg().currency}</td></tr>`).join('')}</tbody></table></div>`;
     html+=`<div style="margin-top:15px;display:flex;gap:8px;flex-wrap:wrap">
       ${b.image?`<button class="btn btn-blu btn-sm" onclick="exportStamped()">PDF mit Stempel</button>`:''}
       ${b.image?`<button class="btn btn-g btn-sm" onclick="exportSinglePDF()">PDF speichern</button>`:''}
-      <button class="btn btn-red btn-sm" onclick="delBeleg(${b.id})">LÃ¶schen</button>
+      <button class="btn btn-red btn-sm" onclick="delBeleg(${b.id})">Löschen</button>
     </div>`;
   }
 
@@ -755,18 +755,18 @@ async function showDetail(id){
 function closeDet(){document.getElementById('detOvl').classList.remove('on');}
 function closeDetOuter(e){if(e.target===document.getElementById('detOvl'))closeDet();}
 async function delBeleg(id){
-  if(!confirm('Beleg lÃ¶schen?'))return;
+  if(!confirm('Beleg löschen?'))return;
   const all=await dba();const b=all.find(x=>x.id===id);
   await dbdel(id);closeDet();
   // WHY: Je nach Beleg-Typ den richtigen Tab aktualisieren
   if(b&&b.type==='priv')renderPrivatBelege();else renderBelege();
-  renderHome();toast('GelÃ¶scht','ok');
+  renderHome();toast('Gelöscht','ok');
 }
 async function exportSinglePDF(){if(!curDet?.image){toast('Kein Bild','wr');return;}await exportBelegPDF(curDet,false);}
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: MwSt ANALYTICS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: MwSt ANALYTICS
+// ════════════════════════════════════════════════════════
 function setPeriod(p,btn){mwstPer=p;document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderMwst();}
 function filterPer(all){
   const now=new Date();
@@ -793,7 +793,7 @@ async function renderMwst(){
   const maxV=Math.max(1,...months.map(m=>Math.max(bm[m].ar,bm[m].er)));
   document.getElementById('mChart').innerHTML=months.map(m=>{const aH=Math.round(bm[m].ar/maxV*74),eH=Math.round(bm[m].er/maxV*74);return`<div class="mcol"><div class="mcol-bars"><div class="mbar ar" style="height:${aH}px"></div><div class="mbar er" style="height:${eH}px"></div></div><div class="mbar-l">${m.substring(5)}</div></div>`;}).join('');
   const ms=Object.keys(bm).sort().reverse();
-  document.getElementById('mTbl').innerHTML=ms.map(m=>{const r=bm[m],s=r.arM-r.erM,sc=s>0?'var(--red)':s<0?'var(--grn)':'var(--txt2)';return`<tr><td class="mo">${m}</td><td class="mo" style="color:var(--ylw)">${r.arM>0?fm(r.arM):'â€“'}</td><td class="mo" style="color:var(--blu)">${r.erM>0?fm(r.erM):'â€“'}</td><td class="mo" style="color:${sc}">${fm(Math.abs(s))}</td></tr>`;}).join('');
+  document.getElementById('mTbl').innerHTML=ms.map(m=>{const r=bm[m],s=r.arM-r.erM,sc=s>0?'var(--red)':s<0?'var(--grn)':'var(--txt2)';return`<tr><td class="mo">${m}</td><td class="mo" style="color:var(--ylw)">${r.arM>0?fm(r.arM):'–'}</td><td class="mo" style="color:var(--blu)">${r.erM>0?fm(r.erM):'–'}</td><td class="mo" style="color:${sc}">${fm(Math.abs(s))}</td></tr>`;}).join('');
   const byCat={};er.forEach(b=>{byCat[b.cat||'Sonstiges']=(byCat[b.cat||'Sonstiges']||0)+(b.brutto||0);});
   const cats=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,8);const maxC=cats[0]?.[1]||1;
   document.getElementById('catChart').innerHTML=cats.map(([c,v])=>`<div class="barrow"><div class="bar-lbl">${eh(c)}</div><div class="bar-track"><div class="bar-fill" style="width:${Math.round(v/maxC*100)}%;background:rgba(74,128,192,.45)"></div></div><div class="bar-val">${fm(v)}</div></div>`).join('');
@@ -801,9 +801,9 @@ async function renderMwst(){
   await renderInflationsTracker();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: EINKOMMENSTEUER Â§32a + GAUGE
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: EINKOMMENSTEUER §32a + GAUGE
+// ════════════════════════════════════════════════════════
 async function calcSteuer(){
   const all=await dba(),now=new Date();
   const ar=all.filter(b=>b.type==='ar'&&b.date&&new Date(b.date+'T00:00:00').getFullYear()===now.getFullYear());
@@ -824,26 +824,26 @@ async function calcSteuer(){
   const kirche=(parseFloat(document.getElementById('stKi2')?.value||'0')||0)*est;
   const gesamt=Math.max(0,est+soli+kirche);
   const effRate=gewinn>0?Math.round(gesamt/gewinn*100):0;
-  document.getElementById('estJahr').textContent=fmK(Math.round(gesamt))+' â‚¬';
-  document.getElementById('estG').textContent=fmK(Math.round(gewinn))+' â‚¬';
+  document.getElementById('estJahr').textContent=fmK(Math.round(gesamt))+' €';
+  document.getElementById('estG').textContent=fmK(Math.round(gewinn))+' €';
   document.getElementById('estR').textContent=effRate+' %';
-  document.getElementById('estM').textContent=fmK(Math.round(gesamt/12))+' â‚¬';
-  document.getElementById('estSub').textContent=`Einnahmen ${fmK(Math.round(einnahmen))}â‚¬ âˆ’ Ausgaben ${fmK(Math.round(betrAusg+manuell))}â‚¬ = Gewinn ${fmK(Math.round(gewinn))}â‚¬`;
+  document.getElementById('estM').textContent=fmK(Math.round(gesamt/12))+' €';
+  document.getElementById('estSub').textContent=`Einnahmen ${fmK(Math.round(einnahmen))}€ − Ausgaben ${fmK(Math.round(betrAusg+manuell))}€ = Gewinn ${fmK(Math.round(gewinn))}€`;
   const stufen=[{bis:11604,rate:0,col:'var(--grn)'},{bis:17005,rate:14,col:'var(--grn)'},{bis:66760,rate:24,col:'var(--ylw)'},{bis:277825,rate:42,col:'var(--orn)'},{bis:Infinity,rate:45,col:'var(--red)'}];
   document.getElementById('gaugeM').style.left=Math.min(100,Math.round(zvE/300000*100))+'%';
   let stufe=stufen.find(s=>zvE<=s.bis)||stufen[stufen.length-1];
   document.getElementById('gaugeStufe').textContent=stufe.rate+' %';
   document.getElementById('gaugeStufe').style.color=stufe.col;
   const idx=stufen.indexOf(stufe);
-  if(idx<stufen.length-1){const next=stufen[idx+1];const diff=next.bis-zvE;document.getElementById('gaugeNext').textContent=`Noch ${fmK(Math.round(diff))} â‚¬ Gewinn bis zum nÃ¤chsten Steuersatz (${next.rate}%). Jeder weitere Euro: ${next.rate} Cent Steuer.`;}
-  else{document.getElementById('gaugeNext').textContent='HÃ¶chster Steuersatz: 45%. Jeder weitere Euro Gewinn: 45 Cent Steuer.';}
-  // Vital-Check nur rendern wenn Steuer-View geÃ¶ffnet
+  if(idx<stufen.length-1){const next=stufen[idx+1];const diff=next.bis-zvE;document.getElementById('gaugeNext').textContent=`Noch ${fmK(Math.round(diff))} € Gewinn bis zum nächsten Steuersatz (${next.rate}%). Jeder weitere Euro: ${next.rate} Cent Steuer.`;}
+  else{document.getElementById('gaugeNext').textContent='Höchster Steuersatz: 45%. Jeder weitere Euro Gewinn: 45 Cent Steuer.';}
+  // Vital-Check nur rendern wenn Steuer-View geöffnet
   await renderVitalCheck();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: QUARTAL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: QUARTAL
+// ════════════════════════════════════════════════════════
 async function initQuartal(){
   const qs=document.getElementById('qSel');qs.innerHTML='';
   const y=new Date().getFullYear();
@@ -862,7 +862,7 @@ async function renderQuartal(){
   const arSum=ar.reduce((s,b)=>s+(b.brutto||0),0),erSum=er.reduce((s,b)=>s+(b.brutto||0),0);
   const arM=ar.reduce((s,b)=>s+(b.mwst||0),0),erM=er.reduce((s,b)=>s+(b.mwst||0),0),saldo=arM-erM;
   document.getElementById('qSum').innerHTML=`
-    <div class="stitle">Q${qQ} ${qY} â€” ${fi.length} Belege</div>
+    <div class="stitle">Q${qQ} ${qY} — ${fi.length} Belege</div>
     <div class="qsum-grid">
       <div class="qsum-item"><div class="l">Umsatz (AR brutto)</div><div class="v" style="color:var(--ylw)">${fm(arSum)} ${cfg().currency}</div></div>
       <div class="qsum-item"><div class="l">Ausgaben (ER brutto)</div><div class="v" style="color:var(--blu)">${fm(erSum)} ${cfg().currency}</div></div>
@@ -879,9 +879,9 @@ async function renderQuartal(){
     <div style="width:2px;height:34px;border-radius:1px;background:${b.type==='er'?'var(--blu)':'var(--ylw)'};opacity:.6;flex-shrink:0"></div>
     <div style="flex:1;min-width:0">
       <div style="font-size:13px;font-weight:300;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${eh(b.shop||'')}</div>
-      <div style="font-size:10px;font-weight:300;color:var(--txt3)" class="mono">${eh(b.belegNr||'')} Â· ${fd(b.date)}</div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3)" class="mono">${eh(b.belegNr||'')} · ${fd(b.date)}</div>
     </div>
-    <div class="mono" style="font-size:12px;font-weight:300;color:${b.type==='er'?'var(--blu)':'var(--ylw)'};flex-shrink:0">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'â€“'}</div>
+    <div class="mono" style="font-size:12px;font-weight:300;color:${b.type==='er'?'var(--blu)':'var(--ylw)'};flex-shrink:0">${b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'–'}</div>
   </div>`).join('');
 }
 async function exportQCSV(){const all=await dba();const fi=all.filter(b=>{if(!b.date)return false;const d=new Date(b.date+'T00:00:00');return d.getFullYear()===qY&&Math.ceil((d.getMonth()+1)/3)===qQ;});if(!fi.length){toast('Keine Belege','wr');return;}exportCSVData(fi,`Q${qQ}_${qY}`);}
@@ -890,9 +890,9 @@ async function exportQZip(){
   const all=await dba();
   const fi=all.filter(b=>{if(!b.date)return false;const d=new Date(b.date+'T00:00:00');return d.getFullYear()===qY&&Math.ceil((d.getMonth()+1)/3)===qQ;});
   if(!fi.length){toast('Keine Belege','wr');return;}
-  toast('ZIP wird erstellt â€¦','wr');loadStamp();
+  toast('ZIP wird erstellt …','wr');loadStamp();
   const zip=new JSZip(),folder=zip.folder(`Q${qQ}_${qY}`);
-  const rows=[['Belegnummer','Typ','Datum','HÃ¤ndler','Netto',cfg().steuerLabel,'Brutto',cfg().steuerLabel+'%','Kategorie','Zahlung','Abo','Garantie bis']];
+  const rows=[['Belegnummer','Typ','Datum','Händler','Netto',cfg().steuerLabel,'Brutto',cfg().steuerLabel+'%','Kategorie','Zahlung','Abo','Garantie bis']];
   fi.forEach(b=>rows.push([b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',b.date||'',b.shop||'',b.net!=null?b.net.toFixed(2):'',b.mwst!=null?b.mwst.toFixed(2):'',b.brutto!=null?b.brutto.toFixed(2):'',b.mwstRate||'',b.cat||'',b.payment||'',b.istAbo?'Ja':'',b.garantieBis||'']));
   folder.file(`Q${qQ}_${qY}_belege.csv`,'\uFEFF'+rows.map(r=>r.join(';')).join('\n'));
   let count=0;
@@ -902,14 +902,14 @@ async function exportQZip(){
   }
   const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`BelegScan_Q${qQ}_${qY}.zip`;a.click();URL.revokeObjectURL(url);
-  toast(`ZIP mit ${count} PDFs exportiert âœ“`,'ok');
+  toast(`ZIP mit ${count} PDFs exportiert ✓`,'ok');
 }
 
 async function exportSteuerberaterZip(){
   if(typeof JSZip==='undefined'||typeof window.jspdf==='undefined'){toast('Bibliotheken nicht geladen','er');return;}
   const all=await dba();
   if(!all.length){toast('Keine Belege','wr');return;}
-  toast('Steuerberater-Export wird erstellt â€¦','wr');loadStamp();
+  toast('Steuerberater-Export wird erstellt …','wr');loadStamp();
 
   const zip=new JSZip();
   const year = new Date().getFullYear();
@@ -917,7 +917,7 @@ async function exportSteuerberaterZip(){
   // 1. zusammenfassung.csv
   const zusammenfassungRows = [];
 
-  // Ãœbersicht
+  // Übersicht
   const erBelege = all.filter(b => b.type === 'er');
   const arBelege = all.filter(b => b.type === 'ar');
   const rcBelege = all.filter(b => isReverseCharge(b));
@@ -930,18 +930,18 @@ async function exportSteuerberaterZip(){
   const rcSumme = rcBelege.reduce((s, b) => s + (b.brutto || 0), 0);
   const kmSumme = kmBelege.reduce((s, b) => s + (b.pauschale || 0), 0);
 
-  zusammenfassungRows.push(['ÃœBERSICHT']);
-  zusammenfassungRows.push(['Gesamteinnahmen', gesamtEinnahmen.toFixed(2) + ' â‚¬']);
-  zusammenfassungRows.push(['Gesamtausgaben', gesamtAusgaben.toFixed(2) + ' â‚¬']);
-  zusammenfassungRows.push(['Gewinn', gewinn.toFixed(2) + ' â‚¬']);
-  zusammenfassungRows.push(['MwSt-Zahllast', mwstZahllast.toFixed(2) + ' â‚¬']);
-  zusammenfassungRows.push(['Reverse-Charge-Summe', rcSumme.toFixed(2) + ' â‚¬']);
-  zusammenfassungRows.push(['Kilometerpauschale gesamt', kmSumme.toFixed(2) + ' â‚¬']);
+  zusammenfassungRows.push(['ÜBERSICHT']);
+  zusammenfassungRows.push(['Gesamteinnahmen', gesamtEinnahmen.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Gesamtausgaben', gesamtAusgaben.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Gewinn', gewinn.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['MwSt-Zahllast', mwstZahllast.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Reverse-Charge-Summe', rcSumme.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Kilometerpauschale gesamt', kmSumme.toFixed(2) + ' €']);
   zusammenfassungRows.push(['']);
 
   // ER-Liste
   zusammenfassungRows.push(['EINGANGSRECHNUNGEN (ER)']);
-  zusammenfassungRows.push(['Belegnummer', 'Datum', 'HÃ¤ndler', 'Netto', cfg().steuerLabel, 'Brutto', cfg().steuerLabel+'%', 'Kategorie', 'Zahlung', 'Reverse Charge']);
+  zusammenfassungRows.push(['Belegnummer', 'Datum', 'Händler', 'Netto', cfg().steuerLabel, 'Brutto', cfg().steuerLabel+'%', 'Kategorie', 'Zahlung', 'Reverse Charge']);
   erBelege.forEach(b => zusammenfassungRows.push([
     b.belegNr || '',
     b.date || '',
@@ -958,7 +958,7 @@ async function exportSteuerberaterZip(){
 
   // AR-Liste
   zusammenfassungRows.push(['AUSGANGSRECHNUNGEN (AR)']);
-  zusammenfassungRows.push(['Belegnummer', 'Datum', 'HÃ¤ndler', 'Netto', cfg().steuerLabel, 'Brutto', cfg().steuerLabel+'%', 'Kategorie', 'Zahlung']);
+  zusammenfassungRows.push(['Belegnummer', 'Datum', 'Händler', 'Netto', cfg().steuerLabel, 'Brutto', cfg().steuerLabel+'%', 'Kategorie', 'Zahlung']);
   arBelege.forEach(b => zusammenfassungRows.push([
     b.belegNr || '',
     b.date || '',
@@ -1005,7 +1005,7 @@ async function exportSteuerberaterZip(){
   // 2. rc_reverse_charge.csv
   const rcRows = [];
   rcRows.push(['REVERSE CHARGE - NICHT IN NORMALER VORSTEUER ENTHALTEN']);
-  rcRows.push(['Diese BetrÃ¤ge mÃ¼ssen separat in der UStVA eingetragen werden.']);
+  rcRows.push(['Diese Beträge müssen separat in der UStVA eingetragen werden.']);
   rcRows.push(['']);
   rcRows.push(['Belegnummer', 'Datum', 'Anbieter', 'Netto-Betrag', 'Selbst berechnete MwSt (19%)', 'UStVA Zeile 52 (Schuld)', 'UStVA Zeile 67 (Vorsteuer)']);
   let rcTotalNetto = 0, rcTotalMwst = 0;
@@ -1045,12 +1045,12 @@ async function exportSteuerberaterZip(){
   const readme = `Steuerberater-Export BelegScan ${year}
 
 INHALT:
-- zusammenfassung.csv: Ãœbersicht mit Kennzahlen und allen Belegen
-- rc_reverse_charge.csv: Reverse Charge BetrÃ¤ge fÃ¼r UStVA Zeile 52 und 67
+- zusammenfassung.csv: Übersicht mit Kennzahlen und allen Belegen
+- rc_reverse_charge.csv: Reverse Charge Beträge für UStVA Zeile 52 und 67
 - belege/: Alle Belege als PDFs, benannt nach Belegnummer
 
 HINWEIS ZU REVERSE CHARGE:
-Die BetrÃ¤ge in rc_reverse_charge.csv sind NICHT in der normalen Vorsteuer enthalten.
+Die Beträge in rc_reverse_charge.csv sind NICHT in der normalen Vorsteuer enthalten.
 Tragen Sie die Werte aus "UStVA Zeile 52" in die Umsatzsteuer-Voranmeldung Zeile 52 ein.
 Tragen Sie die Werte aus "UStVA Zeile 67" in die Umsatzsteuer-Voranmeldung Zeile 67 ein.
 `;
@@ -1063,35 +1063,35 @@ Tragen Sie die Werte aus "UStVA Zeile 67" in die Umsatzsteuer-Voranmeldung Zeile
   a.download = `Steuerberater_Export_${year}.zip`;
   a.click();
   URL.revokeObjectURL(url);
-  toast(`Steuerberater-Export mit ${pdfCount} PDFs erstellt âœ“`,'ok');
+  toast(`Steuerberater-Export mit ${pdfCount} PDFs erstellt ✓`,'ok');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: CSV & BACKUP
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: CSV & BACKUP
+// ════════════════════════════════════════════════════════
 async function exportCSV(){const all=await dba();if(!all.length){toast('Keine Belege','wr');return;}exportCSVData(all,`belege_${new Date().toISOString().split('T')[0]}`);}
 function exportCSVData(data,fn){
-  const rows=[['Belegnummer','Typ','Datum','HÃ¤ndler','Netto',cfg().steuerLabel,'Brutto',cfg().steuerLabel+'%','Kategorie','Zahlung','Erfasst','Abo','Garantie bis']];
+  const rows=[['Belegnummer','Typ','Datum','Händler','Netto',cfg().steuerLabel,'Brutto',cfg().steuerLabel+'%','Kategorie','Zahlung','Erfasst','Abo','Garantie bis']];
   [...data].sort((a,b)=>(a.date||'')>(b.date||'')?1:-1).forEach(b=>rows.push([b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',b.date||'',ec(b.shop||''),b.net!=null?b.net.toFixed(2):'',b.mwst!=null?b.mwst.toFixed(2):'',b.brutto!=null?b.brutto.toFixed(2):'',b.mwstRate||'',ec(b.cat||''),ec(b.payment||''),new Date(b.savedAt||0).toLocaleDateString('de-DE'),b.istAbo?'Ja':'',b.garantieBis||'']));
   const blob=new Blob(['\uFEFF'+rows.map(r=>r.join(';')).join('\n')],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fn+'.csv';a.click();URL.revokeObjectURL(url);
-  toast('CSV exportiert âœ“','ok');
+  toast('CSV exportiert ✓','ok');
 }
 async function exportBackup(){
   const all=await dba();
   const blob=new Blob([JSON.stringify({version:4,exportDate:new Date().toISOString(),profile,belege:all})],{type:'application/json'});
   const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`belegscan_backup_${new Date().toISOString().split('T')[0]}.json`;a.click();URL.revokeObjectURL(url);
-  toast('Backup exportiert âœ“','ok');
+  toast('Backup exportiert ✓','ok');
 }
 async function importBackup(inp){
   const f=inp.files[0];if(!f)return;
-  try{const data=JSON.parse(await f.text());if(!data.belege||!Array.isArray(data.belege))throw new Error('UngÃ¼ltiges Format');if(!confirm(`${data.belege.length} Belege importieren?`))return;for(const b of data.belege){const{id:_,...rest}=b;await dbadd(rest);}toast(`${data.belege.length} Belege importiert âœ“`,'ok');renderHome();}catch(e){toast('Import-Fehler: '+e.message,'er');}
+  try{const data=JSON.parse(await f.text());if(!data.belege||!Array.isArray(data.belege))throw new Error('Ungültiges Format');if(!confirm(`${data.belege.length} Belege importieren?`))return;for(const b of data.belege){const{id:_,...rest}=b;await dbadd(rest);}toast(`${data.belege.length} Belege importiert ✓`,'ok');renderHome();}catch(e){toast('Import-Fehler: '+e.message,'er');}
   inp.value='';
 }
 
 async function importBackup(inp){
   const f=inp.files[0];if(!f)return;
-  try{const data=JSON.parse(await f.text());if(!data.belege||!Array.isArray(data.belege))throw new Error('UngÃ¼ltiges Format');if(!confirm(`${data.belege.length} Belege importieren?`))return;for(const b of data.belege){const{id:_,...rest}=b;await dbadd(rest);}toast(`${data.belege.length} Belege importiert âœ“`,'ok');renderHome();}catch(e){toast('Import-Fehler: '+e.message,'er');}
+  try{const data=JSON.parse(await f.text());if(!data.belege||!Array.isArray(data.belege))throw new Error('Ungültiges Format');if(!confirm(`${data.belege.length} Belege importieren?`))return;for(const b of data.belege){const{id:_,...rest}=b;await dbadd(rest);}toast(`${data.belege.length} Belege importiert ✓`,'ok');renderHome();}catch(e){toast('Import-Fehler: '+e.message,'er');}
   inp.value='';
 }
 
@@ -1103,18 +1103,18 @@ async function loadExportPreview(){
   const year = new Date().getFullYear();
   const yearBelege = all.filter(b => b.date && new Date(b.date).getFullYear() === year);
 
-  // JahresÃ¼bersicht
+  // Jahresübersicht
   const yearSummary = document.getElementById('exportYearSummary');
   const totalEinnahmen = yearBelege.filter(b => b.type === 'ar').reduce((s, b) => s + (b.brutto || 0), 0);
   const totalAusgaben = yearBelege.filter(b => b.type === 'er').reduce((s, b) => s + (b.brutto || 0), 0);
   const gewinn = totalEinnahmen - totalAusgaben;
   yearSummary.innerHTML = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Einnahmen (AR):</span><span style="color:var(--grn)">${totalEinnahmen.toFixed(2)} â‚¬</span></div>
-    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Ausgaben (ER):</span><span style="color:var(--red)">${totalAusgaben.toFixed(2)} â‚¬</span></div>
-    <div style="display:flex;justify-content:space-between;border-top:1px solid var(--br);padding-top:8px"><span><strong>Gewinn:</strong></span><span style="color:var(--gold)"><strong>${gewinn.toFixed(2)} â‚¬</strong></span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Einnahmen (AR):</span><span style="color:var(--grn)">${totalEinnahmen.toFixed(2)} €</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Ausgaben (ER):</span><span style="color:var(--red)">${totalAusgaben.toFixed(2)} €</span></div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid var(--br);padding-top:8px"><span><strong>Gewinn:</strong></span><span style="color:var(--gold)"><strong>${gewinn.toFixed(2)} €</strong></span></div>
   `;
 
-  // QuartalsÃ¼bersicht
+  // Quartalsübersicht
   const quarterSummary = document.getElementById('exportQuarterSummary');
   const quarters = [1,2,3,4];
   const quarterData = quarters.map(q => {
@@ -1129,9 +1129,9 @@ async function loadExportPreview(){
   quarterSummary.innerHTML = quarterData.map(qd => `
     <div style="margin-bottom:12px;padding:8px;border:1px solid var(--br);border-radius:var(--r8)">
       <div style="font-weight:500;margin-bottom:4px">Q${qd.q} ${year}</div>
-      <div style="display:flex;justify-content:space-between;font-size:11px"><span>Einnahmen:</span><span style="color:var(--grn)">${qd.einnahmen.toFixed(2)} â‚¬</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px"><span>Ausgaben:</span><span style="color:var(--red)">${qd.ausgaben.toFixed(2)} â‚¬</span></div>
-      <div style="display:flex;justify-content:space-between;font-size:11px;border-top:1px solid var(--br);padding-top:4px;margin-top:4px"><span>Gewinn:</span><span style="color:var(--gold)">${qd.gewinn.toFixed(2)} â‚¬</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span>Einnahmen:</span><span style="color:var(--grn)">${qd.einnahmen.toFixed(2)} €</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span>Ausgaben:</span><span style="color:var(--red)">${qd.ausgaben.toFixed(2)} €</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;border-top:1px solid var(--br);padding-top:4px;margin-top:4px"><span>Gewinn:</span><span style="color:var(--gold)">${qd.gewinn.toFixed(2)} €</span></div>
     </div>
   `).join('');
 
@@ -1141,20 +1141,20 @@ async function loadExportPreview(){
   belegList.innerHTML = recentBelege.map(b => `
     <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--br)">
       <div>
-        <div style="font-size:12px;font-weight:500">${b.belegNr || 'â€“'}</div>
-        <div style="font-size:10px;color:var(--txt3)">${b.date || 'â€“'} Â· ${b.shop || 'â€“'}</div>
+        <div style="font-size:12px;font-weight:500">${b.belegNr || '–'}</div>
+        <div style="font-size:10px;color:var(--txt3)">${b.date || '–'} · ${b.shop || '–'}</div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:12px;font-weight:500;color:${b.type === 'ar' ? 'var(--grn)' : 'var(--red)'}">${(b.brutto || 0).toFixed(2)} â‚¬</div>
+        <div style="font-size:12px;font-weight:500;color:${b.type === 'ar' ? 'var(--grn)' : 'var(--red)'}">${(b.brutto || 0).toFixed(2)} €</div>
         <div style="font-size:10px;color:var(--txt3)">${b.type === 'ar' ? 'Einnahme' : 'Ausgabe'}</div>
       </div>
     </div>
   `).join('');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: PDF EXPORT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PDF EXPORT
+// ════════════════════════════════════════════════════════
 async function exportBelegPDF(b,stamped=false){
   if(typeof window.jspdf==='undefined'){toast('jsPDF nicht geladen','er');return;}
   const{jsPDF}=window.jspdf;
@@ -1176,10 +1176,10 @@ async function exportBelegPDF(b,stamped=false){
   pdf.addImage(imgData,'JPEG',0,0,mmW,mmH,undefined,'FAST');
   const fh=11;pdf.setFillColor(255,255,255);pdf.rect(0,mmH-fh,mmW,fh,'F');
   pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(80);
-  const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',`${cfg().steuerLabel} ${b.mwstRate||cfg().mwstH}%: ${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:''}`,b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  Â·  ');
+  const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',`${cfg().steuerLabel} ${b.mwstRate||cfg().mwstH}%: ${b.mwst!=null?fm(b.mwst)+' '+cfg().currency:''}`,b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  ·  ');
   pdf.text(meta,3,mmH-3);
   pdf.save(`${b.belegNr||'beleg'}.pdf`);
-  toast(b.belegNr+' als PDF gespeichert âœ“','ok');
+  toast(b.belegNr+' als PDF gespeichert ✓','ok');
 }
 async function belegPDFBytes(b){
   if(typeof window.jspdf==='undefined')return null;
@@ -1197,7 +1197,7 @@ async function belegPDFBytes(b){
   pdf.addImage(imgData,'JPEG',0,0,mmW,mmH,undefined,'FAST');
   const fh=11;pdf.setFillColor(255,255,255);pdf.rect(0,mmH-fh,mmW,fh,'F');
   pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(80);
-  const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  Â·  ');
+  const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  ·  ');
   pdf.text(meta,3,mmH-3);return pdf.output('arraybuffer');
 }
 
@@ -1238,7 +1238,7 @@ async function belegPDFBytesCompressed(b){
     pdf.addImage(imgData,'JPEG',0,0,mmW,mmH,undefined,'FAST');
     const fh=11;pdf.setFillColor(255,255,255);pdf.rect(0,mmH-fh,mmW,fh,'F');
     pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(80);
-    const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  Â·  ');
+    const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  ·  ');
     pdf.text(meta,3,mmH-3);
     const buffer = pdf.output('arraybuffer');
     size = buffer.byteLength;
@@ -1258,7 +1258,7 @@ async function belegPDFBytesCompressed(b){
   }
 
   if(size > 100*1024){
-    console.warn(`PDF fÃ¼r ${b.belegNr} ist ${Math.round(size/1024)}KB - Lesbarkeit kÃ¶nnte eingeschrÃ¤nkt sein`);
+    console.warn(`PDF für ${b.belegNr} ist ${Math.round(size/1024)}KB - Lesbarkeit könnte eingeschränkt sein`);
   }
 
   return pdf.output('arraybuffer');
@@ -1266,19 +1266,19 @@ async function belegPDFBytesCompressed(b){
 
 async function exportStamped(){loadStamp();if(!curDet?.image){toast('Kein Bild','er');return;}await exportBelegPDF(curDet,true);}
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: STEMPEL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: STEMPEL
+// ════════════════════════════════════════════════════════
 function loadStamp(){stamp.firma=localStorage.getItem('sf')||'';stamp.frei=localStorage.getItem('sfr')||'';stamp.color=localStorage.getItem('sc')||'#b71c1c';}
 function loadStampUI(){
   loadStamp();document.getElementById('sFirma').value=stamp.firma;document.getElementById('sFrei').value=stamp.frei;
   document.getElementById('cPick').value=stamp.color;document.querySelectorAll('.csw').forEach(s=>s.classList.toggle('on',s.dataset.c===stamp.color));
-  pickTpl(stampTpl); // WHY: pickTpl setzt inline styles explizit â€“ toggle allein nicht zuverlÃ¤ssig
+  pickTpl(stampTpl); // WHY: pickTpl setzt inline styles explizit – toggle allein nicht zuverlässig
 }
 function pickTpl(i){
   stampTpl=parseInt(i);
   localStorage.setItem('stpl',String(stampTpl));
-  // Alle entfernen, dann aktiven setzen â€“ kein toggle-Zustandsproblem
+  // Alle entfernen, dann aktiven setzen – kein toggle-Zustandsproblem
   for(let j=0;j<3;j++){
     const el=document.getElementById('tpl'+j);
     if(!el) continue;
@@ -1299,8 +1299,8 @@ function pickCol(el){document.querySelectorAll('.csw').forEach(s=>s.classList.re
 function freeCol(inp){stamp.color=inp.value;document.querySelectorAll('.csw').forEach(s=>s.classList.remove('on'));refreshStamp();}
 function refreshStamp(){stamp.firma=document.getElementById('sFirma').value;stamp.frei=document.getElementById('sFrei').value;const previewNr='ER-'+new Date().getFullYear()+'-Q'+Math.ceil((new Date().getMonth()+1)/3)+'-0001';drawStamp(document.getElementById('stmpC'),stamp,previewNr,0);}
 function saveStamp(){localStorage.setItem('sf',stamp.firma);localStorage.setItem('sfr',stamp.frei);localStorage.setItem('sc',stamp.color);toast('Stempel gespeichert','ok');}
-// WHY: Einheitlicher Stempel â€“ kein Stil-Wechsel.
-// Format: EINGANGSRECHNUNG / Jahr Â· Quartal Â· Nummer / Firma / Datum
+// WHY: Einheitlicher Stempel – kein Stil-Wechsel.
+// Format: EINGANGSRECHNUNG / Jahr · Quartal · Nummer / Firma / Datum
 function drawStamp(cv,cfg2,nr,tpl=0){
   const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,p=10,col=cfg2.color||'#b71c1c';
   ctx.clearRect(0,0,W,H);ctx.save();
@@ -1312,7 +1312,7 @@ function drawStamp(cv,cfg2,nr,tpl=0){
   const typ=nr.startsWith('AR')||nr.startsWith('ar')?'AUSGANGSRECHNUNG':'EINGANGSRECHNUNG';
   ctx.font=`bold 9px 'Inter',sans-serif`;ctx.letterSpacing='2px';
   ctx.fillText(typ,W/2,p+17);
-  // Belegnummer groÃŸ
+  // Belegnummer groß
   ctx.font=`bold 17px 'Courier New',monospace`;ctx.letterSpacing='0px';
   ctx.fillText(nr,W/2,p+37);
   // Trennlinie
@@ -1325,21 +1325,21 @@ function drawStamp(cv,cfg2,nr,tpl=0){
   ctx.restore();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: KONTOAUSZUG-ABGLEICH
-// WHY: Nutzer fotografiert Kontoauszug â†’ KI liest Buchungen â†’
-// Abgleich gegen alle Belege (priv+biz) â†’ unbekannte Buchungen
+// ════════════════════════════════════════════════════════
+// ██ MODUL: KONTOAUSZUG-ABGLEICH
+// WHY: Nutzer fotografiert Kontoauszug → KI liest Buchungen →
+// Abgleich gegen alle Belege (priv+biz) → unbekannte Buchungen
 // werden mit KI-Vorschlag angezeigt, Nutzer entscheidet.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: KONTOAUSZUG-ABGLEICH v2
-// WHY: Buchungen persistent in localStorage â€“ bleiben auch
+// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// ██ MODUL: KONTOAUSZUG-ABGLEICH v2
+// WHY: Buchungen persistent in localStorage – bleiben auch
 // nach Tab-Wechsel erhalten. Multi-Upload-Queue verarbeitet
 // mehrere Fotos sequenziell. Status (offen/erfasst/ignoriert)
 // wird pro Buchung gespeichert.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 const KONTO_STORE = 'bsp_konto_v2';
-let kontoQueue = []; // Datei-Queue fÃ¼r Batch-Upload
+let kontoQueue = []; // Datei-Queue für Batch-Upload
 let kontoRunning = false;
 
 // Buchungen laden/speichern
@@ -1356,7 +1356,7 @@ async function updKontoStatus(){
   const alle = await dbKontoBuchungen();
   const offen = alle.filter(t=>t.status==='offen').length;
   const lbl = document.getElementById('kontoStatusLbl');
-  if(lbl) lbl.textContent = alle.length===0 ? 'Noch keine Buchungen geladen' : `${alle.length} Buchungen Â· ${offen} offen`;
+  if(lbl) lbl.textContent = alle.length===0 ? 'Noch keine Buchungen geladen' : `${alle.length} Buchungen · ${offen} offen`;
 }
 
 function setKontoLog(m,p){
@@ -1364,7 +1364,7 @@ function setKontoLog(m,p){
   if(p!==undefined){ const f=document.getElementById('kontoFill'); if(f) f.style.width=p+'%'; }
 }
 
-// â”€â”€ Multi-Upload Queue â”€â”€
+// ── Multi-Upload Queue ──
 function kontoQueueAdd(inp){
   const bankName = document.getElementById('kontoBankInput').value.trim();
   if (!bankName) {
@@ -1375,7 +1375,7 @@ function kontoQueueAdd(inp){
   const files=Array.from(inp.files||[]);
   if(!files.length) return;
   
-  // Bank-Name zu jedem File hinzufÃ¼gen
+  // Bank-Name zu jedem File hinzufügen
   files.forEach(f => f.bankName = bankName);
   
   kontoQueue.push(...files);
@@ -1387,8 +1387,8 @@ function kontoQueueAdd(inp){
 }
 
 function openBankManager() {
-  // Einfacher Dialog fÃ¼r Bank-Verwaltung
-  const bankName = prompt('Neue Bank hinzufÃ¼gen (Name):');
+  // Einfacher Dialog für Bank-Verwaltung
+  const bankName = prompt('Neue Bank hinzufügen (Name):');
   if (bankName && bankName.trim()) {
     addBank(bankName.trim());
   }
@@ -1397,10 +1397,10 @@ function openBankManager() {
 async function addBank(name) {
   try {
     const id = await dbAddBank({name: name, createdAt: Date.now()});
-    toast(`Bank "${name}" hinzugefÃ¼gt`, 'ok');
+    toast(`Bank "${name}" hinzugefügt`, 'ok');
     loadBanks();
   } catch (e) {
-    toast('Fehler beim HinzufÃ¼gen', 'er');
+    toast('Fehler beim Hinzufügen', 'er');
   }
 }
 
@@ -1408,7 +1408,7 @@ async function loadBanks() {
   try {
     const banks = await dbBanks();
     const select = document.getElementById('kontoBankSelect');
-    select.innerHTML = '<option value="">Bank wÃ¤hlen...</option>';
+    select.innerHTML = '<option value="">Bank wählen...</option>';
     banks.forEach(bank => {
       const opt = document.createElement('option');
       opt.value = bank.id;
@@ -1421,31 +1421,31 @@ async function loadBanks() {
 }
 
 async function addBankPrompt() {
-  const name = prompt('Neue Bank hinzufÃ¼gen (Name):');
+  const name = prompt('Neue Bank hinzufügen (Name):');
   if (name && name.trim()) {
     await addBank(name.trim());
   }
 }
 
 async function deleteBank(id) {
-  if (!confirm('Bank wirklich lÃ¶schen? Alle zugehÃ¶rigen Buchungen werden entfernt.')) return;
+  if (!confirm('Bank wirklich löschen? Alle zugehörigen Buchungen werden entfernt.')) return;
   try {
-    // LÃ¶sche Bank
+    // Lösche Bank
     await dbDelBank(id);
-    // LÃ¶sche zugehÃ¶rige Buchungen
+    // Lösche zugehörige Buchungen
     const buchungen = await dbKontoBuchungen();
     for (const b of buchungen) {
       if (b.bankId === id) {
         await dbDelKontoBuchung(b.id);
       }
     }
-    toast('Bank und Buchungen gelÃ¶scht', 'ok');
+    toast('Bank und Buchungen gelöscht', 'ok');
     loadBanks();
     loadBankList();
     renderKontoBuchungen();
     updKontoStatus();
   } catch (e) {
-    toast('Fehler beim LÃ¶schen', 'er');
+    toast('Fehler beim Löschen', 'er');
   }
 }
 
@@ -1454,13 +1454,13 @@ async function loadBankList() {
     const banks = await dbBanks();
     const list = document.getElementById('bankList');
     if (!banks.length) {
-      list.innerHTML = '<p style="font-size:11px;color:var(--txt3)">Noch keine Banken hinzugefÃ¼gt.</p>';
+      list.innerHTML = '<p style="font-size:11px;color:var(--txt3)">Noch keine Banken hinzugefügt.</p>';
       return;
     }
     list.innerHTML = banks.map(bank => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--br)">
         <span style="font-size:12px;color:var(--txt)">${eh(bank.name)}</span>
-        <button class="btn btn-red btn-sm" style="font-size:10px;padding:4px 8px" onclick="deleteBank(${bank.id})">LÃ¶schen</button>
+        <button class="btn btn-red btn-sm" style="font-size:10px;padding:4px 8px" onclick="deleteBank(${bank.id})">Löschen</button>
       </div>
     `).join('');
   } catch (e) {
@@ -1490,23 +1490,23 @@ function renderKontoQueue(){
 async function kontoQueueStart(){
   apiKey=localStorage.getItem('cak')||apiKey||'';
   if(!apiKey){toast('Bitte erst API Key hinterlegen','er');openApiSheet();return;}
-  if(kontoRunning){toast('Analyse lÃ¤uft bereits â€¦','wr');return;}
+  if(kontoRunning){toast('Analyse läuft bereits …','wr');return;}
   if(!kontoQueue.length){toast('Keine Dateien in der Warteschlange','wr');return;}
 
   kontoRunning=true;
   const btn=document.getElementById('kontoQueueBtn');
-  if(btn){btn.disabled=true;btn.textContent='â³ Analysiere â€¦';}
+  if(btn){btn.disabled=true;btn.textContent='⏳ Analysiere …';}
   document.getElementById('kontoProg').style.display='block';
 
   const total=kontoQueue.length;
   for(let i=0;i<total;i++){
     const f=kontoQueue[i];
-    setKontoLog(`ðŸ“· Bild ${i+1} von ${total}: ${f.name||'Foto'}`,Math.round((i/total)*80));
+    setKontoLog(`📷 Bild ${i+1} von ${total}: ${f.name||'Foto'}`,Math.round((i/total)*80));
     await kontoAnalyseFile(f);
   }
   kontoQueue=[];
   renderKontoQueue();
-  setKontoLog(`âœ“ Alle ${total} Bilder analysiert`,100);
+  setKontoLog(`✓ Alle ${total} Bilder analysiert`,100);
   setTimeout(()=>document.getElementById('kontoProg').style.display='none',1500);
   kontoRunning=false;
   if(btn){btn.disabled=false;btn.textContent='Alle analysieren starten';}
@@ -1525,15 +1525,15 @@ async function kontoAnalyseFile(file){
         const mt=compressed.startsWith('data:image/png')?'image/png':'image/jpeg';
         const imgData=compressed.split(',')[1];
 
-        const prompt=`Du bist ein prÃ¤ziser Kontoauszug-Scanner fÃ¼r deutsche Bankkonten.
+        const prompt=`Du bist ein präziser Kontoauszug-Scanner für deutsche Bankkonten.
 
 Lies ALLE sichtbaren Kontobuchungen/Transaktionen aus diesem Kontoauszug oder Banking-Screenshot.
 
-ANTWORTE NUR mit einem JSON-Array, ohne ErklÃ¤rung, ohne Markdown:
+ANTWORTE NUR mit einem JSON-Array, ohne Erklärung, ohne Markdown:
 [{"datum":"YYYY-MM-DD","betrag":-29.99,"beschreibung":"REWE SAGT DANKE","typ":"ausgabe"}]
 
 REGELN:
-- betrag: negative Zahl fÃ¼r Ausgaben, positive fÃ¼r EingÃ¤nge
+- betrag: negative Zahl für Ausgaben, positive für Eingänge
 - datum: immer YYYY-MM-DD Format
 - beschreibung: exakt wie auf dem Auszug
 - typ: "ausgabe" oder "eingang"
@@ -1554,7 +1554,7 @@ REGELN:
         try{neu=JSON.parse(rawText.trim());}catch(_){}
         if(!neu){const m=rawText.match(/\[[\s\S]*\]/);if(m)try{neu=JSON.parse(m[0]);}catch(_){}}
         if(neu&&neu.length){
-          // Zu bestehenden hinzufÃ¼gen â€“ Duplikate vermeiden (gleicher Betrag+Datum+Beschreibung+Bank)
+          // Zu bestehenden hinzufügen – Duplikate vermeiden (gleicher Betrag+Datum+Beschreibung+Bank)
           const existing = await dbKontoBuchungen();
           let added=0;
           for(const t of neu){
@@ -1564,7 +1564,7 @@ REGELN:
               added++; 
             }
           }
-          setKontoLog(`âœ“ +${added} neue Buchungen`,undefined);
+          setKontoLog(`✓ +${added} neue Buchungen`,undefined);
         }
       }catch(e){console.error(e);}
       res();
@@ -1620,25 +1620,25 @@ async function renderKontoBuchungen(){
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
-              <span class="badge b-beleg-fehlt">ðŸ”´ Kein Beleg</span>
+              <span class="badge b-beleg-fehlt">🔴 Kein Beleg</span>
               ${t.bankName?`<span style="font-size:10px;color:var(--txt3)">${eh(t.bankName)}</span>`:''}
             </div>
             <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
-            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} Â· Vorschlag: ${v.kat} (${v.typ==='biz'?'Business':'Privat'})</div>
+            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Vorschlag: ${v.kat} (${v.typ==='biz'?'Business':'Privat'})</div>
           </div>
-          <div style="font-size:13px;font-weight:300;color:var(--red);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} â‚¬</div>
+          <div style="font-size:13px;font-weight:300;color:var(--red);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-sm" style="background:rgba(200,164,90,.1);border:1px solid rgba(200,164,90,.3);color:var(--gold);font-size:11px" onclick="kontoBelegScannen('${id}')">ðŸ“· Beleg scannen</button>
-          <button class="btn btn-sm" style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:11px" onclick="kontoErfasse('${id}','priv')">ðŸ  Privat erfassen</button>
-          <button class="btn btn-sm" style="background:rgba(74,128,192,.1);border:1px solid rgba(74,128,192,.25);color:var(--blu);font-size:11px" onclick="kontoErfasse('${id}','biz')">ðŸ’¼ Business erfassen</button>
-          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--br);color:var(--txt3);font-size:11px" onclick="kontoIgnoriere('${id}')">â€” Ignorieren</button>
+          <button class="btn btn-sm" style="background:rgba(200,164,90,.1);border:1px solid rgba(200,164,90,.3);color:var(--gold);font-size:11px" onclick="kontoBelegScannen('${id}')">📷 Beleg scannen</button>
+          <button class="btn btn-sm" style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:11px" onclick="kontoErfasse('${id}','priv')">🏠 Privat erfassen</button>
+          <button class="btn btn-sm" style="background:rgba(74,128,192,.1);border:1px solid rgba(74,128,192,.25);color:var(--blu);font-size:11px" onclick="kontoErfasse('${id}','biz')">💼 Business erfassen</button>
+          <button class="btn btn-sm" style="background:transparent;border:1px solid var(--br);color:var(--txt3);font-size:11px" onclick="kontoIgnoriere('${id}')">— Ignorieren</button>
         </div>
       </div>`;
     }).join('');
   } else { uSec.style.display='none'; }
 
-  // --- Vermutete Belege (KI-Vorschlag, unbestÃ¤tigt) ---
+  // --- Vermutete Belege (KI-Vorschlag, unbestätigt) ---
   let vermSec = document.getElementById('kontoVermSec');
   if(!vermSec){
     vermSec = document.createElement('div');
@@ -1649,7 +1649,7 @@ async function renderKontoBuchungen(){
   if(vermutet.length){
     vermSec.style.display='block';
     vermSec.innerHTML = `<div style="font-size:11px;font-weight:300;color:var(--ylw);margin-bottom:8px;letter-spacing:.3px;display:flex;justify-content:space-between">
-      <span>ðŸŸ¡ BELEG VERMUTET (unbestÃ¤tigt)</span><span style="color:var(--txt3)">${vermutet.length}</span></div>` +
+      <span>🟡 BELEG VERMUTET (unbestätigt)</span><span style="color:var(--txt3)">${vermutet.length}</span></div>` +
     vermutet.map(t=>{
       const id=t.id;
       const vbNr  = t.vorschlagBelegNr  || '';
@@ -1659,22 +1659,22 @@ async function renderKontoBuchungen(){
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
           <div style="flex:1;min-width:0">
             <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
-              <span class="badge b-beleg-vermutet">ðŸŸ¡ Beleg vermutet</span>
+              <span class="badge b-beleg-vermutet">🟡 Beleg vermutet</span>
             </div>
             <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
-            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)}${vbShop?' Â· Vermutet: '+eh(vbShop):''} ${vbNr?'('+eh(vbNr)+')':''}</div>
+            <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)}${vbShop?' · Vermutet: '+eh(vbShop):''} ${vbNr?'('+eh(vbNr)+')':''}</div>
           </div>
-          <div style="font-size:13px;font-weight:300;color:var(--ylw);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} â‚¬</div>
+          <div style="font-size:13px;font-weight:300;color:var(--ylw);margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
-          <button class="btn btn-sm" style="background:rgba(58,175,112,.1);border:1px solid rgba(58,175,112,.3);color:var(--grn);font-size:11px" onclick="kontoBestaetigenBeleg('${id}')">âœ“ BestÃ¤tigen</button>
-          <button class="btn btn-sm" style="background:rgba(192,64,64,.08);border:1px solid rgba(192,64,64,.2);color:var(--red);font-size:11px" onclick="kontoVermutungAblehnen('${id}')">âœ— Ablehnen</button>
+          <button class="btn btn-sm" style="background:rgba(58,175,112,.1);border:1px solid rgba(58,175,112,.3);color:var(--grn);font-size:11px" onclick="kontoBestaetigenBeleg('${id}')">✓ Bestätigen</button>
+          <button class="btn btn-sm" style="background:rgba(192,64,64,.08);border:1px solid rgba(192,64,64,.2);color:var(--red);font-size:11px" onclick="kontoVermutungAblehnen('${id}')">✗ Ablehnen</button>
         </div>
       </div>`;
     }).join('');
   } else { vermSec.style.display='none'; }
 
-  // --- Abgeglichen / BestÃ¤tigt ---
+  // --- Abgeglichen / Bestätigt ---
   if(bestaetigt.length){
     mSec.style.display='block';
     document.getElementById('kontoMatchedList').innerHTML=bestaetigt.map(t=>`
@@ -1682,12 +1682,12 @@ async function renderKontoBuchungen(){
         padding:9px 12px;margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:7px;margin-bottom:3px">
-            <span class="badge b-beleg-ok">ðŸŸ¢ ${t.belegStatus==='bestaetigt'?'BestÃ¤tigt':'Abgeglichen'}</span>
+            <span class="badge b-beleg-ok">🟢 ${t.belegStatus==='bestaetigt'?'Bestätigt':'Abgeglichen'}</span>
           </div>
           <div style="font-size:12px;font-weight:300;color:var(--txt);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(t.beschreibung||'')}</div>
-          <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} Â· Beleg: ${eh(t.belegShop||t.vorschlagBelegShop||'')} ${eh(t.belegNr||t.vorschlagBelegNr||'')}</div>
+          <div style="font-size:10px;font-weight:300;color:var(--txt3)">${fd(t.datum)} · Beleg: ${eh(t.belegShop||t.vorschlagBelegShop||'')} ${eh(t.belegNr||t.vorschlagBelegNr||'')}</div>
         </div>
-        <div style="color:var(--grn);font-size:13px;margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} â‚¬</div>
+        <div style="color:var(--grn);font-size:13px;margin-left:8px;flex-shrink:0">${fm(Math.abs(t.betrag))} €</div>
       </div>`).join('');
   } else { mSec.style.display='none'; }
 }
@@ -1717,7 +1717,7 @@ async function kontoErfasse(id, typ){
     // Status updaten
     await dbAddKontoBuchung({...t, status: 'erfasst_' + typ});
     await dbDelKontoBuchung(t.id);
-    toast('Erfasst als ' + (typ === 'priv' ? 'Privat' : 'Business') + ' âœ“', 'ok');
+    toast('Erfasst als ' + (typ === 'priv' ? 'Privat' : 'Business') + ' ✓', 'ok');
     if(typ === 'biz') renderMwst();
     renderHome();
     renderKontoBuchungen();
@@ -1739,31 +1739,31 @@ async function kontoIgnoriere(id){
 }
 
 async function kontoAllesLoeschen(){
-  if(!confirm('Alle Kontoauszug-Daten lÃ¶schen?')) return;
+  if(!confirm('Alle Kontoauszug-Daten löschen?')) return;
   const alle = await dbKontoBuchungen();
   for(const b of alle) {
     await dbDelKontoBuchung(b.id);
   }
   renderKontoBuchungen();
   updKontoStatus();
-  toast('Kontoauszug-Daten gelÃ¶scht','ok');
+  toast('Kontoauszug-Daten gelöscht','ok');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: BELEG-STATUS FUNKTIONEN
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BELEG-STATUS FUNKTIONEN
 // WHY: Jede Kontobuchung bekommt expliziten Beleg-Status:
-// kein_beleg â†’ vermutet â†’ bestaetigt
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// kein_beleg → vermutet → bestaetigt
+// ════════════════════════════════════════════════════════
 
-// Merkt die aktuelle KontoBuchung-ID fÃ¼r nachtrÃ¤gliches Einsortieren
+// Merkt die aktuelle KontoBuchung-ID für nachträgliches Einsortieren
 let _aktiverKontoBuchungId = null;
 
 function kontoBelegScannen(buchungId){
   // Buchung-ID merken, damit saveBeleg() danach zuordnen kann
   _aktiverKontoBuchungId = buchungId;
-  // Scanner Ã¶ffnen
+  // Scanner öffnen
   openScanner();
-  toast('Bitte den fehlenden Beleg scannen â€¦', 'wr');
+  toast('Bitte den fehlenden Beleg scannen …', 'wr');
 }
 
 async function kontoBestaetigenBeleg(id){
@@ -1772,7 +1772,7 @@ async function kontoBestaetigenBeleg(id){
   if(!t) return;
   await dbAddKontoBuchung({...t, belegStatus: 'bestaetigt'});
   await dbDelKontoBuchung(t.id);
-  toast('Beleg bestÃ¤tigt âœ“', 'ok');
+  toast('Beleg bestätigt ✓', 'ok');
   renderKontoBuchungen();
   updKontoStatus();
 }
@@ -1781,20 +1781,20 @@ async function kontoVermutungAblehnen(id){
   const alle = await dbKontoBuchungen();
   const t = alle.find(x => String(x.id) === String(id));
   if(!t) return;
-  // ZurÃ¼ck auf offen / kein_beleg setzen
+  // Zurück auf offen / kein_beleg setzen
   await dbAddKontoBuchung({...t, belegStatus: 'kein_beleg', vorschlagBelegId: null, vorschlagBelegNr: null, vorschlagBelegShop: null});
   await dbDelKontoBuchung(t.id);
-  toast('Zuordnung abgelehnt â€“ Buchung zurÃ¼ck auf "Kein Beleg"', 'wr');
+  toast('Zuordnung abgelehnt – Buchung zurück auf "Kein Beleg"', 'wr');
   renderKontoBuchungen();
   updKontoStatus();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ KI-GESAMT-ABGLEICH: Alle offenen Buchungen vs. alle Belege
+// ════════════════════════════════════════════════════════
+// ██ KI-GESAMT-ABGLEICH: Alle offenen Buchungen vs. alle Belege
 // WHY: Nutzer kann jederzeit auf Knopfdruck alle noch offenen
 // Buchungen durch Claude mit allen Belegen abgleichen lassen.
-// Claude gibt Paarungen zurÃ¼ck â†’ belegStatus='vermutet'
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Claude gibt Paarungen zurück → belegStatus='vermutet'
+// ════════════════════════════════════════════════════════
 async function kontoKiGesamt(){
   apiKey = localStorage.getItem('cak') || apiKey || '';
   if(!apiKey){ toast('Bitte erst API Key hinterlegen', 'er'); openApiSheet(); return; }
@@ -1807,11 +1807,11 @@ async function kontoKiGesamt(){
   const bizBelege = belege.filter(b => b.type !== 'priv');
   if(!bizBelege.length){ toast('Keine Belege vorhanden', 'wr'); return; }
 
-  toast('ðŸ¤– KI vergleicht alles â€¦', 'wr');
+  toast('🤖 KI vergleicht alles …', 'wr');
 
-  // Buchungen und Belege als kompakte Listen fÃ¼r Claude
-  const buchungsListe = offene.map((t,i) => `B${i+1}: ${t.datum||'?'} | ${fm(Math.abs(t.betrag))} â‚¬ | ${(t.beschreibung||'').substring(0,50)}`).join('\n');
-  const belegListe = bizBelege.slice(0, 80).map((b,i) => `R${i+1}: ${b.date||'?'} | ${fm(b.brutto||0)} â‚¬ | ${(b.shop||'').substring(0,40)} | ${b.belegNr||''}`).join('\n');
+  // Buchungen und Belege als kompakte Listen für Claude
+  const buchungsListe = offene.map((t,i) => `B${i+1}: ${t.datum||'?'} | ${fm(Math.abs(t.betrag))} € | ${(t.beschreibung||'').substring(0,50)}`).join('\n');
+  const belegListe = bizBelege.slice(0, 80).map((b,i) => `R${i+1}: ${b.date||'?'} | ${fm(b.brutto||0)} € | ${(b.shop||'').substring(0,40)} | ${b.belegNr||''}`).join('\n');
 
   const prompt = `Du bist ein Buchhalter-Assistent. Gleiche Konteauszug-Buchungen mit Belegen ab.
 
@@ -1821,12 +1821,12 @@ ${buchungsListe}
 BELEGE (R1-R${Math.min(bizBelege.length,80)}):
 ${belegListe}
 
-Antworte NUR mit einem JSON-Array von Paarungen, ohne ErklÃ¤rung, ohne Markdown:
+Antworte NUR mit einem JSON-Array von Paarungen, ohne Erklärung, ohne Markdown:
 [{"buchung":"B1","beleg":"R3","sicher":true},{"buchung":"B2","beleg":"R7","sicher":false}]
 
 REGELN:
-- Nur wenn Betrag Â±1â‚¬ UND Datum Â±5 Tage passen â†’ Paarung
-- sicher:true wenn Betrag exakt und Datum Â±2 Tage
+- Nur wenn Betrag  ±1€ UND Datum  ±5 Tage passen → Paarung
+- sicher:true wenn Betrag exakt und Datum  ±2 Tage
 - Wenn keine passende Paarung: nicht aufnehmen
 - Antwort: nur das JSON-Array, nichts anderes`;
 
@@ -1853,7 +1853,7 @@ REGELN:
       if(bi < 0 || ri < 0 || bi >= offene.length || ri >= bizBelege.length) continue;
       const buchung = offene[bi];
       const beleg   = bizBelege[ri];
-      // Update buchung â†’ belegStatus vermutet
+      // Update buchung → belegStatus vermutet
       await dbAddKontoBuchung({...buchung,
         belegStatus: 'vermutet',
         vorschlagBelegId: beleg.id,
@@ -1863,7 +1863,7 @@ REGELN:
       await dbDelKontoBuchung(buchung.id);
       found++;
     }
-    toast(`ðŸ¤– ${found} Paarung${found!==1?'en':''} gefunden â€“ bitte bestÃ¤tigen`, found>0?'ok':'wr');
+    toast(`🤖 ${found} Paarung${found!==1?'en':''} gefunden – bitte bestätigen`, found>0?'ok':'wr');
     renderKontoBuchungen();
     updKontoStatus();
   } catch(e){
@@ -1871,12 +1871,12 @@ REGELN:
   }
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: EXPORT-FEHLER-CHECK
+// ════════════════════════════════════════════════════════
+// ██ MODUL: EXPORT-FEHLER-CHECK
 // WHY: Vor dem Absenden an den Steuerberater muss alles stimmen.
-// Fehlende Belege, unbestÃ¤tigte VorschlÃ¤ge, MwSt-Fehler â€“ alles
-// wird geprÃ¼ft und dem Nutzer klar angezeigt.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Fehlende Belege, unbestätigte Vorschläge, MwSt-Fehler – alles
+// wird geprüft und dem Nutzer klar angezeigt.
+// ════════════════════════════════════════════════════════
 async function checkExportFehler(){
   const alle    = await dbKontoBuchungen();
   const belege  = await dba();
@@ -1889,27 +1889,27 @@ async function checkExportFehler(){
     fehler.push(`${ohneBeleg.length} Kontobuchung${ohneBeleg.length!==1?'en':''} ohne zugeordneten Beleg`);
   }
 
-  // 2. UnbestÃ¤tigte KI-Vermutungen
+  // 2. Unbestätigte KI-Vermutungen
   const unbestaetigt = alle.filter(t => t.belegStatus === 'vermutet');
   if(unbestaetigt.length){
-    warnungen.push(`${unbestaetigt.length} Beleg-Zuordnung${unbestaetigt.length!==1?'en':''} noch nicht bestÃ¤tigt`);
+    warnungen.push(`${unbestaetigt.length} Beleg-Zuordnung${unbestaetigt.length!==1?'en':''} noch nicht bestätigt`);
   }
 
   // 3. Business-Belege ohne MwSt-Betrag (aber kein Kleinunternehmer)
   if(profile.typ !== 'ku'){
     const ohneMwst = belege.filter(b => b.type !== 'priv' && (b.mwst == null || b.mwst === 0) && b.brutto > 10);
     if(ohneMwst.length){
-      warnungen.push(`${ohneMwst.length} Beleg${ohneMwst.length!==1?'e':''} ohne MwSt-Betrag (bitte prÃ¼fen)`);
+      warnungen.push(`${ohneMwst.length} Beleg${ohneMwst.length!==1?'e':''} ohne MwSt-Betrag (bitte prüfen)`);
     }
 
-    // 4. MwSt-Rechenfehler (Netto Ã— (1+Satz/100) â‰  Brutto, Abweichung > 0.10â‚¬)
+    // 4. MwSt-Rechenfehler (Netto × (1+Satz/100) ≠ Brutto, Abweichung > 0.10€)
     const mwstFehler = belege.filter(b => {
       if(b.type === 'priv' || !b.brutto || !b.net || !b.mwstRate) return false;
       const expected = Math.round(b.net * (1 + b.mwstRate / 100) * 100) / 100;
       return Math.abs(expected - (b.brutto||0)) > 0.10;
     });
     if(mwstFehler.length){
-      warnungen.push(`${mwstFehler.length} Beleg${mwstFehler.length!==1?'e':''} mit MwSt-Rechenfehler (Netto Ã— Satz â‰  Brutto)`);
+      warnungen.push(`${mwstFehler.length} Beleg${mwstFehler.length!==1?'e':''} mit MwSt-Rechenfehler (Netto × Satz ≠ Brutto)`);
     }
   }
 
@@ -1925,7 +1925,7 @@ async function renderExportWarnBox(){
   const isCritical = fehler.length > 0;
   box.style.display = 'block';
   box.innerHTML = `<div class="export-warn ${isCritical?'critical':''}">
-    <div class="ew-title">${isCritical?'âš ï¸':'â„¹ï¸'} ${isCritical?'Fehler vor Export':'Hinweise vor Export'}</div>
+    <div class="ew-title">${isCritical?'⚠️':'ℹ️'} ${isCritical?'Fehler vor Export':'Hinweise vor Export'}</div>
     <ul>
       ${fehler.map(f  => `<li style="color:var(--red)">${eh(f)}</li>`).join('')}
       ${warnungen.map(w => `<li>${eh(w)}</li>`).join('')}
@@ -1936,8 +1936,8 @@ async function renderExportWarnBox(){
 }
 
 // WHY: Kleine Bar-Ausgaben, Eis, Trinkgeld etc. haben keine Quittung.
-// Spracheingabe Ã¼ber Web Speech API (nativ in iOS Safari).
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Spracheingabe über Web Speech API (nativ in iOS Safari).
+// ════════════════════════════════════════════════════════
 let micActive=false, recognition=null;
 
 function openSchnell(){
@@ -1958,7 +1958,7 @@ function toggleMic(){
 
 function startMic(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){toast('Spracheingabe nicht unterstÃ¼tzt','er');return;}
+  if(!SR){toast('Spracheingabe nicht unterstützt','er');return;}
   recognition=new SR();
   recognition.lang='de-DE';
   recognition.continuous=false;
@@ -1968,9 +1968,9 @@ function startMic(){
     document.getElementById('micBtn').style.background='rgba(192,64,64,.15)';
     document.getElementById('micBtn').style.borderColor='rgba(192,64,64,.4)';
     document.getElementById('micBtn').style.color='var(--red)';
-    document.getElementById('micLbl').textContent='ðŸ”´ Aufnahme lÃ¤uft â€¦';
+    document.getElementById('micLbl').textContent='🔴 Aufnahme läuft …';
     document.getElementById('micTranscript').style.display='block';
-    document.getElementById('micTranscript').textContent='â€¦';
+    document.getElementById('micTranscript').textContent='…';
   };
   recognition.onresult=e=>{
     const transcript=Array.from(e.results).map(r=>r[0].transcript).join('');
@@ -1989,16 +1989,16 @@ function stopMic(){
   document.getElementById('micBtn').style.background='';
   document.getElementById('micBtn').style.borderColor='';
   document.getElementById('micBtn').style.color='';
-  document.getElementById('micLbl').textContent='ðŸŽ¤ Sprechen';
+  document.getElementById('micLbl').textContent='🎤 Sprechen';
 }
 
-// WHY: Einfaches NLP â€“ erkennt Betrag und Kategorie aus Freitext
+// WHY: Einfaches NLP – erkennt Betrag und Kategorie aus Freitext
 // z.B. "Eis 2,50 Lebensmittel" oder "Kaffee 3 Euro bar"
 function parseSprachEingabe(text){
   const t=text.toLowerCase();
 
   // Betrag extrahieren: "2,50" "3 euro" "1.80"
-  const betragMatch=t.match(/(\d+[.,]\d{1,2}|\d+)\s*(?:euro|â‚¬|eur)?/);
+  const betragMatch=t.match(/(\d+[.,]\d{1,2}|\d+)\s*(?:euro|€|eur)?/);
   if(betragMatch){
     const betrag=parseFloat(betragMatch[1].replace(',','.'));
     if(betrag>0) document.getElementById('sBrutto').value=betrag.toFixed(2);
@@ -2009,7 +2009,7 @@ function parseSprachEingabe(text){
   document.getElementById('sCat').value=v.kat;
 
   // Shop-Name: alles vor dem Betrag
-  const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|â‚¬|eur)?/i,'').replace(/\s+/g,' ').trim();
+  const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|€|eur)?/i,'').replace(/\s+/g,' ').trim();
   if(shopRaw) document.getElementById('sShop').value=shopRaw.charAt(0).toUpperCase()+shopRaw.slice(1);
 }
 
@@ -2017,7 +2017,7 @@ function parseManualSprachEingabe(text){
   const t=text.toLowerCase();
 
   // Betrag extrahieren
-  const betragMatch=t.match(/(\d+[.,]\d{1,2}|\d+)\s*(?:euro|â‚¬|eur)?/);
+  const betragMatch=t.match(/(\d+[.,]\d{1,2}|\d+)\s*(?:euro|€|eur)?/);
   if(betragMatch){
     const betrag=parseFloat(betragMatch[1].replace(',','.'));
     if(betrag>0) document.getElementById('mBrutto').value=betrag.toFixed(2);
@@ -2028,13 +2028,13 @@ function parseManualSprachEingabe(text){
   document.getElementById('mCat').value=v.kat;
 
   // Shop-Name: alles vor dem Betrag
-  const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|â‚¬|eur)?/i,'').replace(/\s+/g,' ').trim();
+  const shopRaw=text.replace(/\d+[.,]?\d*\s*(?:euro|€|eur)?/i,'').replace(/\s+/g,' ').trim();
   if(shopRaw) document.getElementById('mShop').value=shopRaw.charAt(0).toUpperCase()+shopRaw.slice(1);
 }
 
 function guessBusinessKategorie(text){
   const t=text.toLowerCase();
-  if(t.includes('bÃ¼ro')||t.includes('papier')||t.includes('drucker')) return {kat:'BÃ¼robedarf'};
+  if(t.includes('büro')||t.includes('papier')||t.includes('drucker')) return {kat:'Bürobedarf'};
   if(t.includes('software')||t.includes('lizenz')||t.includes('programm')) return {kat:'Software'};
   if(t.includes('beratung')||t.includes('consulting')) return {kat:'Beratung'};
   if(t.includes('marketing')||t.includes('werbung')) return {kat:'Marketing'};
@@ -2061,20 +2061,20 @@ async function saveSchnell(){
   };
   try{
     await dbadd(item);
-    toast(shop+' ('+fm(brutto)+' â‚¬) gespeichert âœ“','ok');
+    toast(shop+' ('+fm(brutto)+' €) gespeichert ✓','ok');
     closeSchnell();
     renderPrivatBelege();
     renderHome();
   }catch(e){toast('Fehler: '+e.message,'er');}
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: PRIVAT KREISDIAGRAMM + OPTIMIERUNGSPOTENTIAL
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PRIVAT KREISDIAGRAMM + OPTIMIERUNGSPOTENTIAL
 // WHY: Nutzer soll sofort sehen wo das Geld hingeht
-// und wie viel theoretisch gespart werden kÃ¶nnte.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// und wie viel theoretisch gespart werden könnte.
+// ════════════════════════════════════════════════════════
 
-// Farben fÃ¼r Kategorien â€“ konsistent
+// Farben für Kategorien – konsistent
 const KATFARBEN={
   'Lebensmittel':'#4a9e6b','Restaurant':'#c07030','Elektronik':'#4a80c0',
   'Kleidung':'#9b59b6','Tanken':'#e74c3c','Haushalt':'#27ae60',
@@ -2084,9 +2084,9 @@ const KATFARBEN={
 // Kategorien wo Einsparpotential realistisch ist (in %)
 const KATSPARPOT={'Restaurant':0.30,'Kleidung':0.25,'Elektronik':0.20,'Freizeit':0.25,'Reise':0.15,'Sonstiges':0.10};
 
-// WHY: Diagramm nach einzelnen POSITIONEN (items) â€“ nicht Kategorien.
-// So sieht man z.B. "GemÃ¼se 3,20â‚¬ Â· Brot 1,80â‚¬ Â· Milch 1,20â‚¬" statt nur "Lebensmittel"
-// Palette generiert â€“ fÃ¼r viele verschiedene Artikel
+// WHY: Diagramm nach einzelnen POSITIONEN (items) – nicht Kategorien.
+// So sieht man z.B. "Gemüse 3,20€ · Brot 1,80€ · Milch 1,20€" statt nur "Lebensmittel"
+// Palette generiert – für viele verschiedene Artikel
 function itemColor(i){
   const pal=['#4a9e6b','#4a80c0','#c07030','#9b59b6','#e74c3c','#27ae60',
              '#1abc9c','#f39c12','#3498db','#7f8c8d','#e67e22','#2ecc71',
@@ -2117,7 +2117,7 @@ function renderPrivatChart(belege){
     }
   });
 
-  // Wenn keine Items â†’ fallback auf Kategorien
+  // Wenn keine Items → fallback auf Kategorien
   const useItems=totalItems>0;
   const byCat={};
   if(!useItems){
@@ -2138,9 +2138,9 @@ function renderPrivatChart(belege){
   const total=entries.reduce((s,[,v])=>s+v,0);
   if(!total){wrap.style.display='none';if(optCard)optCard.style.display='none';return;}
 
-  // Einsparpotential (einfache 15% SchÃ¤tzung auf Gesamtausgaben)
+  // Einsparpotential (einfache 15% Schätzung auf Gesamtausgaben)
   if(optCard){
-    document.getElementById('privOptBetrag').textContent=fm(total*0.15)+' â‚¬';
+    document.getElementById('privOptBetrag').textContent=fm(total*0.15)+' €';
     optCard.style.display='flex';
   }
 
@@ -2173,23 +2173,23 @@ function renderPrivatChart(belege){
     return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
       <div style="width:8px;height:8px;border-radius:50%;background:${itemColor(i)};flex-shrink:0"></div>
       <span style="color:var(--txt2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${eh(name)}</span>
-      <span style="color:var(--txt3);flex-shrink:0;margin-left:6px">${fm(val)} â‚¬</span>
+      <span style="color:var(--txt3);flex-shrink:0;margin-left:6px">${fm(val)} €</span>
     </div>`;
   }).join('');
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: VERPFLEGUNGSPAUSCHALE & FAHRTENERFASSUNG
-// WHY: Freelancer kÃ¶nnen pro AuÃŸentermin Verpflegungspauschale
+// ════════════════════════════════════════════════════════
+// ██ MODUL: VERPFLEGUNGSPAUSCHALE & FAHRTENERFASSUNG
+// WHY: Freelancer können pro Außentermin Verpflegungspauschale
 // absetzen. Geo nur auf Knopfdruck (kein Background-Tracking).
 // Reverse Geocoding via OpenStreetMap Nominatim (kostenlos).
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 
 let verpflBesuch=null; // aktiver Besuch {start, lat, lon, adresse}
 let verpflTimerInterval=null;
 const VERPFL_KEY='bsp_verpfl_fahrten';
 
-// Pauschale nach Stunden (Â§4 Abs.5 EStG Inland 2024)
+// Pauschale nach Stunden (§4 Abs.5 EStG Inland 2024)
 function calcPauschale(h){
   if(h>=24) return 28;
   if(h>=14) return 14;
@@ -2208,18 +2208,18 @@ function saveBetriebsstaette(){
   const v=document.getElementById('bsAdresse').value.trim();
   if(!v){toast('Adresse eingeben','er');return;}
   localStorage.setItem('bsp_bs',v);
-  document.getElementById('bsHint').textContent='âœ“ Gespeichert als BetriebsstÃ¤tte.';
-  toast('BetriebsstÃ¤tte gespeichert','ok');
+  document.getElementById('bsHint').textContent='✓ Gespeichert als Betriebsstätte.';
+  toast('Betriebsstätte gespeichert','ok');
 }
 
 async function verpflAnkunft(){
   const btn=document.getElementById('btnAnkunft');
-  btn.disabled=true;btn.textContent='â³ Standort â€¦';
+  btn.disabled=true;btn.textContent='⏳ Standort …';
 
   navigator.geolocation.getCurrentPosition(async pos=>{
     const {latitude:lat,longitude:lon}=pos.coords;
 
-    // Reverse Geocoding via Nominatim (kein API Key nÃ¶tig)
+    // Reverse Geocoding via Nominatim (kein API Key nötig)
     let adresse='Unbekannter Standort';
     try{
       const r=await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=de`,
@@ -2231,8 +2231,8 @@ async function verpflAnkunft(){
 
     verpflBesuch={start:Date.now(),lat,lon,adresse};
 
-    // Entfernung zur BetriebsstÃ¤tte
-    let kmText='â€“';
+    // Entfernung zur Betriebsstätte
+    let kmText='–';
     const bsGespeichert=localStorage.getItem('bsp_bs_coords');
     if(bsGespeichert){
       try{
@@ -2244,12 +2244,12 @@ async function verpflAnkunft(){
     // Anzeige
     const info=document.getElementById('verpflStandortInfo');
     info.style.display='block';
-    info.innerHTML=`<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">ðŸ“ Aktueller Standort</div>
+    info.innerHTML=`<div style="font-size:11px;color:var(--txt3);margin-bottom:4px">📍 Aktueller Standort</div>
       <div style="font-weight:300;color:var(--txt)">${eh(adresse)}</div>
-      <div style="font-size:11px;color:var(--txt3);margin-top:4px">Entfernung BetriebsstÃ¤tte: ${kmText} (Luftlinie)</div>`;
+      <div style="font-size:11px;color:var(--txt3);margin-top:4px">Entfernung Betriebsstätte: ${kmText} (Luftlinie)</div>`;
 
     document.getElementById('verpflActiveCard').style.display='block';
-    document.getElementById('verpflActiveInfo').textContent=`ðŸ“ ${eh(adresse)}`;
+    document.getElementById('verpflActiveInfo').textContent=`📍 ${eh(adresse)}`;
     document.getElementById('verpflStartInfo').textContent=`Gestartet: ${new Date(verpflBesuch.start).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} Uhr`;
 
     // WHY: Timer alle Sekunde aktualisieren
@@ -2266,14 +2266,14 @@ async function verpflAnkunft(){
     },1000);
 
     btn.disabled=false;
-    btn.innerHTML='<span style="font-size:18px">ðŸ“</span><span>Ich bin hier</span><span style="font-size:10px;color:var(--txt3)">Standort aktualisieren</span>';
+    btn.innerHTML='<span style="font-size:18px">📍</span><span>Ich bin hier</span><span style="font-size:10px;color:var(--txt3)">Standort aktualisieren</span>';
     document.getElementById('btnAbfahrt').disabled=false;
     updVerpflTages();
     toast('Standort erfasst: '+adresse.substring(0,40),'ok');
 
   }, err=>{
-    btn.disabled=false;btn.innerHTML='<span style="font-size:18px">ðŸ“</span><span>Ich bin hier</span><span style="font-size:10px;color:var(--txt3)">Standort erfassen</span>';
-    toast('Standort-Zugriff verweigert â€“ Bitte in Einstellungen erlauben','er');
+    btn.disabled=false;btn.innerHTML='<span style="font-size:18px">📍</span><span>Ich bin hier</span><span style="font-size:10px;color:var(--txt3)">Standort erfassen</span>';
+    toast('Standort-Zugriff verweigert – Bitte in Einstellungen erlauben','er');
   },{enableHighAccuracy:false,timeout:10000,maximumAge:30000});
 }
 
@@ -2307,19 +2307,19 @@ async function verpflAbfahrt(){
 
   updVerpflTages();
   renderVerpflFahrten();
-  toast(`Besuch erfasst Â· ${Math.round(h*10)/10}h Â· Pauschale: ${pauschale} â‚¬`,'ok');
+  toast(`Besuch erfasst · ${Math.round(h*10)/10}h · Pauschale: ${pauschale} €`,'ok');
 }
 
 function updVerpflTages(){
   if(!verpflBesuch){
     document.getElementById('verpflStunden').textContent='0h';
-    document.getElementById('verpflPauschale').textContent='0 â‚¬';
+    document.getElementById('verpflPauschale').textContent='0 €';
     return;
   }
   const h=(Date.now()-verpflBesuch.start)/3600000;
   document.getElementById('verpflStunden').textContent=Math.round(h*10)/10+'h';
-  document.getElementById('verpflPauschale').textContent=calcPauschale(h)+' â‚¬';
-  document.getElementById('verpflKm').textContent='â€“ km'; // Geo nur auf Knopfdruck
+  document.getElementById('verpflPauschale').textContent=calcPauschale(h)+' €';
+  document.getElementById('verpflKm').textContent='– km'; // Geo nur auf Knopfdruck
 }
 
 function renderVerpflFahrten(){
@@ -2330,7 +2330,7 @@ function renderVerpflFahrten(){
   const dieserMonat=fahrten.filter(f=>(f.datum||'').startsWith(`${jahr}-${monat}`));
 
   const summe=dieserMonat.reduce((s,f)=>s+(f.pauschale||0),0);
-  document.getElementById('verpflMonatsSumme').textContent=summe+' â‚¬';
+  document.getElementById('verpflMonatsSumme').textContent=summe+' €';
 
   const l=document.getElementById('verpflFahrtenList');
   if(!dieserMonat.length){
@@ -2342,9 +2342,9 @@ function renderVerpflFahrten(){
       padding:9px 0;border-bottom:1px solid var(--br);font-size:12px;font-weight:300">
       <div>
         <div style="color:var(--txt)">${fd(f.datum)}</div>
-        <div style="font-size:10px;color:var(--txt3);margin-top:2px">${eh(f.adresse||'â€“')} Â· ${f.h}h</div>
+        <div style="font-size:10px;color:var(--txt3);margin-top:2px">${eh(f.adresse||'–')} · ${f.h}h</div>
       </div>
-      <div style="color:var(--gold);font-size:13px">${f.pauschale} â‚¬</div>
+      <div style="color:var(--gold);font-size:13px">${f.pauschale} €</div>
     </div>`).join('');
 }
 
@@ -2365,11 +2365,11 @@ function initVerpflView(){
   const bs=localStorage.getItem('bsp_bs');
   if(bs){
     document.getElementById('bsAdresse').value=bs;
-    document.getElementById('bsHint').textContent='âœ“ Gespeichert. Tippe OK um zu aktualisieren.';
+    document.getElementById('bsHint').textContent='✓ Gespeichert. Tippe OK um zu aktualisieren.';
     geocodeBetriebsstaette(); // Koordinaten im Hintergrund holen
   }
   renderVerpflFahrten();
   updVerpflTages();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════

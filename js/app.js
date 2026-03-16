@@ -1,11 +1,11 @@
 'use strict';
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: PWA
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: PWA
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// WHY: SW lÃ¤uft als externe sw.js â€“ Blob-URL funktioniert nicht
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PWA
+// ════════════════════════════════════════════════════════
+// ██ MODUL: PWA
+// ════════════════════════════════════════════════════════
+// WHY: SW läuft als externe sw.js – Blob-URL funktioniert nicht
 // auf GitHub Pages wegen Security-Restrictions.
 let pwaPrompt=null;
 function setupPWA(){
@@ -15,11 +15,11 @@ function setupPWA(){
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();pwaPrompt=e;const b=document.getElementById('pwaBtn');if(b)b.style.display='inline-flex';});
 }
 function installPWA(){if(pwaPrompt){pwaPrompt.prompt();pwaPrompt.userChoice.then(()=>{pwaPrompt=null;});}}
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: STATE & KONFIGURATION
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: STATE & KONFIGURATION
+// ════════════════════════════════════════════════════════
 let camStream=null,capB64=null,capThumb=null,scanType='er',curRes=null,curDet=null;
-let toastT; // WHY: Muss oben stehen â€“ wird vor toast()-Definition schon genutzt
+let toastT; // WHY: Muss oben stehen – wird vor toast()-Definition schon genutzt
 let apiKey=localStorage.getItem('cak')||'';
 let erC=parseInt(localStorage.getItem('erc')||'0');
 let arC=parseInt(localStorage.getItem('arc')||'0');
@@ -41,18 +41,18 @@ let profile={
 
 // DACH Steuer-Konfiguration
 const LANDCFG={
-  de:{name:'Deutschland',flag:'ðŸ‡©ðŸ‡ª',mwstH:19,mwstL:7,kuLimit:22000,currency:'â‚¬',steuerLabel:'MwSt'},
-  at:{name:'Ã–sterreich',flag:'ðŸ‡¦ðŸ‡¹',mwstH:20,mwstL:10,kuLimit:35000,currency:'â‚¬',steuerLabel:'USt'},
-  ch:{name:'Schweiz',flag:'ðŸ‡¨ðŸ‡­',mwstH:8.1,mwstL:2.6,kuLimit:100000,currency:'CHF',steuerLabel:'MWST'},
-  other:{name:'Anderes Land',flag:'ðŸŒ',mwstH:20,mwstL:10,kuLimit:22000,currency:'â‚¬',steuerLabel:'MwSt'}
+  de:{name:'Deutschland',flag:'🇩🇪',mwstH:19,mwstL:7,kuLimit:22000,currency:'€',steuerLabel:'MwSt'},
+  at:{name:'Österreich',flag:'🇦🇹',mwstH:20,mwstL:10,kuLimit:35000,currency:'€',steuerLabel:'USt'},
+  ch:{name:'Schweiz',flag:'🇨🇭',mwstH:8.1,mwstL:2.6,kuLimit:100000,currency:'CHF',steuerLabel:'MWST'},
+  other:{name:'Anderes Land',flag:'🌍',mwstH:20,mwstL:10,kuLimit:22000,currency:'€',steuerLabel:'MwSt'}
 };
 function cfg(){return LANDCFG[profile.land]||LANDCFG.de;}
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: MODUS-TOGGLE (Business â†” Privat)
+// ════════════════════════════════════════════════════════
+// ██ MODUL: MODUS-TOGGLE (Business ↔ Privat)
 // WHY: Derselbe Ring, zwei Bedeutungen. Gold = Steuerpflichten.
-// Silber = persÃ¶nliche Finanzen. Ein Toggle, kein separater Tab.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Silber = persönliche Finanzen. Ein Toggle, kein separater Tab.
+// ════════════════════════════════════════════════════════
 function setMode(m){
   appMode=m;
   localStorage.setItem('appMode',m);
@@ -77,9 +77,9 @@ function setMode(m){
   renderHome();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: ONBOARDING
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: ONBOARDING
+// ════════════════════════════════════════════════════════
 let obLand='de',obTyp='frei',obFmt='A';
 function pickLand(l){obLand=l;document.querySelectorAll('[id^=land-]').forEach(el=>el.classList.remove('on'));document.getElementById('land-'+l).classList.add('on');}
 function pickTyp(t){obTyp=t;document.querySelectorAll('[id^=typ-]').forEach(el=>el.classList.remove('on'));document.getElementById('typ-'+t).classList.add('on');document.getElementById('kuWarn').style.display=t==='ku'?'block':'none';}
@@ -97,9 +97,9 @@ function obFinish(){
 function resetOnboarding(){if(!confirm('Neu einrichten?'))return;localStorage.removeItem('p_done');profile.done=false;document.getElementById('onboarding').classList.add('on');}
 function checkOnboarding(){if(!profile.done){document.getElementById('onboarding').classList.add('on');}else{initApp();}}
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: NAV
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: NAV
+// ════════════════════════════════════════════════════════
 function showView(v){
   document.querySelectorAll('.view').forEach(el=>el.classList.remove('on'));
   const vEl=document.getElementById('v-'+v);
@@ -118,31 +118,31 @@ function showView(v){
   if(v==='settings'){loadStampUI();updCounters();updSettingsInfo();}
 }
 function resetApiCost(){
-  if(!confirm('API-Verbrauch zurÃ¼cksetzen?')) return;
+  if(!confirm('API-Verbrauch zurücksetzen?')) return;
   localStorage.removeItem('bsp_api_costs');
   updApiCostDisplay();
-  toast('Verbrauch zurÃ¼ckgesetzt','ok');
+  toast('Verbrauch zurückgesetzt','ok');
 }
 function updSettingsInfo(){
   const c=cfg();
   document.getElementById('settLand').textContent=c.flag+' '+c.name;
-  document.getElementById('settTyp').textContent=profile.typ==='ku'?'Kleinunternehmer Â§19':profile.typ==='gew'?'Gewerbetreibender':'Freiberufler';
-  // WHY: Key immer ins Feld laden damit Nutzer ihn sehen/Ã¤ndern kann
+  document.getElementById('settTyp').textContent=profile.typ==='ku'?'Kleinunternehmer §19':profile.typ==='gew'?'Gewerbetreibender':'Freiberufler';
+  // WHY: Key immer ins Feld laden damit Nutzer ihn sehen/ändern kann
   const keyInp=document.getElementById('apiKey');
   if(keyInp) keyInp.value=localStorage.getItem('cak')||'';
   updApiCostDisplay();
   const fmtEx={A:'ER-2026-0001',B:'2026-Q1-ER-0001',C:'2026-ER-0001'};
-  document.getElementById('settFmt').textContent=fmtEx[profile.fmt]||'â€“';
+  document.getElementById('settFmt').textContent=fmtEx[profile.fmt]||'–';
   if(apiKey)document.getElementById('apiKey').value=apiKey;
   updApiStat();
   loadAboKeywords();
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: BELEGNUMMER â€“ GoBD-konform
-// WHY: Finanzamtkonform = keine LÃ¼cken, keine Ã„nderungen.
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BELEGNUMMER – GoBD-konform
+// WHY: Finanzamtkonform = keine Lücken, keine Änderungen.
 // Die Nummer wird einmal vergeben und ist danach fest.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 function nextNr(t){
   const y=new Date().getFullYear(),q=Math.ceil((new Date().getMonth()+1)/3);
   const prefix=t==='er'?'ER':'AR';
@@ -161,4 +161,4 @@ function updCounters(){
   if(e)e.textContent=fmtNr('er',erC);if(a)a.textContent=fmtNr('ar',arC);
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════

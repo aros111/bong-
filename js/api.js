@@ -1,20 +1,20 @@
-// â–ˆâ–ˆ MODUL: CLAUDE VISION â€“ BELEGANALYSE
+// ██ MODUL: CLAUDE VISION – BELEGANALYSE
 // WHY: Claude bekommt das Bild direkt als base64.
-// Der Prompt ist so gebaut dass er maximal prÃ¤zise Zahlen
-// extrahiert â€“ auch von schrÃ¤gen, schlecht beleuchteten Fotos.
+// Der Prompt ist so gebaut dass er maximal präzise Zahlen
+// extrahiert – auch von schrägen, schlecht beleuchteten Fotos.
 // Robustes JSON-Parsing mit mehreren Fallback-Strategien.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 async function askClaude(b64){
   // Bildformat erkennen (JPEG oder PNG)
   const mt = b64.startsWith('data:image/png') ? 'image/png'
            : b64.startsWith('data:image/webp') ? 'image/webp'
            : 'image/jpeg';
-  // Nur den Base64-Datenteil senden, ohne den data:image/... PrÃ¤fix
+  // Nur den Base64-Datenteil senden, ohne den data:image/... Präfix
   const imgData = b64.split(',')[1];
 
   if(!imgData) throw new Error('Kein Bilddaten gefunden');
 
-  const prompt = `Du bist ein prÃ¤ziser Belegscanner fÃ¼r die DACH-Region (${cfg().name}).
+  const prompt = `Du bist ein präziser Belegscanner für die DACH-Region (${cfg().name}).
 
 AUFGABE: Lies alle sichtbaren Daten von diesem Beleg/dieser Rechnung ab.
 
@@ -24,9 +24,9 @@ Das Bild kann sein:
 - Monitor-Screenshot (YouTube, Stripe, PayPal, Online-Rechnung)
 - Handgeschriebener Beleg
 
-ANTWORTE AUSSCHLIESSLICH mit diesem JSON-Objekt, ohne ErklÃ¤rung, ohne Markdown:
+ANTWORTE AUSSCHLIESSLICH mit diesem JSON-Objekt, ohne Erklärung, ohne Markdown:
 {
-  "shop": "Name des HÃ¤ndlers, Unternehmens oder der Plattform",
+  "shop": "Name des Händlers, Unternehmens oder der Plattform",
   "belegNrExtern": "Rechnungs- oder Belegnummer falls sichtbar, sonst null",
   "date": "YYYY-MM-DD Format, z.B. 2025-03-15",
   "net": 12.34,
@@ -43,18 +43,18 @@ ANTWORTE AUSSCHLIESSLICH mit diesem JSON-Objekt, ohne ErklÃ¤rung, ohne Markdow
 }
 
 WICHTIGE REGELN:
-1. BetrÃ¤ge IMMER als Dezimalzahl ohne WÃ¤hrungszeichen (14.68 nicht "14,68 â‚¬")
+1. Beträge IMMER als Dezimalzahl ohne Währungszeichen (14.68 nicht "14,68 €")
 2. Datum im Format YYYY-MM-DD (2025-03-15 nicht "15.03.2025")
 3. Wenn Netto und Brutto sichtbar: berechne MwSt = Brutto - Netto
 4. Wenn nur Brutto sichtbar und MwSt-Satz erkennbar: berechne Netto = Brutto / 1.${cfg().mwstH}
 5. mwstRate: nur die Zahl (19 nicht "19%")
 6. category muss GENAU einer dieser Werte sein: Lebensmittel, Restaurant, Elektronik, Kleidung, Tanken, Haushalt, Gesundheit, Dienstleistung, Software, Sonstiges
-7. payment muss GENAU einer dieser Werte sein: Karte, Bar, Ãœberweisung, Online
-8. istAbo=true wenn monatliche/jÃ¤hrliche GebÃ¼hr erkennbar
-9. garantieMonate=24 fÃ¼r Elektronik/GerÃ¤te, 12 fÃ¼r MÃ¶bel, sonst null
+7. payment muss GENAU einer dieser Werte sein: Karte, Bar, Überweisung, Online
+8. istAbo=true wenn monatliche/jährliche Gebühr erkennbar
+9. garantieMonate=24 für Elektronik/Geräte, 12 für Möbel, sonst null
 10. Fehlende oder unlesbare Felder: null (nicht 0, nicht "")`;
 
-  setLog('ðŸ¤– Claude analysiert Bild â€¦'); setP(40);
+  setLog('🤖 Claude analysiert Bild …'); setP(40);
 
   const resp = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
@@ -92,27 +92,27 @@ WICHTIGE REGELN:
     let detail = '';
     try { detail = JSON.parse(respText)?.error?.message || ''; } catch(_) {}
     let errMsg = `API Fehler ${resp.status}`;
-    if(resp.status === 401) errMsg = 'ðŸ”‘ API Key ungÃ¼ltig â€“ bitte in Settings prÃ¼fen';
-    else if(resp.status === 429) errMsg = 'â³ Rate Limit â€“ kurz warten und nochmal';
-    else if(resp.status === 400) errMsg = 'âš ï¸ Anfrage-Fehler: ' + (detail || 'Bild evtl. zu groÃŸ');
-    else if(resp.status === 529) errMsg = 'â³ Claude Ã¼berlastet â€“ nochmal versuchen';
-    else if(resp.status === 0 || !respText) errMsg = 'ðŸŒ Keine Verbindung â€“ Internet prÃ¼fen';
+    if(resp.status === 401) errMsg = '🔑 API Key ungültig – bitte in Settings prüfen';
+    else if(resp.status === 429) errMsg = '⏳ Rate Limit – kurz warten und nochmal';
+    else if(resp.status === 400) errMsg = '⚠️ Anfrage-Fehler: ' + (detail || 'Bild evtl. zu groß');
+    else if(resp.status === 529) errMsg = '⏳ Claude überlastet – nochmal versuchen';
+    else if(resp.status === 0 || !respText) errMsg = '🌐 Keine Verbindung – Internet prüfen';
     else errMsg = `API ${resp.status}: ${detail.substring(0, 80) || respText.substring(0, 60)}`;
     throw new Error(errMsg);
   }
 
-  // Sicher parsen â€“ nie direkt resp.json() in Safari
+  // Sicher parsen – nie direkt resp.json() in Safari
   let data;
   try {
     data = JSON.parse(respText);
   } catch(e) {
-    throw new Error('UngÃ¼ltige API-Antwort â€“ mÃ¶glicherweise Netzwerkproblem. Nochmal versuchen.');
+    throw new Error('Ungültige API-Antwort – möglicherweise Netzwerkproblem. Nochmal versuchen.');
   }
 
-  setLog('ðŸ“‹ Antwort wird verarbeitet â€¦'); setP(90);
+  setLog('📋 Antwort wird verarbeitet …'); setP(90);
 
   if(!data.content || !Array.isArray(data.content)) {
-    throw new Error('Unerwartete API-Antwort â€“ bitte nochmal versuchen.');
+    throw new Error('Unerwartete API-Antwort – bitte nochmal versuchen.');
   }
 
   // Antwort-Text aus dem content-Array zusammensetzen
@@ -144,7 +144,7 @@ WICHTIGE REGELN:
 
   if(!parsed) throw new Error('Konnte JSON nicht lesen. Claude-Antwort: ' + rawText.substring(0, 100));
 
-  // Typen sicherstellen â€“ manchmal gibt Claude Strings zurÃ¼ck statt Zahlen
+  // Typen sicherstellen – manchmal gibt Claude Strings zurück statt Zahlen
   if(typeof parsed.net    === 'string') parsed.net    = parseFloat(parsed.net.replace(',','.'))    || null;
   if(typeof parsed.mwst   === 'string') parsed.mwst   = parseFloat(parsed.mwst.replace(',','.'))   || null;
   if(typeof parsed.brutto === 'string') parsed.brutto = parseFloat(parsed.brutto.replace(',','.')) || null;
@@ -183,24 +183,24 @@ function addNewItemField(name='', price='') {
   const bd = document.getElementById('itemsB');
   const tr = document.createElement('tr');
   tr.className = 'item-row';
-  tr.innerHTML = \`
-    <td style="padding-right:5px"><input type="text" class="item-name inp" value="\${eh(name)}" placeholder="Artikel" style="width:100%;font-size:12px;padding:6px"></td>
-    <td><input type="text" class="item-price inp" value="\${price}" placeholder="0.00" inputmode="decimal" oninput="calcFieldsFromItems()" style="width:100%;text-align:right;font-size:12px;padding:6px"></td>
-    <td style="width:30px;text-align:center"><button tabindex="-1" type="button" class="btn-red" style="padding:4px 8px;border-radius:4px" onclick="this.closest('tr').remove();calcFieldsFromItems()">âœ•</button></td>
-  \`;
+  tr.innerHTML = `
+    <td style="padding-right:5px"><input type="text" class="item-name inp" value="${eh(name)}" placeholder="Artikel" style="width:100%;font-size:12px;padding:6px"></td>
+    <td><input type="text" class="item-price inp" value="${price}" placeholder="0.00" inputmode="decimal" oninput="calcFieldsFromItems()" style="width:100%;text-align:right;font-size:12px;padding:6px"></td>
+    <td style="width:30px;text-align:center"><button tabindex="-1" type="button" class="btn-red" style="padding:4px 8px;border-radius:4px" onclick="this.closest('tr').remove();calcFieldsFromItems()">✖</button></td>
+  `;
   bd.appendChild(tr);
 }
 
 function showRes(r){
   if(!r)return;
-  // WHY: Bei Privat-Scan Privat-Felder + Items befÃ¼llen
+  // WHY: Bei Privat-Scan Privat-Felder + Items befüllen
   if(scanType==='priv'){
     document.getElementById('pShop').value=r.shop||'';
     document.getElementById('pDate').value=r.date||new Date().toISOString().split('T')[0];
     document.getElementById('pBrutto').value=r.brutto!=null?r.brutto.toFixed(2):'';
     if(r.category)document.getElementById('pCat').value=r.category;
     if(r.payment)document.getElementById('pPay').value=r.payment;
-    // WHY: Items immer neu befÃ¼llen â€“ sonst bleibt vorheriger Scan stehen
+    // WHY: Items immer neu befüllen – sonst bleibt vorheriger Scan stehen
     const pbd=document.getElementById('itemsB');
     if(pbd) pbd.innerHTML='';
     if(r.items&&r.items.length){
@@ -209,7 +209,7 @@ function showRes(r){
         addNewItemField(it.name || '', it.price ? parseFloat(it.price).toFixed(2) : '');
       });
       const appendBtn = document.createElement('tr');
-      appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufÃ¼gen</button></td>`;
+      appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
       if(pbd) pbd.appendChild(appendBtn);
     } else {
       document.getElementById('itemsSec').style.display='none';
@@ -240,12 +240,12 @@ function showRes(r){
       addNewItemField(it.name || '', it.price ? parseFloat(it.price).toFixed(2) : '');
     });
     const appendBtn = document.createElement('tr');
-    appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufÃ¼gen</button></td>`;
+    appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
     bd.appendChild(appendBtn);
   }else {
     document.getElementById('itemsSec').style.display='block';
     const appendBtn = document.createElement('tr');
-    appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufÃ¼gen</button></td>`;
+    appendBtn.innerHTML = `<td colspan="3"><button type="button" class="btn btn-sm btn-g" style="width:100%;justify-content:center;margin-top:6px" onclick="addNewItemField()">+ Artikel hinzufügen</button></td>`;
     bd.appendChild(appendBtn);
   }
   
@@ -256,7 +256,7 @@ function showRes(r){
 }
 
 // WHY: Zeigt leeres Formular zur manuellen Eingabe.
-// Wird aufgerufen wenn kein Key da ist oder KI fehlschlÃ¤gt.
+// Wird aufgerufen wenn kein Key da ist oder KI fehlschlägt.
 // "KI erneut starten" Button erscheint sobald Key gesetzt wurde.
 function showManualForm(){
   // WHY: Bei Privat nur Privat-Felder clearen
@@ -275,7 +275,7 @@ function showManualForm(){
   document.getElementById('rRate').value=cfg().mwstH;
   document.getElementById('itemsSec').style.display='none';
 
-  // Banner: Status erklÃ¤ren
+  // Banner: Status erklären
   apiKey = localStorage.getItem('cak') || apiKey || '';
   const banner = document.getElementById('scanModeBanner');
   if(banner){
@@ -284,13 +284,13 @@ function showManualForm(){
       banner.style.background='rgba(74,128,192,.1)';
       banner.style.border='1px solid rgba(74,128,192,.25)';
       banner.style.color='var(--txt2)';
-      banner.innerHTML='â„¹ï¸ KI-Analyse fehlgeschlagen. Felder manuell ausfÃ¼llen oder unten erneut starten.';
+      banner.innerHTML='ℹ️ KI-Analyse fehlgeschlagen. Felder manuell ausfüllen oder unten erneut starten.';
     } else {
       banner.style.display='block';
       banner.style.background='rgba(200,164,90,.08)';
       banner.style.border='1px solid rgba(200,164,90,.25)';
       banner.style.color='var(--txt2)';
-      banner.innerHTML='âš¡ Kein API Key â€“ Felder manuell ausfÃ¼llen. <span onclick="openApiSheet()" style="color:var(--gold);text-decoration:underline;cursor:pointer">Key jetzt einrichten â†’</span>';
+      banner.innerHTML='⚡ Kein API Key – Felder manuell ausfüllen. <span onclick="openApiSheet()" style="color:var(--gold);text-decoration:underline;cursor:pointer">Key jetzt einrichten →</span>';
     }
   }
 
@@ -302,18 +302,18 @@ function showManualForm(){
 }
 
 // WHY: Startet KI-Analyse erneut mit dem bereits vorhandenen Bild.
-// NÃ¼tzlich wenn Key erst nach dem Foto-Upload eingetragen wurde.
+// Nützlich wenn Key erst nach dem Foto-Upload eingetragen wurde.
 function retryKi(){
   apiKey = localStorage.getItem('cak') || '';
   if(!apiKey){ openApiSheet(); return; }
-  if(!capB64){ toast('Kein Bild vorhanden â€“ bitte neu scannen','er'); return; }
+  if(!capB64){ toast('Kein Bild vorhanden – bitte neu scannen','er'); return; }
   document.getElementById('resWrap').classList.remove('on');
   processImg(capB64);
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: API KEY SHEET
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: API KEY SHEET
+// ════════════════════════════════════════════════════════
 function openApiSheet(){
   const sheet=document.getElementById('apiOvl');
   sheet.classList.add('on');
@@ -345,12 +345,12 @@ function saveApiKeySheet(){
   if(rib && capB64) rib.style.display='inline-flex';
   const banner = document.getElementById('scanModeBanner');
   if(banner && banner.style.display!=='none'){
-    banner.innerHTML='âœ… Key gespeichert! Tippe auf "âš¡ KI erneut starten" um das Bild zu analysieren.';
+    banner.innerHTML='✅ Key gespeichert! Tippe auf "⚡ KI erneut starten" um das Bild zu analysieren.';
     banner.style.background='rgba(58,175,112,.08)';
     banner.style.border='1px solid rgba(58,175,112,.2)';
     banner.style.color='var(--grn)';
   }
-  toast('âœ“ KI-Erkennung aktiviert','ok');
+  toast('✓ KI-Erkennung aktiviert','ok');
   setTimeout(closeApiSheet,1200);
 }
 function removeApiKey(){
@@ -375,43 +375,43 @@ function saveApiKey(){
   apiKey=k;
   localStorage.setItem('cak',k);
   updApiStat();updApiBanner();
-  toast('âœ“ API Key gespeichert','ok');
+  toast('✓ API Key gespeichert','ok');
 }
 function clearApiKeySettings(){
-  if(!confirm('API Key lÃ¶schen?'))return;
+  if(!confirm('API Key löschen?'))return;
   apiKey='';
   localStorage.removeItem('cak');
   document.getElementById('apiKey').value='';
   updApiStat();updApiBanner();
-  toast('Key gelÃ¶scht','ok');
+  toast('Key gelöscht','ok');
 }
 function saveAboKeywords(){
   const keywords = document.getElementById('aboKeywordsInput').value.trim();
   if(!keywords){toast('Bitte Keywords eingeben','er');return;}
   localStorage.setItem('aboKeywords', keywords);
-  toast('âœ“ Abo-Keywords gespeichert','ok');
+  toast('✓ Abo-Keywords gespeichert','ok');
 }
-function updApiStat(){const s=document.getElementById('apiStat');if(s)s.textContent=apiKey?'âœ“ Claude API aktiv. Garantie-WÃ¤chter + Abo-Detektiv + Monitor-Erkennung aktiv.':'Kein Key â€“ manuelle Eingabe. Intelligenz-Module eingeschrÃ¤nkt.';}
-function resetCounters(){if(!confirm('ZÃ¤hler zurÃ¼cksetzen?'))return;erC=0;arC=0;localStorage.setItem('erc','0');localStorage.setItem('arc','0');updCounters();toast('ZurÃ¼ckgesetzt','ok');}
+function updApiStat(){const s=document.getElementById('apiStat');if(s)s.textContent=apiKey?'✓ Claude API aktiv. Garantie-Wächter + Abo-Detektiv + Monitor-Erkennung aktiv.':'Kein Key – manuelle Eingabe. Intelligenz-Module eingeschränkt.';}
+function resetCounters(){if(!confirm('Zähler zurücksetzen?'))return;erC=0;arC=0;localStorage.setItem('erc','0');localStorage.setItem('arc','0');updCounters();toast('Zurückgesetzt','ok');}
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ UTILS
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: API-KOSTEN-TRACKER
+// ════════════════════════════════════════════════════════
+// ██ UTILS
+// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// ██ MODUL: API-KOSTEN-TRACKER
 // WHY: Nutzer soll sehen wie viel API-Guthaben verbraucht wurde.
-// Sonnet 4.5: Input $3/1M Tokens, Output $15/1M Tokens (ca. SchÃ¤tzung)
-// Bilder: ca. 1000-4000 Input-Tokens je nach GrÃ¶ÃŸe
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// Sonnet 4.5: Input $3/1M Tokens, Output $15/1M Tokens (ca. Schätzung)
+// Bilder: ca. 1000-4000 Input-Tokens je nach Größe
+// ════════════════════════════════════════════════════════
 const API_COST_KEY='bsp_api_costs';
-// Preise in $ pro 1000 Tokens (claude-sonnet-4-5 SchÃ¤tzung)
+// Preise in $ pro 1000 Tokens (claude-sonnet-4-5 Schätzung)
 const COST_IN=0.003, COST_OUT=0.015;
 
 function trackApiCost(typ, imgB64Len=0){
-  // Input-Token-SchÃ¤tzung: Bild ca. imgLen/750 + Prompt ~300 Tokens
+  // Input-Token-Schätzung: Bild ca. imgLen/750 + Prompt ~300 Tokens
   const imgTokens=imgB64Len>0?Math.round(imgB64Len/750):0;
   const promptTokens=400;
-  const outputTokens=800; // SchÃ¤tzung Output
+  const outputTokens=800; // Schätzung Output
   const inputCost=(imgTokens+promptTokens)/1000*COST_IN;
   const outputCost=outputTokens/1000*COST_OUT;
   const callCost=inputCost+outputCost;
@@ -428,23 +428,23 @@ function updApiCostDisplay(){
   const data=JSON.parse(localStorage.getItem(API_COST_KEY)||'{"calls":0,"cost":0}');
   const el=document.getElementById('apiCostDisp');
   if(!el) return;
-  const costEur=data.cost*0.92; // $ â†’ â‚¬ SchÃ¤tzung
-  el.innerHTML=`<span style="color:var(--txt)">${data.calls} KI-Calls</span> Â· <span style="color:var(--gold)">~${costEur.toFixed(3)} â‚¬ verbraucht</span>`;
+  const costEur=data.cost*0.92; // $ → € Schätzung
+  el.innerHTML=`<span style="color:var(--txt)">${data.calls} KI-Calls</span> · <span style="color:var(--gold)">~${costEur.toFixed(3)} € verbraucht</span>`;
 }
 
-function fd(d){if(!d)return'â€“';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function fd(d){if(!d)return'–';return new Date(d+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'});}
 function fm(n){return(n||0).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmK(n){if(Math.abs(n)>=1000)return(n/1000).toLocaleString('de-DE',{minimumFractionDigits:1,maximumFractionDigits:1})+'k';return(n||0).toLocaleString('de-DE');}
 function eh(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function ec(s){s=String(s||'');if(/[;"'\n]/.test(s))return'"'+s.replace(/"/g,'""')+'"';return s;}
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className='show'+(type?' '+type:'');clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3200);}
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ INIT
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ INIT
+// ════════════════════════════════════════════════════════
 function initApp(){
   loadStamp();updCounters();updApiStat();updApiBanner();
-  // MwSt-SÃ¤tze fÃ¼r aktives Land setzen
+  // MwSt-Sätze für aktives Land setzen
   const rRate=document.getElementById('rRate');
   if(rRate)rRate.innerHTML=`<option value="${cfg().mwstH}">${cfg().mwstH} %</option><option value="${cfg().mwstL}">${cfg().mwstL} %</option><option value="0">0 %</option>`;
   // Modus-Toggle initialisieren

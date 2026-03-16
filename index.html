@@ -14,78 +14,78 @@
 </head>
 <body>
 
-<!-- â•â• ONBOARDING (unverÃ¤ndert, funktioniert) â•â•â•â•â•â•â•â• -->
+<!-- ══ ONBOARDING (unverändert, funktioniert) ════════ -->
 <div id="onboarding">
   <div class="ob-step on" id="obs1">
-    <div class="ob-logo">ðŸ§¾</div>
+    <div class="ob-logo">🧾</div>
     <div class="ob-title">BelegScan Pro</div>
-    <div class="ob-sub">Belege erfassen, Steuern tracken,<br>Garantien im Blick behalten.<br><br>Einmal einrichten â€“ dauert 2 Minuten.</div>
+    <div class="ob-sub">Belege erfassen, Steuern tracken,<br>Garantien im Blick behalten.<br><br>Einmal einrichten – dauert 2 Minuten.</div>
     <div class="stitle">Dein Land</div>
     <div class="ob-cards">
-      <div class="ob-card on" id="land-de" onclick="pickLand('de')"><div class="ck">âœ“</div><div class="ico">ðŸ‡©ðŸ‡ª</div><div class="lbl">Deutschland</div><div class="sub">19% / 7% MwSt<br>KU-Grenze 22.000 â‚¬</div></div>
-      <div class="ob-card" id="land-at" onclick="pickLand('at')"><div class="ck">âœ“</div><div class="ico">ðŸ‡¦ðŸ‡¹</div><div class="lbl">Ã–sterreich</div><div class="sub">20% / 10% USt<br>KU-Grenze 35.000 â‚¬</div></div>
-      <div class="ob-card" id="land-ch" onclick="pickLand('ch')"><div class="ck">âœ“</div><div class="ico">ðŸ‡¨ðŸ‡­</div><div class="lbl">Schweiz</div><div class="sub">8.1% / 2.6% MWST<br>KU-Grenze 100.000 CHF</div></div>
-      <div class="ob-card" id="land-other" onclick="pickLand('other')"><div class="ck">âœ“</div><div class="ico">ðŸŒ</div><div class="lbl">Anderes Land</div><div class="sub">Manuell konfigurieren</div></div>
+      <div class="ob-card on" id="land-de" onclick="pickLand('de')"><div class="ck">✓</div><div class="ico">🇩🇪</div><div class="lbl">Deutschland</div><div class="sub">19% / 7% MwSt<br>KU-Grenze 22.000 €</div></div>
+      <div class="ob-card" id="land-at" onclick="pickLand('at')"><div class="ck">✓</div><div class="ico">🇦🇹</div><div class="lbl">Österreich</div><div class="sub">20% / 10% USt<br>KU-Grenze 35.000 €</div></div>
+      <div class="ob-card" id="land-ch" onclick="pickLand('ch')"><div class="ck">✓</div><div class="ico">🇨🇭</div><div class="lbl">Schweiz</div><div class="sub">8.1% / 2.6% MWST<br>KU-Grenze 100.000 CHF</div></div>
+      <div class="ob-card" id="land-other" onclick="pickLand('other')"><div class="ck">✓</div><div class="ico">🌍</div><div class="lbl">Anderes Land</div><div class="sub">Manuell konfigurieren</div></div>
     </div>
-    <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="obNext(2)">Weiter â†’</button>
+    <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="obNext(2)">Weiter →</button>
   </div>
   <div class="ob-step" id="obs2">
     <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
     <div class="ob-title">Dein Status</div>
     <div class="ob-sub">Die App passt sich automatisch an.</div>
     <div class="ob-nr-opts" style="margin-bottom:20px">
-      <div class="ob-nr-opt on" id="typ-frei" onclick="pickTyp('frei')"><div><div class="nr-fmt">Freiberufler</div><div class="nr-lbl">Volle MwSt-Pflicht</div></div><div class="ck2">âœ“</div></div>
-      <div class="ob-nr-opt" id="typ-ku" onclick="pickTyp('ku')"><div><div class="nr-fmt">Kleinunternehmer Â§19</div><div class="nr-lbl">Unter der Umsatzgrenze</div></div><div class="ck2">âœ“</div></div>
-      <div class="ob-nr-opt" id="typ-gew" onclick="pickTyp('gew')"><div><div class="nr-fmt">Gewerbetreibender</div><div class="nr-lbl">MwSt + Gewerbesteuer</div></div><div class="ck2">âœ“</div></div>
+      <div class="ob-nr-opt on" id="typ-frei" onclick="pickTyp('frei')"><div><div class="nr-fmt">Freiberufler</div><div class="nr-lbl">Volle MwSt-Pflicht</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="typ-ku" onclick="pickTyp('ku')"><div><div class="nr-fmt">Kleinunternehmer §19</div><div class="nr-lbl">Unter der Umsatzgrenze</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="typ-gew" onclick="pickTyp('gew')"><div><div class="nr-fmt">Gewerbetreibender</div><div class="nr-lbl">MwSt + Gewerbesteuer</div></div><div class="ck2">✓</div></div>
     </div>
-    <div class="ku-warn" id="kuWarn" style="display:none"><p>âš ï¸ Als Kleinunternehmer Ã¼berwacht die App deinen Jahresumsatz und warnt dich vor der Grenze. <strong>Das kann dir tausende Euro ersparen.</strong></p></div>
-    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(1)">â† ZurÃ¼ck</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(3)">Weiter â†’</button></div>
+    <div class="ku-warn" id="kuWarn" style="display:none"><p>⚠️ Als Kleinunternehmer überwacht die App deinen Jahresumsatz und warnt dich vor der Grenze. <strong>Das kann dir tausende Euro ersparen.</strong></p></div>
+    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(1)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(3)">Weiter →</button></div>
   </div>
   <div class="ob-step" id="obs3">
     <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
     <div class="ob-title">Belegnummer</div>
-    <div class="ob-sub">Einmalig wÃ¤hlen â€“ dann unverÃ¤nderlich.<br>GoBD-konform, lÃ¼ckenlos, automatisch.</div>
+    <div class="ob-sub">Einmalig wählen – dann unveränderlich.<br>GoBD-konform, lückenlos, automatisch.</div>
     <div class="ob-nr-opts">
-      <div class="ob-nr-opt on" id="fmt-a" onclick="pickFmt('A')"><div><div class="nr-fmt">ER-2026-0001</div><div class="nr-lbl">Typ â€“ Jahr â€“ Nummer (empfohlen)</div></div><div class="ck2">âœ“</div></div>
-      <div class="ob-nr-opt" id="fmt-b" onclick="pickFmt('B')"><div><div class="nr-fmt">2026-Q1-ER-0001</div><div class="nr-lbl">Jahr â€“ Quartal â€“ Typ â€“ Nummer</div></div><div class="ck2">âœ“</div></div>
-      <div class="ob-nr-opt" id="fmt-c" onclick="pickFmt('C')"><div><div class="nr-fmt">2026-ER-0001</div><div class="nr-lbl">Jahr â€“ Typ â€“ Nummer</div></div><div class="ck2">âœ“</div></div>
+      <div class="ob-nr-opt on" id="fmt-a" onclick="pickFmt('A')"><div><div class="nr-fmt">ER-2026-0001</div><div class="nr-lbl">Typ – Jahr – Nummer (empfohlen)</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="fmt-b" onclick="pickFmt('B')"><div><div class="nr-fmt">2026-Q1-ER-0001</div><div class="nr-lbl">Jahr – Quartal – Typ – Nummer</div></div><div class="ck2">✓</div></div>
+      <div class="ob-nr-opt" id="fmt-c" onclick="pickFmt('C')"><div><div class="nr-fmt">2026-ER-0001</div><div class="nr-lbl">Jahr – Typ – Nummer</div></div><div class="ck2">✓</div></div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:20px"><button class="btn btn-g" onclick="obNext(2)">â† ZurÃ¼ck</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(4)">Weiter â†’</button></div>
+    <div style="display:flex;gap:8px;margin-top:20px"><button class="btn btn-g" onclick="obNext(2)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(4)">Weiter →</button></div>
   </div>
   <div class="ob-step" id="obs4">
     <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot"></div></div>
     <div class="ob-title">KI-Erkennung</div>
-    <div class="ob-sub">Mit Claude API Key erkennt die App BetrÃ¤ge, HÃ¤ndler, Garantien und Abos automatisch aus Fotos â€“ auch von Monitoren.</div>
+    <div class="ob-sub">Mit Claude API Key erkennt die App Beträge, Händler, Garantien und Abos automatisch aus Fotos – auch von Monitoren.</div>
     <div class="ob-api-box">
-      <div class="step-row"><div class="sn">1</div><div class="st">Gehe zu <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> â†’ kostenlosen Account erstellen.</div></div>
-      <div class="step-row"><div class="sn">2</div><div class="st">Klicke auf <strong>API Keys â†’ Create Key</strong> und kopiere den Key.</div></div>
-      <div class="step-row"><div class="sn">3</div><div class="st">FÃ¼ge ihn hier ein. Er wird nur lokal auf deinem GerÃ¤t gespeichert.</div></div>
+      <div class="step-row"><div class="sn">1</div><div class="st">Gehe zu <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → kostenlosen Account erstellen.</div></div>
+      <div class="step-row"><div class="sn">2</div><div class="st">Klicke auf <strong>API Keys → Create Key</strong> und kopiere den Key.</div></div>
+      <div class="step-row"><div class="sn">3</div><div class="st">Füge ihn hier ein. Er wird nur lokal auf deinem Gerät gespeichert.</div></div>
     </div>
-    <input class="inp" type="password" id="obApiKey" placeholder="sk-ant-â€¦ (optional)" style="margin-bottom:12px;font-size:13px">
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:20px;line-height:1.6">Ohne Key: manuelle Eingabe. Mit Key: Automatik + Garantie-WÃ¤chter + Abo-Detektiv.</p>
-    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(3)">â† ZurÃ¼ck</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obFinish()">Loslegen âœ“</button></div>
+    <input class="inp" type="password" id="obApiKey" placeholder="sk-ant-… (optional)" style="margin-bottom:12px;font-size:13px">
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:20px;line-height:1.6">Ohne Key: manuelle Eingabe. Mit Key: Automatik + Garantie-Wächter + Abo-Detektiv.</p>
+    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(3)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obFinish()">Loslegen ✓</button></div>
   </div>
 </div>
 
-<!-- â•â• APP â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<!-- ══ APP ════════════════════════════════════════════ -->
 <div id="app">
 
-<!-- â”€â”€ HOME â”€â”€ -->
+<!-- ── HOME ── -->
 <div class="view on" id="v-home">
 
-  <!-- API Key Banner â€“ erscheint nur wenn kein Key hinterlegt ist -->
+  <!-- API Key Banner – erscheint nur wenn kein Key hinterlegt ist -->
   <div id="apiBanner" style="display:none" onclick="openApiSheet()">
     <div class="api-banner">
-      <div class="ico">âš¡</div>
+      <div class="ico">⚡</div>
       <div class="body">
         <div class="head">KI-Erkennung aktivieren</div>
-        <div class="sub">Fotos automatisch auslesen â€“ BetrÃ¤ge, Garantien, Abos. API Key einrichten.</div>
+        <div class="sub">Fotos automatisch auslesen – Beträge, Garantien, Abos. API Key einrichten.</div>
       </div>
-      <div class="arr">â€º</div>
+      <div class="arr">›</div>
     </div>
   </div>
 
-  <!-- â”€â”€ EFFIZIENZ-TACHO â”€â”€
+  <!-- ── EFFIZIENZ-TACHO ──
        WHY: Macht den Wert der KI-Nutzung sofort sichtbar.
        Formel: 120s (manuell) - 5s (KI) = 115s pro Scan gespart.
        Hochgerechnet auf alle Scans = gesparte Lebenszeit. -->
@@ -101,24 +101,24 @@
         <div class="tacho-lbl">Lebenszeit<br>gespart</div>
       </div>
       <div class="tacho-item">
-        <div class="tacho-val" id="tachoGeld" style="color:var(--ylw)">0 â‚¬</div>
+        <div class="tacho-val" id="tachoGeld" style="color:var(--ylw)">0 €</div>
         <div class="tacho-lbl">vs. Steuer-<br>berater gespart</div>
       </div>
     </div>
   </div>
 
-  <!-- â”€â”€ PROGRESSIONS-SCHUTZ â”€â”€
-       WHY: Erscheint wenn Gewinn sich einer Steuerstufe nÃ¤hert.
+  <!-- ── PROGRESSIONS-SCHUTZ ──
+       WHY: Erscheint wenn Gewinn sich einer Steuerstufe nähert.
        Gibt konkreten Investitions-Tipp um Steuerlast zu senken. -->
   <div id="progSchutzBanner" style="display:none"></div>
 
-  <!-- Business â†” Privat Toggle -->
+  <!-- Business ↔ Privat Toggle -->
   <div class="mode-toggle">
-    <button class="mode-btn on biz" id="modeBiz" onclick="setMode('biz')">ðŸ’¼ Business</button>
-    <button class="mode-btn priv" id="modePriv" onclick="setMode('priv')">ðŸ  Privat</button>
+    <button class="mode-btn on biz" id="modeBiz" onclick="setMode('biz')">💼 Business</button>
+    <button class="mode-btn priv" id="modePriv" onclick="setMode('priv')">🏠 Privat</button>
   </div>
 
-  <!-- Potential-Ring â€“ Ã¤ndert Farbe und Bedeutung je nach Modus -->
+  <!-- Potential-Ring – ändert Farbe und Bedeutung je nach Modus -->
   <div class="ring-wrap">
     <div class="ring-c">
       <svg class="ring-svg" viewBox="0 0 130 130">
@@ -126,34 +126,34 @@
         <circle class="ring-f" id="ringF" cx="65" cy="65" r="57" stroke-dasharray="358.14" stroke-dashoffset="0" stroke="var(--gold)"/>
       </svg>
       <div class="ring-in">
-        <div class="ring-big" id="ringBig">â€“</div>
+        <div class="ring-big" id="ringBig">–</div>
         <div class="ring-tag" id="ringTag">Tage</div>
       </div>
     </div>
-    <div class="ring-sub" id="ringSub">â€“</div>
-    <div class="ring-date mono" id="ringDate">â€“</div>
+    <div class="ring-sub" id="ringSub">–</div>
+    <div class="ring-date mono" id="ringDate">–</div>
   </div>
 
   <!-- Business-Content (Standard) -->
   <div id="bizContent">
     <div class="hero zl" id="heroCard">
       <div class="hero-lbl" id="heroLbl">Aktueller MwSt-Stand</div>
-      <div class="hero-val" id="heroVal">0,00 â‚¬</div>
+      <div class="hero-val" id="heroVal">0,00 €</div>
       <div class="hero-bar"><div class="hero-bar-a" id="hbA" style="width:50%"></div><div class="hero-bar-e" id="hbE" style="width:50%"></div></div>
       <div class="hero-cols" id="heroCols">
-        <div class="hcol"><div class="l">Eingenommen</div><div class="v" id="hAR" style="color:var(--ylw)">0,00 â‚¬</div></div>
-        <div class="hcol"><div class="l">Vorsteuer</div><div class="v" id="hER" style="color:var(--blu)">0,00 â‚¬</div></div>
-        <div class="hcol"><div class="l" id="saldoLbl">Zahllast</div><div class="v" id="hSaldo" style="color:var(--red)">0,00 â‚¬</div></div>
+        <div class="hcol"><div class="l">Eingenommen</div><div class="v" id="hAR" style="color:var(--ylw)">0,00 €</div></div>
+        <div class="hcol"><div class="l">Vorsteuer</div><div class="v" id="hER" style="color:var(--blu)">0,00 €</div></div>
+        <div class="hcol"><div class="l" id="saldoLbl">Zahllast</div><div class="v" id="hSaldo" style="color:var(--red)">0,00 €</div></div>
       </div>
       <div class="ku-bar-wrap" id="kuBarWrap" style="display:none">
         <div class="ku-bar-lbl"><span id="kuBarLeft">Umsatz YTD</span><span id="kuBarRight">Grenze</span></div>
         <div class="ku-bar-track"><div class="ku-bar-fill" id="kuBarFill" style="width:0%"></div></div>
-        <div class="ku-bar-hint" id="kuBarHint">â€“</div>
+        <div class="ku-bar-hint" id="kuBarHint">–</div>
       </div>
     </div>
     <div class="qs">
-      <div class="qs-c"><div class="qs-l">Umsatz (Jahr)</div><div class="qs-v" id="qsU" style="color:var(--ylw)">0 â‚¬</div><div class="qs-s" id="qsUc">0 Rechnungen</div></div>
-      <div class="qs-c"><div class="qs-l">Ausgaben (Jahr)</div><div class="qs-v" id="qsA" style="color:var(--blu)">0 â‚¬</div><div class="qs-s" id="qsAc">0 Belege</div></div>
+      <div class="qs-c"><div class="qs-l">Umsatz (Jahr)</div><div class="qs-v" id="qsU" style="color:var(--ylw)">0 €</div><div class="qs-s" id="qsUc">0 Rechnungen</div></div>
+      <div class="qs-c"><div class="qs-l">Ausgaben (Jahr)</div><div class="qs-v" id="qsA" style="color:var(--blu)">0 €</div><div class="qs-s" id="qsAc">0 Belege</div></div>
     </div>
   </div>
 
@@ -161,21 +161,21 @@
   <div id="privContent" style="display:none">
     <div class="hero priv" id="heroPriv">
       <div class="hero-lbl">Optimierbares Geld</div>
-      <div class="hero-val" id="heroPrivVal" style="color:var(--silv)">0,00 â‚¬</div>
+      <div class="hero-val" id="heroPrivVal" style="color:var(--silv)">0,00 €</div>
       <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.55" id="heroPrivSub">Abos, Garantien, Sparpotentiale</div>
     </div>
-    <!-- Insight Banner â€“ erscheint kontextbezogen wenn echtes Sparpotential erkannt wurde -->
+    <!-- Insight Banner – erscheint kontextbezogen wenn echtes Sparpotential erkannt wurde -->
     <div id="insightBanner" style="display:none"></div>
   </div>
 
-  <!-- Intelligenz-Widgets (immer sichtbar, mode-unabhÃ¤ngig) -->
+  <!-- Intelligenz-Widgets (immer sichtbar, mode-unabhängig) -->
   <div class="card" id="gwCard" style="display:none">
-    <div class="stitle">ðŸ›¡ï¸ Garantie-WÃ¤chter</div>
+    <div class="stitle">🛡️ Garantie-Wächter</div>
     <div id="gwList"></div>
   </div>
 
   <div class="card" id="aboCard" style="display:none">
-    <div class="stitle">ðŸ” Abo-Detektiv</div>
+    <div class="stitle">🔍 Abo-Detektiv</div>
     <div id="aboList"></div>
   </div>
 
@@ -185,10 +185,10 @@
   </div>
 </div>
 
-<!-- â”€â”€ BELEGE (Business only) â”€â”€ -->
+<!-- ── BELEGE (Business only) ── -->
 <div class="view" id="v-belege">
   <div class="filter-row">
-    <input class="inp" id="srch" type="text" placeholder="Suchen â€¦" oninput="renderBelege()" style="flex:1;min-width:80px;font-size:12px;padding:8px 12px">
+    <input class="inp" id="srch" type="text" placeholder="Suchen …" oninput="renderBelege()" style="flex:1;min-width:80px;font-size:12px;padding:8px 12px">
     <select class="sel" id="ftT" onchange="renderBelege()"><option value="">Alle</option><option value="er">Eingang</option><option value="ar">Ausgang</option></select>
     <select class="sel" id="ftC" onchange="renderBelege()"><option value="">Kategorie</option><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select>
     <button class="btn btn-g btn-sm" onclick="exportCSV()">CSV</button>
@@ -196,12 +196,12 @@
   <div id="bList"></div>
 </div>
 
-<!-- â”€â”€ PRIVAT â”€â”€ -->
+<!-- ── PRIVAT ── -->
 <div class="view" id="v-priv">
   <!-- Kopfzeile: Gesamt + Buttons -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div>
-      <div style="font-size:22px;font-weight:200;color:var(--silv)" id="privTotalDisp">0,00 â‚¬</div>
+      <div style="font-size:22px;font-weight:200;color:var(--silv)" id="privTotalDisp">0,00 €</div>
       <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="privCountDisp">0 Belege</div>
     </div>
     <div style="display:flex;gap:8px">
@@ -223,8 +223,8 @@
     border-radius:var(--r12);padding:11px 14px;margin-bottom:12px;
     display:flex;align-items:center;justify-content:space-between">
     <div>
-      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px">Einsparpotential (geschÃ¤tzt)</div>
-      <div style="font-size:18px;font-weight:200;color:var(--gold)" id="privOptBetrag">0,00 â‚¬</div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px">Einsparpotential (geschätzt)</div>
+      <div style="font-size:18px;font-weight:200;color:var(--gold)" id="privOptBetrag">0,00 €</div>
     </div>
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.2">
       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
@@ -249,7 +249,7 @@
     <select class="sel" id="pftC" onchange="renderPrivatBelege()"><option value="">Alle Kategorien</option><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Freizeit</option><option>Reise</option><option>Sonstiges</option></select>
     <select class="sel" id="pftM" onchange="renderPrivatBelege()">
       <option value="">Alle Monate</option>
-      <option value="01">Januar</option><option value="02">Februar</option><option value="03">MÃ¤rz</option>
+      <option value="01">Januar</option><option value="02">Februar</option><option value="03">März</option>
       <option value="04">April</option><option value="05">Mai</option><option value="06">Juni</option>
       <option value="07">Juli</option><option value="08">August</option><option value="09">September</option>
       <option value="10">Oktober</option><option value="11">November</option><option value="12">Dezember</option>
@@ -258,7 +258,7 @@
   <div id="pList"></div>
 </div>
 
-<!-- â”€â”€ KONTO-ABGLEICH â”€â”€ -->
+<!-- ── KONTO-ABGLEICH ── -->
 <div class="view" id="v-konto">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div>
@@ -268,7 +268,7 @@
     <div style="display:flex;gap:6px">
       <button class="btn btn-g btn-sm" onclick="kontoKiGesamt()" style="font-size:11px;display:flex;align-items:center;gap:5px"
         title="KI vergleicht alle offenen Buchungen mit allen Belegen">
-        ðŸ¤– Alles vergleichen
+        🤖 Alles vergleichen
       </button>
       <button class="btn btn-g btn-sm" onclick="kontoAllesLoeschen()" style="font-size:11px">Leeren</button>
     </div>
@@ -276,7 +276,7 @@
 
   <!-- Bank-Eingabe -->
   <div style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);padding:14px;margin-bottom:12px">
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px">ðŸ¦ Bank eingeben</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px">🏦 Bank eingeben</div>
     <input type="text" id="kontoBankInput" placeholder="z.B. Sparkasse, Deutsche Bank..." style="width:100%;background:var(--s1);border:1px solid var(--br);border-radius:var(--r8);padding:8px 10px;color:var(--txt);font-size:12px" value="">
   </div>
 
@@ -294,14 +294,14 @@
       style="background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r12);
       padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-      <span style="font-size:12px;font-weight:300;color:var(--txt)">Mehrere auswÃ¤hlen</span>
-      <span style="font-size:10px;color:var(--txt3)">Galerie Â· mehrere mÃ¶glich</span>
+      <span style="font-size:12px;font-weight:300;color:var(--txt)">Mehrere auswählen</span>
+      <span style="font-size:10px;color:var(--txt3)">Galerie · mehrere möglich</span>
     </button>
   </div>
 
   <!-- Queue-Anzeige -->
   <div id="kontoQueue" style="display:none;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px">ðŸ“‹ Warteschlange</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px">📋 Warteschlange</div>
     <div id="kontoQueueList" style="font-size:12px;font-weight:300;color:var(--txt2)"></div>
     <button class="btn btn-gold btn-sm" onclick="kontoQueueStart()" style="margin-top:8px;width:100%;justify-content:center" id="kontoQueueBtn">
       Alle analysieren starten
@@ -310,35 +310,35 @@
 
   <!-- Progress -->
   <div id="kontoProg" style="display:none;margin-bottom:10px">
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px;font-family:'DM Mono',monospace" id="kontoLog">Bereit â€¦</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px;font-family:'DM Mono',monospace" id="kontoLog">Bereit …</div>
     <div style="background:var(--s3);border-radius:4px;height:3px">
       <div id="kontoFill" style="background:var(--silv);height:3px;border-radius:4px;width:0%;transition:width .3s"></div>
     </div>
   </div>
 
-  <!-- Erkannte Buchungen â€“ persistent, akkumuliert -->
+  <!-- Erkannte Buchungen – persistent, akkumuliert -->
   <div id="kontoResultWrap">
     <div id="kontoUnknownSec" style="display:none;margin-bottom:16px">
       <div style="font-size:11px;font-weight:300;color:var(--orn);margin-bottom:8px;letter-spacing:.3px;display:flex;justify-content:space-between">
-        <span>â“ KEIN BELEG GEFUNDEN</span>
+        <span>❓ KEIN BELEG GEFUNDEN</span>
         <span id="kontoUnknownCount" style="color:var(--txt3)"></span>
       </div>
       <div id="kontoUnknownList"></div>
     </div>
     <div id="kontoMatchedSec" style="display:none;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:300;color:var(--grn);margin-bottom:8px;letter-spacing:.3px">âœ… ABGEGLICHEN</div>
+      <div style="font-size:11px;font-weight:300;color:var(--grn);margin-bottom:8px;letter-spacing:.3px">✅ ABGEGLICHEN</div>
       <div id="kontoMatchedList"></div>
     </div>
   </div>
 </div>
 
-<!-- â”€â”€ SCHNELLEINGABE SHEET (Privat, kein Foto) â”€â”€ -->
+<!-- ── SCHNELLEINGABE SHEET (Privat, kein Foto) ── -->
 <div class="ovl" id="schnellOvl" onclick="closeSchnellOuter(event)">
   <div class="sheet">
     <div class="sh"></div>
-    <button class="sc-btn" onclick="closeSchnell()">âœ•</button>
-    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:4px">âš¡ Schnelleingabe</div>
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:16px">Ohne Foto â€“ tippen oder sprechen</div>
+    <button class="sc-btn" onclick="closeSchnell()">✖</button>
+    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:4px">⚡ Schnelleingabe</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:16px">Ohne Foto – tippen oder sprechen</div>
 
     <!-- Spracheingabe -->
     <div id="sprachWrap" style="margin-bottom:14px">
@@ -350,18 +350,18 @@
           <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
           <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
         </svg>
-        <span id="micLbl">ðŸŽ¤ Sprechen</span>
+        <span id="micLbl">🎤 Sprechen</span>
       </button>
       <div id="micTranscript" style="display:none;background:var(--s2);border:1px solid var(--br2);
         border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
         color:var(--txt2);margin-top:8px;min-height:36px;line-height:1.5"></div>
     </div>
 
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">â€” oder manuell â€”</div>
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">— oder manuell —</div>
 
     <!-- Manuelle Felder -->
     <div class="res-fields">
-      <div class="field"><label>HÃ¤ndler / Beschreibung</label><input id="sShop" type="text" placeholder="z.B. Eiswagen am See"></div>
+      <div class="field"><label>Händler / Beschreibung</label><input id="sShop" type="text" placeholder="z.B. Eiswagen am See"></div>
       <div class="field"><label>Betrag</label><input id="sBrutto" type="text" placeholder="0.00" inputmode="decimal"></div>
       <div class="field"><label>Datum</label><input id="sDate" type="date"></div>
       <div class="field"><label>Kategorie</label><select id="sCat">
@@ -380,19 +380,19 @@
   </div>
 </div>
 
-<!-- â”€â”€ VERPFLEGUNGSPAUSCHALE / FAHRTKOSTEN â”€â”€ -->
+<!-- ── VERPFLEGUNGSPAUSCHALE / FAHRTKOSTEN ── -->
 <div class="view" id="v-verpfl">
   <div style="font-size:16px;font-weight:300;color:var(--txt);margin-bottom:4px">Verpflegungspauschale</div>
-  <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">Â§ 4 Abs. 5 EStG Â· Inland 8 â‚¬ / 14 â‚¬ / 28 â‚¬</div>
+  <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">§ 4 Abs. 5 EStG · Inland 8 € / 14 € / 28 €</div>
 
-  <!-- BetriebsstÃ¤tte -->
+  <!-- Betriebsstätte -->
   <div class="card card-sm" style="margin-bottom:10px">
-    <div class="stitle">BetriebsstÃ¤tte (Heimatort)</div>
+    <div class="stitle">Betriebsstätte (Heimatort)</div>
     <div style="display:flex;gap:8px">
-      <input class="inp" id="bsAdresse" type="text" placeholder="z.B. MusterstraÃŸe 1, 80331 MÃ¼nchen" style="flex:1;font-size:12px">
+      <input class="inp" id="bsAdresse" type="text" placeholder="z.B. Musterstraße 1, 80331 München" style="flex:1;font-size:12px">
       <button class="btn btn-g btn-sm" onclick="saveBetriebsstaette()">OK</button>
     </div>
-    <p id="bsHint" style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Einmal hinterlegen â€“ wird fÃ¼r Abstandsberechnung gespeichert.</p>
+    <p id="bsHint" style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Einmal hinterlegen – wird für Abstandsberechnung gespeichert.</p>
   </div>
 
   <!-- Aktueller Besuch -->
@@ -402,23 +402,23 @@
     <div id="verpflActiveCard" style="display:none;background:rgba(74,128,192,.07);border:1px solid rgba(74,128,192,.2);
       border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div style="font-size:11px;font-weight:300;color:var(--blu)">â±ï¸ Besuch lÃ¤uft â€¦</div>
+        <div style="font-size:11px;font-weight:300;color:var(--blu)">⏱️ Besuch läuft …</div>
         <div style="font-size:18px;font-weight:200;color:var(--gold);font-variant-numeric:tabular-nums" id="verpflTimer">00:00:00</div>
       </div>
-      <div style="font-size:11px;font-weight:300;color:var(--txt2)" id="verpflActiveInfo">â€“</div>
-      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px" id="verpflStartInfo">â€“</div>
+      <div style="font-size:11px;font-weight:300;color:var(--txt2)" id="verpflActiveInfo">–</div>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px" id="verpflStartInfo">–</div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
       <button id="btnAnkunft" class="btn btn-g" onclick="verpflAnkunft()" style="font-size:12px;justify-content:center;flex-direction:column;gap:2px;padding:12px 8px">
-        <span style="font-size:18px">ðŸ“</span>
+        <span style="font-size:18px">📍</span>
         <span>Ich bin hier</span>
         <span style="font-size:10px;color:var(--txt3)">Standort erfassen</span>
       </button>
       <button id="btnAbfahrt" class="btn btn-g" onclick="verpflAbfahrt()" style="font-size:12px;justify-content:center;flex-direction:column;gap:2px;padding:12px 8px" disabled>
-        <span style="font-size:18px">ðŸ</span>
+        <span style="font-size:18px">🏁</span>
         <span>Fertig / Abfahrt</span>
-        <span style="font-size:10px;color:var(--txt3)">Besuch abschlieÃŸen</span>
+        <span style="font-size:10px;color:var(--txt3)">Besuch abschließen</span>
       </button>
     </div>
 
@@ -427,7 +427,7 @@
       color:var(--txt2);line-height:1.6;margin-bottom:10px" id="verpflGeoInfo"></div>
   </div>
 
-  <!-- TagesÃ¼bersicht -->
+  <!-- Tagesübersicht -->
   <div class="card card-sm" style="margin-bottom:10px">
     <div class="stitle">Heutige Pauschale</div>
     <div id="verpflTagesCard">
@@ -437,31 +437,31 @@
           <div style="font-size:10px;font-weight:300;color:var(--txt3)">Abwesend</div>
         </div>
         <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
-          <div style="font-size:20px;font-weight:200;color:var(--gold)" id="verpflPauschale">0 â‚¬</div>
+          <div style="font-size:20px;font-weight:200;color:var(--gold)" id="verpflPauschale">0 €</div>
           <div style="font-size:10px;font-weight:300;color:var(--txt3)">Pauschale</div>
         </div>
         <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
-          <div style="font-size:20px;font-weight:200;color:var(--txt)" id="verpflKm">â€“ km</div>
+          <div style="font-size:20px;font-weight:200;color:var(--txt)" id="verpflKm">– km</div>
           <div style="font-size:10px;font-weight:300;color:var(--txt3)">Entfernung</div>
         </div>
       </div>
       <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.5">
-        Staffel: ab 8h = 8 â‚¬ Â· ab 14h = 14 â‚¬ Â· 24h (Ãœbernachtung) = 28 â‚¬
+        Staffel: ab 8h = 8 € · ab 14h = 14 € · 24h (Übernachtung) = 28 €
       </div>
     </div>
   </div>
 
-  <!-- MonatsÃ¼bersicht gespeicherte Fahrten -->
+  <!-- Monatsübersicht gespeicherte Fahrten -->
   <div class="card card-sm">
     <div class="stitle" style="display:flex;align-items:center;justify-content:space-between">
       <span>Fahrten dieses Monats</span>
-      <span id="verpflMonatsSumme" style="color:var(--gold);font-size:12px">0 â‚¬</span>
+      <span id="verpflMonatsSumme" style="color:var(--gold);font-size:12px">0 €</span>
     </div>
     <div id="verpflFahrtenList"><div class="empty" style="padding:16px 0"><p>Noch keine Fahrten erfasst.</p></div></div>
   </div>
 </div>
 
-<!-- â”€â”€ MwSt â”€â”€ -->
+<!-- ── MwSt ── -->
 
 <div class="view" id="v-mwst">
   <div class="tabs">
@@ -470,84 +470,84 @@
     <button class="tab" onclick="setPeriod('year',this)">Jahr</button>
     <button class="tab" onclick="setPeriod('all',this)">Gesamt</button>
   </div>
-  <button class="btn btn-g btn-sm" onclick="showView('quartal')" style="margin-bottom:10px">Quartalsabschluss â†’</button>
+  <button class="btn btn-g btn-sm" onclick="showView('quartal')" style="margin-bottom:10px">Quartalsabschluss →</button>
   <div class="sg">
-    <div class="sc-card ar"><div class="l">MwSt eingenommen</div><div class="v" id="mAR">0,00 â‚¬</div><div class="s" id="mARs">0 AR</div></div>
-    <div class="sc-card er"><div class="l">Vorsteuer abziehbar</div><div class="v" id="mER">0,00 â‚¬</div><div class="s" id="mERs">0 ER</div></div>
+    <div class="sc-card ar"><div class="l">MwSt eingenommen</div><div class="v" id="mAR">0,00 €</div><div class="s" id="mARs">0 AR</div></div>
+    <div class="sc-card er"><div class="l">Vorsteuer abziehbar</div><div class="v" id="mER">0,00 €</div><div class="s" id="mERs">0 ER</div></div>
   </div>
   <div class="sg">
-    <div class="sc-card zl" id="zlCard"><div class="l">Zahllast</div><div class="v" id="mZL">0,00 â‚¬</div><div class="s">MwSt âˆ’ Vorsteuer</div></div>
-    <div class="sc-card ex" id="exCard" style="display:none"><div class="l">Erstattung</div><div class="v" id="mEX">0,00 â‚¬</div><div class="s">Gutschrift âœ“</div></div>
+    <div class="sc-card zl" id="zlCard"><div class="l">Zahllast</div><div class="v" id="mZL">0,00 €</div><div class="s">MwSt − Vorsteuer</div></div>
+    <div class="sc-card ex" id="exCard" style="display:none"><div class="l">Erstattung</div><div class="v" id="mEX">0,00 €</div><div class="s">Gutschrift ✓</div></div>
   </div>
   <div class="cc"><div class="cc-title">Monatsverlauf</div><div class="mchart" id="mChart"></div><div class="chart-leg"><span><i class="dot" style="background:rgba(192,144,64,.5)"></i>Umsatz AR</span><span><i class="dot" style="background:rgba(74,128,192,.4)"></i>Ausgaben ER</span></div></div>
   <div class="cc"><div class="cc-title">MwSt nach Monat</div><table class="mtbl"><thead><tr><th>Monat</th><th>AR-MwSt</th><th>Vorsteuer</th><th>Saldo</th></tr></thead><tbody id="mTbl"></tbody></table></div>
   <div class="cc"><div class="cc-title">Top Kategorien (Ausgaben)</div><div class="barchart" id="catChart"></div></div>
   <!-- Inflations-Tracker -->
-  <div class="cc" id="inflCC" style="display:none"><div class="cc-title">ðŸ“ˆ Inflations-Tracker</div><div id="inflList"></div></div>
+  <div class="cc" id="inflCC" style="display:none"><div class="cc-title">📈 Inflations-Tracker</div><div id="inflList"></div></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap;padding-bottom:4px">
     <button class="btn btn-g btn-sm" onclick="exportCSV()">CSV Export</button>
     <button class="btn btn-g btn-sm" onclick="exportBackup()">Backup JSON</button>
   </div>
 </div>
 
-<!-- â”€â”€ STEUER â”€â”€ -->
+<!-- ── STEUER ── -->
 <div class="view" id="v-steuer">
   <div class="est-hero">
-    <div class="lbl">GeschÃ¤tzte Einkommensteuer (Jahr)</div>
-    <div class="big" id="estJahr">0 â‚¬</div>
+    <div class="lbl">Geschätzte Einkommensteuer (Jahr)</div>
+    <div class="big" id="estJahr">0 €</div>
     <div class="sub" id="estSub">Auf Basis der erfassten Einnahmen</div>
   </div>
   <div class="est-grid">
-    <div class="est-c"><div class="l">Gewinn</div><div class="v" id="estG" style="color:var(--grn)">0 â‚¬</div></div>
+    <div class="est-c"><div class="l">Gewinn</div><div class="v" id="estG" style="color:var(--grn)">0 €</div></div>
     <div class="est-c"><div class="l">Eff. Satz</div><div class="v" id="estR" style="color:var(--ylw)">0 %</div></div>
-    <div class="est-c"><div class="l">âˆ… / Monat</div><div class="v" id="estM" style="color:var(--red)">0 â‚¬</div></div>
+    <div class="est-c"><div class="l">∅ / Monat</div><div class="v" id="estM" style="color:var(--red)">0 €</div></div>
   </div>
   <div class="gauge-wrap">
     <div class="gauge-title">Einkommensteuerstufen</div>
     <div class="gauge-track"><div class="gauge-marker" id="gaugeM" style="left:0%"></div></div>
     <div class="gauge-stages">
-      <div class="gs"><div class="pct">0%</div><div>0 â‚¬</div></div>
-      <div class="gs"><div class="pct">14â€“24%</div><div>12k â‚¬</div></div>
-      <div class="gs"><div class="pct">24â€“42%</div><div>17k â‚¬</div></div>
-      <div class="gs"><div class="pct">42%</div><div>67k â‚¬</div></div>
-      <div class="gs"><div class="pct">45%</div><div>278k â‚¬</div></div>
+      <div class="gs"><div class="pct">0%</div><div>0 €</div></div>
+      <div class="gs"><div class="pct">14–24%</div><div>12k €</div></div>
+      <div class="gs"><div class="pct">24–42%</div><div>17k €</div></div>
+      <div class="gs"><div class="pct">42%</div><div>67k €</div></div>
+      <div class="gs"><div class="pct">45%</div><div>278k €</div></div>
     </div>
     <div class="gauge-now"><div class="l" id="gaugeStufeTxt">Aktueller Grenzsteuersatz</div><div class="v" id="gaugeStufe" style="color:var(--grn)">0 %</div></div>
-    <div class="gauge-next" id="gaugeNext">â€“</div>
+    <div class="gauge-next" id="gaugeNext">–</div>
   </div>
   <!-- Vital-Check Widget -->
   <div class="card card-sm" id="vitalCard" style="display:none;margin-bottom:9px">
-    <div class="stitle">ðŸ¥¦ Vital-Check</div>
+    <div class="stitle">🥦 Vital-Check</div>
     <div id="vitalContent"></div>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Parameter</div>
     <div class="g2" style="gap:8px">
-      <div class="field"><label>Steuerklasse</label><select id="stK" onchange="calcSteuer()"><option value="1">I â€“ Ledig</option><option value="3">III â€“ Verheiratet</option><option value="4">IV â€“ Gleich</option></select></div>
+      <div class="field"><label>Steuerklasse</label><select id="stK" onchange="calcSteuer()"><option value="1">I – Ledig</option><option value="3">III – Verheiratet</option><option value="4">IV – Gleich</option></select></div>
       <div class="field"><label>Kinder</label><input id="stKi" type="number" value="0" min="0" max="10" oninput="calcSteuer()"></div>
       <div class="field"><label>Kirchensteuer</label><select id="stKi2" onchange="calcSteuer()"><option value="0">Nein</option><option value="0.09">9 %</option><option value="0.08">8 % Bayern</option></select></div>
-      <div class="field"><label>Ausgaben manuell (â‚¬)</label><input id="stM" type="number" value="0" min="0" oninput="calcSteuer()"></div>
+      <div class="field"><label>Ausgaben manuell (€)</label><input id="stM" type="number" value="0" min="0" oninput="calcSteuer()"></div>
     </div>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Hinweis</div>
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);line-height:1.7">SchÃ¤tzung nach Â§32a EStG. Kein Ersatz fÃ¼r einen Steuerberater.</p>
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);line-height:1.7">Schätzung nach §32a EStG. Kein Ersatz für einen Steuerberater.</p>
   </div>
   <!-- Phase 2 Platzhalter -->
   <div class="phase-banner">
-    <div class="ph-lbl">Phase 2 â€“ Geplant</div>
-    <div class="ph-txt">GoBD-Rechnungserstellung direkt in der App. Managed API â€“ kein eigener Key nÃ¶tig. Guthaben-Modell.</div>
+    <div class="ph-lbl">Phase 2 – Geplant</div>
+    <div class="ph-txt">GoBD-Rechnungserstellung direkt in der App. Managed API – kein eigener Key nötig. Guthaben-Modell.</div>
   </div>
   <div style="display:flex;gap:7px;flex-wrap:wrap">
-    <button class="btn btn-gold btn-sm" onclick="exportSteuerberaterZip()">Steuerberater-Export (ZIP) â†’</button>
-    <button class="btn btn-gold btn-sm" onclick="loadExportPreview();showView('export-preview')">Export-Vorschau â†’</button>
-    <button class="btn btn-g btn-sm" onclick="showView('settings')">Einstellungen â†’</button>
+    <button class="btn btn-gold btn-sm" onclick="exportSteuerberaterZip()">Steuerberater-Export (ZIP) →</button>
+    <button class="btn btn-gold btn-sm" onclick="loadExportPreview();showView('export-preview')">Export-Vorschau →</button>
+    <button class="btn btn-g btn-sm" onclick="showView('settings')">Einstellungen →</button>
   </div>
 </div>
 
-<!-- â”€â”€ QUARTAL â”€â”€ -->
+<!-- ── QUARTAL ── -->
 <div class="view" id="v-quartal">
-  <button class="btn btn-g btn-sm" onclick="showView('mwst')" style="margin-bottom:12px">â† ZurÃ¼ck</button>
+  <button class="btn btn-g btn-sm" onclick="showView('mwst')" style="margin-bottom:12px">← Zurück</button>
   <div class="stitle">Quartalsabschluss</div>
   <div class="qsel" id="qSel"></div>
   <div class="qsum" id="qSum"></div>
@@ -558,18 +558,18 @@
   </div>
 </div>
 
-<!-- â”€â”€ EXPORT PREVIEW â”€â”€ -->
+<!-- ── EXPORT PREVIEW ── -->
 <div class="view" id="v-export-preview">
-  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">â† ZurÃ¼ck</button>
-  <div class="stitle">Export-Vorschau fÃ¼r Steuerberater</div>
+  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
+  <div class="stitle">Export-Vorschau für Steuerberater</div>
   <!-- Warn-Box: fehlende Belege / Ungereimtheiten -->
   <div id="exportWarnBox" style="display:none"></div>
   <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">JahresÃ¼bersicht</div>
+    <div class="stitle">Jahresübersicht</div>
     <div id="exportYearSummary"></div>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">QuartalsÃ¼bersicht</div>
+    <div class="stitle">Quartalsübersicht</div>
     <div id="exportQuarterSummary"></div>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
@@ -582,37 +582,37 @@
   </div>
 </div>
 
-<!-- â”€â”€ SETTINGS â”€â”€ -->
+<!-- ── SETTINGS ── -->
 <div class="view" id="v-settings">
-  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">â† ZurÃ¼ck</button>
+  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
   <div class="pwa-card">
-    <div class="l">ðŸ“± Als App installieren</div>
-    <p>iOS: <strong style="color:var(--txt)">Teilen â†’ Zum Homescreen</strong><br>Android: <strong style="color:var(--txt)">MenÃ¼ â†’ App installieren</strong></p>
+    <div class="l">📱 Als App installieren</div>
+    <p>iOS: <strong style="color:var(--txt)">Teilen → Zum Homescreen</strong><br>Android: <strong style="color:var(--txt)">Menü → App installieren</strong></p>
     <button class="btn btn-g btn-sm" id="pwaBtn" onclick="installPWA()" style="margin-top:10px;display:none">App installieren</button>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Mein Profil</div>
-    <div class="info-row"><span class="k">Land</span><span class="val" id="settLand">â€“</span></div>
-    <div class="info-row"><span class="k">Status</span><span class="val" id="settTyp">â€“</span></div>
-    <div class="info-row"><span class="k">Belegnummer-Format</span><span class="val" id="settFmt">â€“</span></div>
+    <div class="info-row"><span class="k">Land</span><span class="val" id="settLand">–</span></div>
+    <div class="info-row"><span class="k">Status</span><span class="val" id="settTyp">–</span></div>
+    <div class="info-row"><span class="k">Belegnummer-Format</span><span class="val" id="settFmt">–</span></div>
     <button class="btn btn-g btn-sm" onclick="resetOnboarding()" style="margin-top:10px">Neu einrichten</button>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">KI-Verbindung</div>
     <div style="margin-bottom:8px">
-      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px" id="apiStat">â€“</div>
+      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px" id="apiStat">–</div>
       <div style="display:flex;gap:7px">
-        <input class="inp" type="password" id="apiKey" placeholder="sk-ant-â€¦ Claude API Key" style="font-size:12px;flex:1">
+        <input class="inp" type="password" id="apiKey" placeholder="sk-ant-… Claude API Key" style="font-size:12px;flex:1">
         <button class="btn btn-gold btn-sm" onclick="saveApiKey()">Speichern</button>
       </div>
-      <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Key wird nur lokal gespeichert. Du kannst ihn jederzeit Ã¼berschreiben oder lÃ¶schen.</p>
+      <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Key wird nur lokal gespeichert. Du kannst ihn jederzeit überschreiben oder löschen.</p>
     </div>
-    <button class="btn btn-red btn-sm" onclick="clearApiKeySettings()" style="margin-bottom:4px">Key lÃ¶schen</button>
-    <a href="https://console.anthropic.com" target="_blank" style="font-size:11px;color:var(--gold);text-decoration:none;display:inline-block;margin-top:6px">â†’ API Key erstellen</a>
+    <button class="btn btn-red btn-sm" onclick="clearApiKeySettings()" style="margin-bottom:4px">Key löschen</button>
+    <a href="https://console.anthropic.com" target="_blank" style="font-size:11px;color:var(--gold);text-decoration:none;display:inline-block;margin-top:6px">→ API Key erstellen</a>
     <div style="margin-top:10px;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:9px 12px">
-      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">API-Verbrauch (geschÃ¤tzt)</div>
-      <div style="font-size:12px;font-weight:300" id="apiCostDisp">â€“</div>
-      <button class="btn btn-g btn-sm" onclick="resetApiCost()" style="margin-top:6px;font-size:10px">ZurÃ¼cksetzen</button>
+      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">API-Verbrauch (geschätzt)</div>
+      <div style="font-size:12px;font-weight:300" id="apiCostDisp">–</div>
+      <button class="btn btn-g btn-sm" onclick="resetApiCost()" style="margin-top:6px;font-size:10px">Zurücksetzen</button>
     </div>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
@@ -620,7 +620,7 @@
     <div class="stamp-prev"><canvas id="stmpC" width="290" height="110"></canvas></div>
     <div class="g2" style="gap:8px;margin-bottom:10px">
       <div class="field"><label>Firma</label><input id="sFirma" type="text" placeholder="Meine Firma GbR" oninput="refreshStamp()"></div>
-      <div class="field"><label>Freitext</label><input id="sFrei" type="text" placeholder="Buchungskreis o.Ã¤." oninput="refreshStamp()"></div>
+      <div class="field"><label>Freitext</label><input id="sFrei" type="text" placeholder="Buchungskreis o.ä." oninput="refreshStamp()"></div>
     </div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
       <div class="csw on" style="background:#b71c1c" data-c="#b71c1c" onclick="pickCol(this)"></div>
@@ -634,14 +634,14 @@
     <button class="btn btn-gold btn-sm" onclick="saveStamp()">Stempel speichern</button>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">ðŸ” Abo-Detektiv</div>
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.6">Passe die Keywords fÃ¼r die automatische Abo-Erkennung an. Trenne mit | (Pipe).</p>
+    <div class="stitle">🔍 Abo-Detektiv</div>
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.6">Passe die Keywords für die automatische Abo-Erkennung an. Trenne mit | (Pipe).</p>
     <textarea id="aboKeywordsInput" style="width:100%;height:60px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--br);border-radius:var(--r8);background:var(--s2);color:var(--txt);resize:none" placeholder="netflix|spotify|amazon prime..."></textarea>
     <button class="btn btn-gold btn-sm" onclick="saveAboKeywords()" style="margin-top:8px">Keywords speichern</button>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Datensicherung</div>
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.65">Alle Daten liegen ausschlieÃŸlich lokal (IndexedDB). Kein Server.</p>
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.65">Alle Daten liegen ausschließlich lokal (IndexedDB). Kein Server.</p>
     <div style="display:flex;gap:7px;flex-wrap:wrap">
       <button class="btn btn-g btn-sm" onclick="exportBackup()">Backup exportieren</button>
       <button class="btn btn-g btn-sm" onclick="document.getElementById('ufi').click()">Backup importieren</button>
@@ -650,14 +650,14 @@
   </div>
   <!-- Phase 3 Platzhalter -->
   <div class="phase-banner">
-    <div class="ph-lbl">Phase 3 â€“ Roadmap</div>
-    <div class="ph-txt">Creator Elite: VIP-Einladungscodes fÃ¼r Multiplikatoren mit Spezial-Dashboards und White-Label Export. BenÃ¶tigt Backend.</div>
+    <div class="ph-lbl">Phase 3 – Roadmap</div>
+    <div class="ph-txt">Creator Elite: VIP-Einladungscodes für Multiplikatoren mit Spezial-Dashboards und White-Label Export. Benötigt Backend.</div>
   </div>
 </div>
 
 </div><!-- /app -->
 
-<!-- â”€â”€ NAV â”€â”€ -->
+<!-- ── NAV ── -->
 <nav id="nav">
   <button class="ni on" onclick="showView('home')" data-v="home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Start
@@ -687,29 +687,29 @@
   </button>
 </nav>
 
-<!-- â”€â”€ BONG-BUTTON ("Kannst du behalten!")
+<!-- ── BONG-BUTTON ("Kannst du behalten!")
      WHY: Taucht kontextbezogen auf wenn die App dem Nutzer
-     gerade echtes Geld gespart hat. Nicht als Werbung â€“
+     gerade echtes Geld gespart hat. Nicht als Werbung –
      als Celebration-Moment. Als "Software-Wartung" absetzbar. -->
 <div class="bong-wrap" id="bongWrap" style="display:none">
   <div class="bong-btn" onclick="openBongSheet()">
-    <div class="bong-ico">ðŸº</div>
+    <div class="bong-ico">🍺</div>
     <div class="bong-body">
       <div class="head">Bong? Kannst du behalten!</div>
       <div class="sub" id="bongSubText">Du hast gerade Steuern gespart.</div>
     </div>
-    <button class="bong-x" onclick="closeBong(event)">âœ•</button>
+    <button class="bong-x" onclick="closeBong(event)">✖</button>
   </div>
 </div>
 
-<!-- â”€â”€ BONG SHEET (Trinkgeld-Detail) â”€â”€ -->
+<!-- ── BONG SHEET (Trinkgeld-Detail) ── -->
 <div class="ovl" id="bongOvl" onclick="closeBongOuter(event)">
   <div class="sheet">
     <div class="sh"></div>
-    <button class="sc-btn" onclick="closeBongSheet()">âœ•</button>
-    <div style="font-size:28px;margin-bottom:8px">ðŸº</div>
+    <button class="sc-btn" onclick="closeBongSheet()">✖</button>
+    <div style="font-size:28px;margin-bottom:8px">🍺</div>
     <div style="font-size:20px;font-weight:200;letter-spacing:-.5px;margin-bottom:6px">Bong? Kannst du behalten!</div>
-    <div style="font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:20px;line-height:1.65" id="bongSheetCtx">â€“</div>
+    <div style="font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:20px;line-height:1.65" id="bongSheetCtx">–</div>
 
     <!-- Live-Kalkulation: Der Steuer-Kniff
          WHY: Nutzer sieht dass 100% der Trinkgeld-Kosten absetzbar sind.
@@ -720,7 +720,7 @@
         <input class="inp" type="number" id="bongAmount" placeholder="0" min="1" max="500"
           style="font-size:18px;font-weight:200;letter-spacing:-1px;text-align:center;width:110px"
           oninput="calcBongLive()">
-        <span style="font-size:14px;font-weight:300;color:var(--txt3)">â‚¬ Trinkgeld</span>
+        <span style="font-size:14px;font-weight:300;color:var(--txt3)">€ Trinkgeld</span>
       </div>
       <div id="bongCalc" style="font-size:12px;font-weight:300;color:var(--txt2);line-height:1.9">
         Betrag eingeben um Effektivkosten zu sehen.
@@ -729,9 +729,9 @@
 
     <div style="background:rgba(58,175,112,.06);border:1px solid rgba(58,175,112,.2);border-radius:var(--r12);padding:12px;margin-bottom:16px">
       <p style="font-size:11px;font-weight:300;color:var(--grn);line-height:1.65">
-        ðŸ’¡ Als <strong style="font-weight:300">"Software-Wartung & Support"</strong> buchbar â€“
-        100% Betriebsausgabe nach Â§4 Abs.4 EStG. Netto-Betrag von der Steuer absetzbar,
-        19% Vorsteuer zurÃ¼ckfordern (falls MwSt-pflichtig).
+        💡 Als <strong style="font-weight:300">"Software-Wartung & Support"</strong> buchbar –
+        100% Betriebsausgabe nach §4 Abs.4 EStG. Netto-Betrag von der Steuer absetzbar,
+        19% Vorsteuer zurückfordern (falls MwSt-pflichtig).
       </p>
     </div>
 
@@ -739,56 +739,56 @@
       style="display:block;text-align:center;background:linear-gradient(135deg,var(--gold),var(--ylw));
       color:#000;border-radius:var(--r12);padding:14px;font-size:14px;font-weight:300;
       text-decoration:none;letter-spacing:.2px;margin-bottom:10px">
-      â†’ Trinkgeld senden
+      → Trinkgeld senden
     </a>
     <p style="font-size:10px;font-weight:300;color:var(--txt3);text-align:center;line-height:1.6">
       Kein Abo. Keine Pflicht. Nur wenn du willst.<br>
-      Du erhÃ¤ltst eine Quittung als Betriebsausgabe.
+      Du erhältst eine Quittung als Betriebsausgabe.
     </p>
   </div>
 </div>
 
-<!-- â”€â”€ API KEY SHEET â”€â”€ -->
+<!-- ── API KEY SHEET ── -->
 <div class="ovl" id="apiOvl" onclick="closeApiOuter(event)">
   <div class="sheet">
     <div class="sh"></div>
-    <button class="sc-btn" onclick="closeApiSheet()">âœ•</button>
-    <div class="api-sheet-title">âš¡ KI-Erkennung</div>
-    <div class="api-sheet-sub">Mit deinem eigenen Claude API Key liest die App Belege automatisch aus â€“ BetrÃ¤ge, HÃ¤ndler, Datum, Garantien und Abos. ~1â€“3 Cent pro Scan. Key wird nur lokal gespeichert.</div>
+    <button class="sc-btn" onclick="closeApiSheet()">✖</button>
+    <div class="api-sheet-title">⚡ KI-Erkennung</div>
+    <div class="api-sheet-sub">Mit deinem eigenen Claude API Key liest die App Belege automatisch aus – Beträge, Händler, Datum, Garantien und Abos. ~1–3 Cent pro Scan. Key wird nur lokal gespeichert.</div>
     <div class="api-steps">
       <div class="api-step"><div class="n">1</div><div class="t">Gehe zu <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> und erstelle einen kostenlosen Account.</div></div>
-      <div class="api-step"><div class="n">2</div><div class="t">Klicke links auf <strong style="color:var(--txt)">API Keys</strong> â†’ <strong style="color:var(--txt)">Create Key</strong>. Kopiere den Key (beginnt mit <span class="mono" style="font-size:11px;color:var(--gold)">sk-ant-</span>).</div></div>
-      <div class="api-step"><div class="n">3</div><div class="t">FÃ¼ge ihn unten ein und tippe auf <strong style="color:var(--txt)">Aktivieren</strong>. Fertig.</div></div>
+      <div class="api-step"><div class="n">2</div><div class="t">Klicke links auf <strong style="color:var(--txt)">API Keys</strong> → <strong style="color:var(--txt)">Create Key</strong>. Kopiere den Key (beginnt mit <span class="mono" style="font-size:11px;color:var(--gold)">sk-ant-</span>).</div></div>
+      <div class="api-step"><div class="n">3</div><div class="t">Füge ihn unten ein und tippe auf <strong style="color:var(--txt)">Aktivieren</strong>. Fertig.</div></div>
     </div>
     <div class="api-key-inp">
-      <input class="inp" type="password" id="apiKeySheet" placeholder="sk-ant-api03-â€¦" style="font-size:13px;letter-spacing:.5px" autocomplete="off">
+      <input class="inp" type="password" id="apiKeySheet" placeholder="sk-ant-api03-…" style="font-size:13px;letter-spacing:.5px" autocomplete="off">
       <button class="btn btn-gold" onclick="saveApiKeySheet()">Aktivieren</button>
     </div>
-    <div class="api-notice">ðŸ”’ Dein Key wird ausschlieÃŸlich lokal in diesem Browser gespeichert und nie an Server Ã¼bertragen â€“ nur direkt an die Anthropic API beim Scan.</div>
-    <div id="apiSheetStat" style="font-size:12px;font-weight:300;color:var(--grn);display:none">âœ“ KI-Erkennung ist aktiv</div>
+    <div class="api-notice">🔒 Dein Key wird ausschließlich lokal in diesem Browser gespeichert und nie an Server übertragen – nur direkt an die Anthropic API beim Scan.</div>
+    <div id="apiSheetStat" style="font-size:12px;font-weight:300;color:var(--grn);display:none">✓ KI-Erkennung ist aktiv</div>
     <div style="margin-top:6px">
       <button class="btn btn-red btn-sm" id="apiRemoveBtn" onclick="removeApiKey()" style="display:none">Key entfernen</button>
     </div>
   </div>
 </div>
 
-<!-- â”€â”€ SCANNER SHEET â”€â”€ -->
+<!-- ── SCANNER SHEET ── -->
 <div class="ovl" id="scanOvl" onclick="closeScanOuter(event)">
   <div class="sheet" style="max-height:95vh">
     <div class="sh"></div>
-    <button class="sc-btn" onclick="closeScanner()">âœ•</button>
-    <!-- WHY: Kein Privat-Tab hier â€“ der Modus kommt vom Toggle auf der Startseite -->
+    <button class="sc-btn" onclick="closeScanner()">✖</button>
+    <!-- WHY: Kein Privat-Tab hier – der Modus kommt vom Toggle auf der Startseite -->
     <div id="bizSeg" class="seg" style="grid-template-columns:1fr 1fr 1fr">
-      <button class="seg-btn on" id="ttER" onclick="setScanType('er')">ðŸ“¥ Eingangsrechnung</button>
-      <button class="seg-btn" id="ttAR" onclick="setScanType('ar')">ðŸ“¤ Ausgangsrechnung</button>
-      <button class="seg-btn" id="ttManual" onclick="setScanType('manual')">âœï¸ Manuell</button>
+      <button class="seg-btn on" id="ttER" onclick="setScanType('er')">📥 Eingangsrechnung</button>
+      <button class="seg-btn" id="ttAR" onclick="setScanType('ar')">📤 Ausgangsrechnung</button>
+      <button class="seg-btn" id="ttManual" onclick="setScanType('manual')">✏️ Manuell</button>
     </div>
     <!-- Privat-Modus Banner: zeigt aktuellen Modus, kein manuelles Umschalten -->
     <div id="privScanHint" style="display:none;background:rgba(136,153,170,.07);border:1px solid rgba(136,153,170,.18);border-radius:10px;padding:9px 12px;font-size:11px;font-weight:300;color:var(--silv);line-height:1.55;margin-bottom:4px">
-      ðŸ  Privat-Modus aktiv Â· Keine Belegnummer Â· Nur Gesamtbetrag Â· Erscheint nur im Privat-Tab
+      🏠 Privat-Modus aktiv · Keine Belegnummer · Nur Gesamtbetrag · Erscheint nur im Privat-Tab
     </div>
 
-    <!-- Vorschau: wird sichtbar sobald ein Bild gewÃ¤hlt wurde -->
+    <!-- Vorschau: wird sichtbar sobald ein Bild gewählt wurde -->
     <div class="vf" id="camArea" style="display:none">
       <video id="camStream" autoplay playsinline muted></video>
       <img id="capImg" alt="">
@@ -799,9 +799,9 @@
       </div>
     </div>
 
-    <!-- Upload-Bereich: primÃ¤re Aktion, immer sichtbar wenn kein Bild da -->
+    <!-- Upload-Bereich: primäre Aktion, immer sichtbar wenn kein Bild da -->
     <div id="camPH" style="margin-bottom:14px">
-      <!-- PrimÃ¤r: Foto aus Galerie / Kamera (ein input, Ã¶ffnet beides auf iOS) -->
+      <!-- Primär: Foto aus Galerie / Kamera (ein input, öffnet beides auf iOS) -->
       <input type="file" id="fi" accept="image/*" capture="environment" onchange="loadFile(this)" style="display:none">
       <input type="file" id="fiGal" accept="image/*" onchange="loadFile(this)" style="display:none">
 
@@ -818,7 +818,7 @@
         <span style="font-size:11px;font-weight:300;color:var(--txt3)">Beleg, Bon, Monitor oder Screen</span>
       </button>
 
-      <!-- SekundÃ¤r: aus Galerie wÃ¤hlen (ohne capture) -->
+      <!-- Sekundär: aus Galerie wählen (ohne capture) -->
       <button onclick="document.getElementById('fiGal').click()"
         style="width:100%;background:transparent;border:1px solid var(--br);border-radius:var(--r12);
         padding:12px 16px;display:flex;align-items:center;justify-content:center;gap:8px;
@@ -828,11 +828,11 @@
           <circle cx="8.5" cy="8.5" r="1.5"/>
           <polyline points="21 15 16 10 5 21"/>
         </svg>
-        Aus Galerie wÃ¤hlen
+        Aus Galerie wählen
       </button>
     </div>
 
-    <!-- Kamera-Capture-Button: nur sichtbar wenn Live-Kamera lÃ¤uft -->
+    <!-- Kamera-Capture-Button: nur sichtbar wenn Live-Kamera läuft -->
     <div class="cam-ctrls" id="camCtrls" style="display:none">
       <div style="width:44px"></div>
       <button class="shutter" id="btnCap" onclick="captureCam()" disabled>
@@ -845,28 +845,28 @@
     </div>
 
     <div class="prog-wrap" id="progWrap">
-      <div class="prog-log mono" id="progLog">Bereit â€¦</div>
+      <div class="prog-log mono" id="progLog">Bereit …</div>
       <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
     </div>
     <div class="res-wrap" id="resWrap">
       <!-- Hinweis-Banner: zeigt ob KI oder manuell -->
       <div id="scanModeBanner" style="margin-bottom:12px;padding:9px 12px;border-radius:8px;
         font-size:11px;font-weight:300;line-height:1.5;display:none"></div>
-      <p style="font-size:13px;font-weight:300;color:var(--txt2);margin-bottom:13px">Daten prÃ¼fen und ggf. korrigieren:</p>
+      <p style="font-size:13px;font-weight:300;color:var(--txt2);margin-bottom:13px">Daten prüfen und ggf. korrigieren:</p>
       <!-- Business-Felder (er/ar) -->
       <div class="res-fields" id="bizFields">
-        <div class="field"><label>HÃ¤ndler / Aussteller</label><input id="rShop" type="text" placeholder="â€“"></div>
+        <div class="field"><label>Händler / Aussteller</label><input id="rShop" type="text" placeholder="–"></div>
         <div class="field"><label>Datum</label><input id="rDate" type="date"></div>
         <div class="field"><label>Netto</label><input id="rNet" type="text" placeholder="0.00"></div>
         <div class="field"><label>MwSt-Betrag</label><input id="rMwst" type="text" placeholder="0.00"></div>
         <div class="field"><label>Brutto</label><input id="rBrutto" type="text" placeholder="0.00"></div>
         <div class="field"><label>MwSt-Satz</label><select id="rRate"></select></div>
         <div class="field"><label>Kategorie</label><select id="rCat"><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select></div>
-        <div class="field"><label>Zahlung</label><select id="rPay"><option>Karte</option><option>Bar</option><option>Ãœberweisung</option><option>Online</option></select></div>
+        <div class="field"><label>Zahlung</label><select id="rPay"><option>Karte</option><option>Bar</option><option>Überweisung</option><option>Online</option></select></div>
       </div>
-      <!-- Privat-Felder (priv) â€“ nur Gesamtbetrag + Kategorie, keine MwSt -->
+      <!-- Privat-Felder (priv) – nur Gesamtbetrag + Kategorie, keine MwSt -->
       <div class="res-fields" id="privFields" style="display:none">
-        <div class="field"><label>HÃ¤ndler / GeschÃ¤ft</label><input id="pShop" type="text" placeholder="â€“"></div>
+        <div class="field"><label>Händler / Geschäft</label><input id="pShop" type="text" placeholder="–"></div>
         <div class="field"><label>Datum</label><input id="pDate" type="date"></div>
         <div class="field"><label>Gesamtbetrag</label><input id="pBrutto" type="text" placeholder="0.00"></div>
         <div class="field"><label>Kategorie</label><select id="pCat">
@@ -877,7 +877,7 @@
         <div class="field"><label>Zahlung</label><select id="pPay"><option>Karte</option><option>Bar</option><option>Online</option></select></div>
       </div>
 
-      <!-- Manuelle Eingabe (manual) â€“ mit Spracheingabe -->
+      <!-- Manuelle Eingabe (manual) – mit Spracheingabe -->
       <div class="res-fields" id="manualFields" style="display:none">
         <!-- Spracheingabe -->
         <div id="manualSprachWrap" style="margin-bottom:14px">
@@ -889,30 +889,30 @@
               <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
               <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
             </svg>
-            <span id="manualMicLbl">ðŸŽ¤ Sprechen fÃ¼r Business-Beleg</span>
+            <span id="manualMicLbl">🎤 Sprechen für Business-Beleg</span>
           </button>
           <div id="manualMicTranscript" style="display:none;background:var(--s2);border:1px solid var(--br2);
             border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
             color:var(--txt2);margin-top:8px;min-height:36px;line-height:1.5"></div>
         </div>
 
-        <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">â€” oder manuell ausfÃ¼llen â€”</div>
+        <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">— oder manuell ausfüllen —</div>
 
-        <div class="field"><label>HÃ¤ndler / Aussteller</label><input id="mShop" type="text" placeholder="z.B. BÃ¼robedarf MÃ¼ller"></div>
+        <div class="field"><label>Händler / Aussteller</label><input id="mShop" type="text" placeholder="z.B. Bürobedarf Müller"></div>
         <div class="field"><label>Datum</label><input id="mDate" type="date"></div>
         <div class="field"><label>Brutto</label><input id="mBrutto" type="text" placeholder="0.00" inputmode="decimal"></div>
         <div class="field"><label>Netto (optional)</label><input id="mNet" type="text" placeholder="0.00" inputmode="decimal"></div>
         <div class="field"><label>MwSt (optional)</label><input id="mMwst" type="text" placeholder="0.00" inputmode="decimal"></div>
         <div class="field"><label>MwSt-Satz</label><select id="mRate">
           <option value="19">19% (Standard)</option>
-          <option value="7">7% (ermÃ¤ÃŸigt)</option>
+          <option value="7">7% (ermäßigt)</option>
           <option value="0">0% (Reverse Charge)</option></select></div>
         <div class="field"><label>Kategorie</label><select id="mCat">
-          <option>BÃ¼robedarf</option><option>Software</option><option>Beratung</option>
+          <option>Bürobedarf</option><option>Software</option><option>Beratung</option>
           <option>Marketing</option><option>Reisen</option><option>Fortbildung</option>
           <option>Fahrzeug</option><option>Telefon/Internet</option><option>Sonstiges</option></select></div>
         <div class="field"><label>Zahlung</label><select id="mPay">
-          <option>Ãœberweisung</option><option>Karte</option><option>Bar</option><option>Lastschrift</option></select></div>
+          <option>Überweisung</option><option>Karte</option><option>Bar</option><option>Lastschrift</option></select></div>
       </div>
 
       <div id="itemsSec" style="display:none;margin-bottom:12px">
@@ -923,15 +923,15 @@
         <button class="btn btn-gold btn-sm" onclick="saveBeleg()">Speichern</button>
         <button class="btn btn-g btn-sm" onclick="resetScan()">Neu scannen</button>
         <button class="btn btn-g btn-sm" id="retryKiBtn" style="display:none"
-          onclick="retryKi()">âš¡ KI erneut starten</button>
+          onclick="retryKi()">⚡ KI erneut starten</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- â”€â”€ DETAIL SHEET â”€â”€ -->
+<!-- ── DETAIL SHEET ── -->
 <div class="ovl" id="detOvl" onclick="closeDetOuter(event)">
-  <div class="sheet"><div class="sh"></div><button class="sc-btn" onclick="closeDet()">âœ•</button>
+  <div class="sheet"><div class="sh"></div><button class="sc-btn" onclick="closeDet()">✖</button>
     <div id="detContent"></div>
   </div>
 </div>

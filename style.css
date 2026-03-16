@@ -1,9 +1,9 @@
-﻿/* â•â• DESIGN TOKENS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+﻿/* ══ DESIGN TOKENS ══════════════════════════════════════════ */
 :root{
   --bg:#070707;--s1:#0e0e0e;--s2:#181818;--s3:#202020;--s4:#282828;
   --br:#2a2a2a;--br2:#363636;
   --gold:#c8a45a;--ylw:#c09040;--blu:#4a80c0;--grn:#3aaf70;--red:#c04040;--orn:#c07030;
-  --silv:#8899aa;  /* Privat-Modus Akzentfarbe â€“ silberblau */
+  --silv:#8899aa;  /* Privat-Modus Akzentfarbe – silberblau */
   --txt:#f0f0f0;--txt2:#a0a0a0;--txt3:#686868;
   --r8:12px;--r12:16px;--r16:20px;--r24:28px;
   --sb:env(safe-area-inset-bottom,0px);
@@ -20,7 +20,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .view.on{display:block}
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-/* â”€â”€ NAV â”€â”€ */
+/* ── NAV ── */
 #nav{position:fixed;bottom:0;left:0;right:0;z-index:100;
   background:rgba(7,7,7,.9);border-top:1px solid var(--br);
   padding:8px 0 calc(8px + var(--sb));
@@ -40,17 +40,17 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .ni-scan:active{transform:scale(.88)}
 .ni-scan svg{width:22px;height:22px;stroke-width:1.3;color:var(--txt2)}
 
-/* â”€â”€ TYPOGRAPHY â”€â”€ */
+/* ── TYPOGRAPHY ── */
 .mono{font-family:'DM Mono',monospace;font-weight:300;letter-spacing:-.3px}
 .stitle{font-size:11px;font-weight:300;letter-spacing:.6px;color:var(--txt3);
   text-transform:uppercase;margin-bottom:12px}
 
-/* â”€â”€ CARDS â”€â”€ */
+/* ── CARDS ── */
 .card{background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);
   padding:16px;margin-bottom:10px}
 .card-sm{border-radius:var(--r12);padding:14px}
 
-/* â”€â”€ BUTTONS â”€â”€ */
+/* ── BUTTONS ── */
 .btn{padding:9px 20px;border-radius:100px;border:none;
   font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:300;
   cursor:pointer;transition:opacity .15s,transform .12s;
@@ -65,7 +65,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .btn-silv{background:rgba(136,153,170,.08);color:var(--silv);border:1px solid rgba(136,153,170,.2)}
 .btn-sm{padding:7px 14px;font-size:11px}
 
-/* â”€â”€ INPUTS â”€â”€ */
+/* ── INPUTS ── */
 .inp{width:100%;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);
   padding:10px 14px;color:var(--txt);font-family:'Inter',system-ui,sans-serif;
   font-size:14px;font-weight:300;outline:none;transition:border-color .2s}
@@ -80,7 +80,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media(max-width:380px){.g2{grid-template-columns:1fr}}
 
-/* â”€â”€ BADGE â”€â”€ */
+/* ── BADGE ── */
 .badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:100px;
   font-size:10px;font-weight:300;letter-spacing:.2px}
 .b-er{background:rgba(74,128,192,.15);color:var(--blu)}
@@ -90,7 +90,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .b-beleg-vermutet{background:rgba(192,144,64,.18);color:var(--ylw)}
 .b-beleg-ok{background:rgba(58,175,112,.13);color:var(--grn)}
 
-/* â”€â”€ EXPORT WARN BOX â”€â”€ */
+/* ── EXPORT WARN BOX ── */
 .export-warn{background:rgba(192,112,48,.08);border:1px solid rgba(192,112,48,.3);
   border-radius:var(--r12);padding:13px 16px;margin-bottom:12px}
 .export-warn.critical{background:rgba(192,64,64,.08);border-color:rgba(192,64,64,.3)}
@@ -99,10 +99,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .export-warn ul{list-style:none;padding:0;margin:0}
 .export-warn li{font-size:11px;font-weight:300;color:var(--txt2);line-height:1.7;
   display:flex;align-items:flex-start;gap:6px}
-.export-warn li::before{content:'â†’';color:var(--orn);flex-shrink:0}
+.export-warn li::before{content:'→';color:var(--orn);flex-shrink:0}
 .export-warn.critical li::before{color:var(--red)}
 
-/* â”€â”€ TOAST â”€â”€ */
+/* ── TOAST ── */
 #toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-70px);
   background:var(--s3);border:1px solid var(--br2);border-radius:var(--r12);
   padding:10px 20px;font-size:12px;z-index:999;
@@ -114,7 +114,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 #toast.er{border-color:var(--red);color:var(--red)}
 #toast.wr{border-color:var(--ylw);color:var(--ylw)}
 
-/* â”€â”€ OVERLAY / SHEET â”€â”€ */
+/* ── OVERLAY / SHEET ── */
 .ovl{display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
   z-index:200;align-items:flex-end;justify-content:center}
 .ovl.on{display:flex}
@@ -130,9 +130,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   font-size:14px;display:flex;align-items:center;justify-content:center}
 ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:var(--br);border-radius:2px}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    ONBOARDING
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 #onboarding{display:none;position:fixed;inset:0;background:var(--bg);
   z-index:500;overflow-y:auto;padding:32px 20px;padding-bottom:calc(32px + var(--sb))}
 #onboarding.on{display:block}
@@ -179,11 +179,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .ku-warn p{font-size:12px;font-weight:300;color:var(--txt2);line-height:1.6}
 .ku-warn strong{color:var(--red);font-weight:300}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   MODUS-TOGGLE (Business â†” Privat)
-   WHY: Der Potential-Ring Ã¤ndert Farbe und Bedeutung je nach Kontext.
+/* ════════════════════════════════════════════════════
+   MODUS-TOGGLE (Business ↔ Privat)
+   WHY: Der Potential-Ring ändert Farbe und Bedeutung je nach Kontext.
    Gold = Business/Steuern, Silber/Blau = Privat/Sparpotentiale
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .mode-toggle{display:flex;background:var(--s2);border:1px solid var(--br);border-radius:100px;
   padding:3px;margin-bottom:14px;align-self:center;width:fit-content;margin-left:auto;margin-right:auto}
 .mode-btn{padding:7px 18px;border:none;border-radius:100px;background:transparent;
@@ -193,9 +193,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .mode-btn.on.biz{color:var(--gold)}
 .mode-btn.on.priv{color:var(--silv)}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    HOME / RING
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .ring-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:14px;padding-top:4px}
 .ring-c{position:relative;width:130px;height:130px}
 .ring-svg{width:130px;height:130px;transform:rotate(-90deg)}
@@ -264,14 +264,14 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .ri-am{font-family:'DM Mono',monospace;font-size:13px;font-weight:300}
 .ri-dt{font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    INTELLIGENZ-LAYER WIDGETS
    WHY: Diese Widgets generieren "Aha-Momente" aus den
    bereits vorhandenen Scan-Daten. Kein neues Datenmodell
-   nÃ¶tig â€“ nur clevere Auswertung der OCR-Felder.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   nötig – nur clevere Auswertung der OCR-Felder.
+════════════════════════════════════════════════════ */
 
-/* Garantie-WÃ¤chter */
+/* Garantie-Wächter */
 .gw-item{background:var(--s1);border:1px solid var(--br);border-radius:var(--r12);
   padding:13px;margin-bottom:7px;display:flex;align-items:center;gap:12px}
 .gw-item.urgent{border-color:rgba(192,64,64,.3);background:rgba(192,64,64,.04)}
@@ -323,9 +323,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .insight .amt{font-family:'DM Mono',monospace;font-size:14px;font-weight:300;
   color:var(--grn);margin-top:5px}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    BELEGE VIEW
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .filter-row{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .sel{background:var(--s2);border:1px solid var(--br);border-radius:100px;
   padding:7px 12px;color:var(--txt2);font-family:'Inter',system-ui,sans-serif;
@@ -352,9 +352,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .empty .ico{font-size:40px;margin-bottom:10px;opacity:.4}
 .empty p{font-size:13px;font-weight:300}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    MwSt VIEW
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .tabs{display:flex;gap:3px;background:var(--s2);border-radius:var(--r8);
   padding:3px;margin-bottom:13px}
 .tab{flex:1;padding:8px 4px;border:none;background:transparent;color:var(--txt3);
@@ -402,9 +402,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .mtbl tr:last-child td{border:none}
 .mtbl .mo{font-family:'DM Mono',monospace;font-size:11px;font-weight:300}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   STEUER VIEW â€“ Einkommensteuer-Gauge
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ════════════════════════════════════════════════════
+   STEUER VIEW – Einkommensteuer-Gauge
+════════════════════════════════════════════════════ */
 .est-hero{background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);
   padding:20px;margin-bottom:10px;text-align:center;position:relative;overflow:hidden}
 .est-hero::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
@@ -438,9 +438,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .gauge-next{margin-top:8px;font-size:11px;font-weight:300;color:var(--txt3);
   line-height:1.6;padding:0 2px}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    QUARTAL VIEW
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .qsel{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:12px}
 .qbtn{padding:8px 4px;border:1px solid var(--br);border-radius:var(--r8);background:var(--s2);
   color:var(--txt3);font-family:'Inter',system-ui,sans-serif;font-size:10px;font-weight:300;
@@ -453,9 +453,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   text-transform:uppercase;margin-bottom:4px}
 .qsum-item .v{font-family:'DM Mono',monospace;font-size:17px;font-weight:300}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    SETTINGS VIEW
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 @keyframes spin{to{transform:rotate(360deg)}}
 .stpl-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}
 .stpl{border:2px solid var(--br);border-radius:var(--r8);padding:10px;cursor:pointer;
@@ -479,9 +479,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .info-row .k{color:var(--txt3);font-weight:300;font-size:12px}
 .info-row .val{font-family:'DM Mono',monospace;font-size:12px;color:var(--txt2)}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    SCANNER SHEET
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .seg{display:flex;background:var(--s2);border-radius:100px;padding:3px;margin-bottom:14px}
 .seg-btn{flex:1;padding:9px;border:none;border-radius:100px;background:transparent;
   color:var(--txt3);font-family:'Inter',system-ui,sans-serif;font-size:12px;font-weight:300;
@@ -541,28 +541,28 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .dk{color:var(--txt3);font-weight:300;font-size:12px}
 .dv{font-family:'DM Mono',monospace;font-size:12px;font-weight:300}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    PHASE 2/3 PLATZHALTER-BANNER
    WHY: Zeigt dem Nutzer was kommt, ohne es schon zu bauen.
-   HÃ¤lt die Roadmap im Produkt selbst sichtbar.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   Hält die Roadmap im Produkt selbst sichtbar.
+════════════════════════════════════════════════════ */
 .phase-banner{border:1px dashed var(--br2);border-radius:var(--r12);padding:14px;
   margin-bottom:10px;opacity:.55}
 .phase-banner .ph-lbl{font-size:9px;letter-spacing:.8px;text-transform:uppercase;
   color:var(--txt3);margin-bottom:5px;font-weight:300}
 .phase-banner .ph-txt{font-size:12px;font-weight:300;color:var(--txt2);line-height:1.55}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    EFFIZIENZ-TACHO
    WHY: Zeigt dem Nutzer in Echtzeit was er durch KI-Scanning
-   spart â€“ Zeit UND Geld vs. Steuerberater. Macht den Wert
-   der App sichtbar, bevor er sie kaufen wÃ¼rde.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+   spart – Zeit UND Geld vs. Steuerberater. Macht den Wert
+   der App sichtbar, bevor er sie kaufen würde.
+════════════════════════════════════════════════════ */
 .tacho-card{background:linear-gradient(135deg,rgba(200,164,90,.06),rgba(200,164,90,.02));
   border:1px solid rgba(200,164,90,.2);border-radius:var(--r12);padding:14px;margin-bottom:10px}
 .tacho-title{font-size:10px;font-weight:300;letter-spacing:.7px;text-transform:uppercase;
   color:var(--txt3);margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.tacho-title::before{content:'âš¡';font-size:12px}
+.tacho-title::before{content:'⚡';font-size:12px}
 .tacho-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .tacho-item{text-align:center}
 .tacho-val{font-family:'DM Mono',monospace;font-size:18px;font-weight:300;
@@ -571,12 +571,12 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   letter-spacing:.3px;line-height:1.4}
 .tacho-divider{width:1px;background:var(--br);margin:4px 0}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    BONG-BUTTON ("Kannst du behalten!")
    WHY: Erscheint NUR kontextbezogen nach echten Ersparnis-Momenten.
    Kein Spam. Der Nutzer sieht live dass das FA indirekt zahlt.
    Als "Software-Wartung" 100% absetzbar.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .bong-wrap{position:fixed;bottom:calc(85px + var(--sb));left:50%;transform:translateX(-50%);
   z-index:150;animation:bong-in .5s cubic-bezier(.34,1.4,.64,1)}
 @keyframes bong-in{from{opacity:0;transform:translateX(-50%) translateY(20px) scale(.88)}
@@ -593,11 +593,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 .bong-x{background:transparent;border:none;color:var(--txt3);font-size:16px;
   cursor:pointer;padding:4px;margin-left:4px;line-height:1}
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ════════════════════════════════════════════════════
    PROGRESSIONS-SCHUTZ BANNER
    WHY: Warnt vor Steuerklassen-Wechsel + zeigt konkreten
    Investitions-Tipp. Spart dem Nutzer echtes Geld = Trust.
-â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+════════════════════════════════════════════════════ */
 .prog-schutz{background:linear-gradient(135deg,rgba(192,112,48,.08),rgba(192,112,48,.03));
   border:1px solid rgba(192,112,48,.3);border-radius:var(--r12);
   padding:14px;margin-bottom:10px}
@@ -607,7 +607,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   border-radius:8px;padding:10px;margin-top:10px;font-size:11px;font-weight:300;
   color:var(--grn);line-height:1.6}
 
-/* â”€â”€ API KEY BANNER â”€â”€ */
+/* ── API KEY BANNER ── */
 .api-banner{background:linear-gradient(135deg,rgba(200,164,90,.07),rgba(200,164,90,.03));
   border:1px solid rgba(200,164,90,.25);border-radius:var(--r12);
   padding:14px 16px;margin-bottom:12px;

@@ -1,10 +1,10 @@
-// â–ˆâ–ˆ MODUL: DATENBANK (IndexedDB)
-// WHY: Alles lokal. Keine Cloud, keine Kosten fÃ¼r den Nutzer.
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ██ MODUL: DATENBANK (IndexedDB)
+// WHY: Alles lokal. Keine Cloud, keine Kosten für den Nutzer.
+// ════════════════════════════════════════════════════════
 let db;
 function initDB(){
   return new Promise((res,rej)=>{
-    const r=indexedDB.open('bsp7',3); // Version erhÃ¶ht fÃ¼r neue Stores
+    const r=indexedDB.open('bsp7',3); // Version erhöht für neue Stores
     r.onupgradeneeded=e=>{
       const d=e.target.result;
       if(!d.objectStoreNames.contains('b')){
@@ -79,12 +79,12 @@ const dbKontoBuchungen=()=>new Promise((res,rej)=>{const r=db.transaction('konto
 const dbAddKontoBuchung=buchung=>new Promise((res,rej)=>{const r=db.transaction('kontoBuchungen','readwrite').objectStore('kontoBuchungen').add(buchung);r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
 const dbDelKontoBuchung=id=>new Promise((res,rej)=>{const r=db.transaction('kontoBuchungen','readwrite').objectStore('kontoBuchungen').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej();});
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: BELEG SPEICHERN
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// â–ˆâ–ˆ MODUL: DUPLIKATSPRÃœFUNG & UNGEREIMTHEITEN
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
+// ██ MODUL: BELEG SPEICHERN
+// ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// ██ MODUL: DUPLIKATSPRÜFUNG & UNGEREIMTHEITEN
+// ════════════════════════════════════════════════════════
 async function checkForDuplicates() {
   const all = await dba();
   const duplicates = [];
@@ -94,7 +94,7 @@ async function checkForDuplicates() {
     const brutto = parseFloat(document.getElementById('pBrutto').value) || 0;
     const date = document.getElementById('pDate').value || '';
     
-    // PrÃ¼fe auf Ã¤hnliche Belege
+    // Prüfe auf ähnliche Belege
     all.filter(b => b.type === 'priv').forEach(b => {
       let score = 0;
       if (b.shop && shop && b.shop.toLowerCase().includes(shop.toLowerCase().substring(0, 3))) score += 1;
@@ -107,7 +107,7 @@ async function checkForDuplicates() {
     const brutto = parseFloat(document.getElementById('rBrutto').value) || 0;
     const belegNr = curRes?.belegNr || '';
     
-    // PrÃ¼fe auf Duplikate basierend auf Rechnungsnummer, Preis, Anbieter
+    // Prüfe auf Duplikate basierend auf Rechnungsnummer, Preis, Anbieter
     all.filter(b => b.type !== 'priv').forEach(b => {
       let score = 0;
       if (b.belegNr && belegNr && b.belegNr === belegNr) score += 2;
@@ -122,7 +122,7 @@ async function checkForDuplicates() {
 
 async function askUserAboutDuplicates(duplicates) {
   return new Promise(resolve => {
-    const msg = `MÃ¶gliche Duplikate gefunden:\n${duplicates.map(d => `- ${d.shop} (${fm(d.brutto || 0)} â‚¬, ${fd(d.date)}, ${d.belegNr || 'Keine Nr.'})`).join('\n')}\n\nWie mÃ¶chtest du den Beleg ablegen?`;
+    const msg = `Mögliche Duplikate gefunden:\n${duplicates.map(d => `- ${d.shop} (${fm(d.brutto || 0)} €, ${fd(d.date)}, ${d.belegNr || 'Keine Nr.'})`).join('\n')}\n\nWie möchtest du den Beleg ablegen?`;
     const choice = prompt(msg + '\n\n1: Als neuen Beleg speichern\n2: Abbrechen und bearbeiten\n\nGib 1 oder 2 ein:');
     if (choice === '1') {
       resolve(true); // Speichern
@@ -134,9 +134,9 @@ async function askUserAboutDuplicates(duplicates) {
 
 // Liste von Institutionen/Keywords, die typischerweise keine MwSt berechnen
 const MWST_FREE_KEYWORDS = [
-  'finanzamt', 'finanzbehÃ¶rde', 'bundesamt', 'landesamt', 'stadt', 'gemeinde', 'behÃ¶rde',
+  'finanzamt', 'finanzbehörde', 'bundesamt', 'landesamt', 'stadt', 'gemeinde', 'behörde',
   'arzt', 'zahnarzt', 'klinik', 'krankenhaus', 'apotheke', 'therapeut', 'psychologe',
-  'schule', 'universitÃ¤t', 'bildungseinrichtung', 'kindergarten',
+  'schule', 'universität', 'bildungseinrichtung', 'kindergarten',
   'kirche', 'stiftung', 'verein', 'verband',
   'versicherung', 'bank', 'sparkasse', 'post', 'telekom'
 ];
@@ -157,23 +157,23 @@ function checkForIssues() {
     const net = parseFloat(document.getElementById('rNet').value) || 0;
     const rate = parseFloat(document.getElementById('rRate').value) || cfg().mwstH;
     
-    // PrÃ¼fe auf MwSt-freie Institutionen
+    // Prüfe auf MwSt-freie Institutionen
     if (isMwstFreeInstitution(shop) && mwst > 0) {
-      issues.push('Institution berechnet typischerweise keine MwSt â€“ bitte prÃ¼fen');
+      issues.push('Institution berechnet typischerweise keine MwSt – bitte prüfen');
     }
     
-    // PrÃ¼fe MwSt-Berechnung
+    // Prüfe MwSt-Berechnung
     const expectedNet = brutto / (1 + rate / 100);
     const expectedMwst = brutto - expectedNet;
     if (Math.abs(net - expectedNet) > 0.1) issues.push('Nettobetrag passt nicht zur MwSt-Berechnung');
     if (Math.abs(mwst - expectedMwst) > 0.1) issues.push('MwSt-Betrag passt nicht zur Berechnung');
     
-    // PrÃ¼fe auf ungewÃ¶hnliche Werte
-    if (brutto > 10000) issues.push('Sehr hoher Betrag â€“ bitte prÃ¼fen');
-    if (rate !== cfg().mwstH && rate !== cfg().mwstL && !isMwstFreeInstitution(shop)) issues.push('UngewÃ¶hnlicher MwSt-Satz');
+    // Prüfe auf ungewöhnliche Werte
+    if (brutto > 10000) issues.push('Sehr hoher Betrag – bitte prüfen');
+    if (rate !== cfg().mwstH && rate !== cfg().mwstL && !isMwstFreeInstitution(shop)) issues.push('Ungewöhnlicher MwSt-Satz');
   } else {
     const brutto = parseFloat(document.getElementById('pBrutto').value) || 0;
-    if (brutto > 5000) issues.push('Sehr hoher privater Betrag â€“ bitte prÃ¼fen');
+    if (brutto > 5000) issues.push('Sehr hoher privater Betrag – bitte prüfen');
   }
   
   return issues;
@@ -188,21 +188,21 @@ async function askUserAboutIssues(issues) {
 }
 
 async function saveBeleg(){
-  // â”€â”€ DUPLIKATSPRÃœFUNG â”€â”€
+  // ── DUPLIKATSPRÜFUNG ──
   const duplicates = await checkForDuplicates();
   if (duplicates.length > 0) {
     const confirmed = await askUserAboutDuplicates(duplicates);
-    if (!confirmed) return; // Abbruch, wenn Nutzer nicht bestÃ¤tigt
+    if (!confirmed) return; // Abbruch, wenn Nutzer nicht bestätigt
   }
 
-  // â”€â”€ UNGEREIMTHEITEN PRÃœFEN â”€â”€
+  // ── UNGEREIMTHEITEN PRÜFEN ──
   const issues = checkForIssues();
   if (issues.length > 0) {
     const confirmed = await askUserAboutIssues(issues);
     if (!confirmed) return; // Abbruch bei Ungereimtheiten
   }
 
-  // â”€â”€ PRIVAT-BELEG: komplett andere Logik â”€â”€
+  // ── PRIVAT-BELEG: komplett andere Logik ──
   if(scanType==='priv'){
     const item={
       type:'priv',
@@ -223,23 +223,23 @@ async function saveBeleg(){
     };
     try{
       await dbadd(item);
-      toast('Privat-Beleg gespeichert âœ“','ok');
+      toast('Privat-Beleg gespeichert ✓','ok');
       closeScanner();resetScan();renderHome();
     }catch(e){toast('Fehler: '+e.message,'er');}
     return;
   }
 
-  // â”€â”€ BUSINESS-BELEG (er/ar): bisherige Logik â”€â”€
+  // ── BUSINESS-BELEG (er/ar): bisherige Logik ──
   const brutto=parseFloat(document.getElementById('rBrutto').value)||0;
   let mwst=parseFloat(document.getElementById('rMwst').value)||0;
   let net=parseFloat(document.getElementById('rNet').value)||0;
   let mwstRate=parseFloat(document.getElementById('rRate').value)||cfg().mwstH;
 
-  // â”€â”€ REVERSE CHARGE BEHANDLUNG â”€â”€
+  // ── REVERSE CHARGE BEHANDLUNG ──
   const shop = document.getElementById('rShop').value || 'Unbekannt';
   const isRC = scanType === 'er' && isReverseCharge({shop});
   if (isRC) {
-    // Bei Reverse Charge: MwSt selbst berechnen (19% auf Brutto), unabhÃ¤ngig von ausgewiesener MwSt
+    // Bei Reverse Charge: MwSt selbst berechnen (19% auf Brutto), unabhängig von ausgewiesener MwSt
     mwst = Math.round(brutto * 0.19 * 100) / 100;
     net = brutto - mwst;
     mwstRate = 19;
@@ -247,7 +247,7 @@ async function saveBeleg(){
     document.getElementById('rNet').value = net.toFixed(2);
     document.getElementById('rMwst').value = mwst.toFixed(2);
     document.getElementById('rRate').value = '19';
-    toast('Reverse Charge erkannt â€“ MwSt selbst berechnet (19%)', 'wr');
+    toast('Reverse Charge erkannt – MwSt selbst berechnet (19%)', 'wr');
   } else if (scanType === 'er' && mwst === 0) {
     // MwSt nicht ausgewiesen - normale Berechnung
     if (net > 0 && brutto > 0) {
@@ -261,7 +261,7 @@ async function saveBeleg(){
       document.getElementById('rNet').value = net.toFixed(2);
       document.getElementById('rMwst').value = mwst.toFixed(2);
     }
-    toast('MwSt nicht ausgewiesen â€“ automatisch berechnet', 'wr');
+    toast('MwSt nicht ausgewiesen – automatisch berechnet', 'wr');
   }
 
   let nr;
@@ -290,12 +290,12 @@ async function saveBeleg(){
   };
   try{
     await dbadd(item);
-    toast(nr+' gespeichert âœ“','ok');
+    toast(nr+' gespeichert ✓','ok');
     closeScanner();resetScan();updCounters();renderHome();
-    // WHY: MwSt-Tab sofort aktuell halten â€“ egal ob gerade geÃ¶ffnet oder nicht
+    // WHY: MwSt-Tab sofort aktuell halten – egal ob gerade geöffnet oder nicht
     if(appMode==='biz') renderMwst();
-    if(kiScanCount===10) triggerBong('10 KI-Scans geschafft â€“ du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
-    if(brutto>=500&&scanType==='er'){const vstRueck=(item.mwst||0);if(vstRueck>=50)triggerBong(`${fm(vstRueck)} â‚¬ Vorsteuer aus diesem Beleg zurÃ¼ckholen â€“ fÃ¤llig in der nÃ¤chsten Voranmeldung.`,'vorsteuer');}
+    if(kiScanCount===10) triggerBong('10 KI-Scans geschafft – du hast bereits ~19 Minuten Lebenszeit gespart.','milestone');
+    if(brutto>=500&&scanType==='er'){const vstRueck=(item.mwst||0);if(vstRueck>=50)triggerBong(`${fm(vstRueck)} € Vorsteuer aus diesem Beleg zurückholen – fällig in der nächsten Voranmeldung.`,'vorsteuer');}
     // WHY: Wenn der Scan aus dem Konto-Tab kam (fehlende Beleg), den neuen Beleg direkt zuordnen
     if(_aktiverKontoBuchungId){
       try{
@@ -308,7 +308,7 @@ async function saveBeleg(){
             vorschlagBelegShop: item.shop
           });
           await dbDelKontoBuchung(buchung.id);
-          toast('Beleg automatisch zugeordnet âœ“', 'ok');
+          toast('Beleg automatisch zugeordnet ✓', 'ok');
         }
       }catch(_){}
       _aktiverKontoBuchungId = null;
@@ -316,7 +316,7 @@ async function saveBeleg(){
   }catch(e){toast('Fehler: '+e.message,'er');}
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ════════════════════════════════════════════════════════
 
 // Offline Scans
 const dbOfflineScans=()=>new Promise((res,rej)=>{const r=db.transaction('offlineScans','readonly').objectStore('offlineScans').getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
