@@ -889,17 +889,23 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     <button class="btn btn-g btn-sm" onclick="kontoAllesLoeschen()" style="font-size:11px">Leeren</button>
   </div>
 
+  <!-- Bank-Eingabe -->
+  <div style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);padding:14px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px">🏦 Bank eingeben</div>
+    <input type="text" id="kontoBankInput" placeholder="z.B. Sparkasse, Deutsche Bank..." style="width:100%;background:var(--s1);border:1px solid var(--br);border-radius:var(--r8);padding:8px 10px;color:var(--txt);font-size:12px" value="">
+  </div>
+
   <!-- Multi-Upload -->
   <input type="file" id="kontoFileMulti" accept="image/*" multiple onchange="kontoQueueAdd(this)" style="display:none">
   <input type="file" id="kontoFileKam" accept="image/*" capture="environment" onchange="kontoQueueAdd(this)" style="display:none">
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <button onclick="document.getElementById('kontoFileKam').click()"
+    <button onclick="kontoQueueAddFromCam()"
       style="background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r12);
       padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
       <span style="font-size:12px;font-weight:300;color:var(--txt)">Foto aufnehmen</span>
     </button>
-    <button onclick="document.getElementById('kontoFileMulti').click()"
+    <button onclick="kontoQueueAddFromGallery()"
       style="background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r12);
       padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
@@ -1147,7 +1153,11 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     <div class="ph-lbl">Phase 2 – Geplant</div>
     <div class="ph-txt">GoBD-Rechnungserstellung direkt in der App. Managed API – kein eigener Key nötig. Guthaben-Modell.</div>
   </div>
-  <button class="btn btn-g btn-sm" onclick="showView('settings')">Einstellungen →</button>
+  <div style="display:flex;gap:7px;flex-wrap:wrap">
+    <button class="btn btn-gold btn-sm" onclick="exportSteuerberaterZip()">Steuerberater-Export (ZIP) →</button>
+    <button class="btn btn-gold btn-sm" onclick="loadExportPreview();showView('export-preview')">Export-Vorschau →</button>
+    <button class="btn btn-g btn-sm" onclick="showView('settings')">Einstellungen →</button>
+  </div>
 </div>
 
 <!-- ── QUARTAL ── -->
@@ -1159,6 +1169,28 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   <div class="cc"><div class="cc-title">Belege im Quartal</div><div id="qBList"></div></div>
   <div style="display:flex;gap:7px;flex-wrap:wrap">
     <button class="btn btn-gold btn-sm" onclick="exportQCSV()">CSV exportieren</button>
+    <button class="btn btn-g btn-sm" onclick="exportQZip()">PDF-Paket (ZIP)</button>
+  </div>
+</div>
+
+<!-- ── EXPORT PREVIEW ── -->
+<div class="view" id="v-export-preview">
+  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
+  <div class="stitle">Export-Vorschau für Steuerberater</div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Jahresübersicht</div>
+    <div id="exportYearSummary"></div>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Quartalsübersicht</div>
+    <div id="exportQuarterSummary"></div>
+  </div>
+  <div class="card card-sm" style="margin-bottom:9px">
+    <div class="stitle">Belegliste (letzte 50)</div>
+    <div id="exportBelegList"></div>
+  </div>
+  <div style="display:flex;gap:7px;flex-wrap:wrap">
+    <button class="btn btn-gold btn-sm" onclick="exportCSV()">CSV exportieren</button>
     <button class="btn btn-g btn-sm" onclick="exportQZip()">PDF-Paket (ZIP)</button>
   </div>
 </div>
@@ -1215,12 +1247,10 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
     <button class="btn btn-gold btn-sm" onclick="saveStamp()">Stempel speichern</button>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Belegnummer-Zähler</div>
-    <p style="font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:10px;line-height:1.7">
-      Nächste ER: <span id="erND" class="mono" style="color:var(--blu)">–</span><br>
-      Nächste AR: <span id="arND" class="mono" style="color:var(--ylw)">–</span>
-    </p>
-    <button class="btn btn-red btn-sm" onclick="resetCounters()">Zähler zurücksetzen</button>
+    <div class="stitle">🔍 Abo-Detektiv</div>
+    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.6">Passe die Keywords für die automatische Abo-Erkennung an. Trenne mit | (Pipe).</p>
+    <textarea id="aboKeywordsInput" style="width:100%;height:60px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--br);border-radius:var(--r8);background:var(--s2);color:var(--txt);resize:none" placeholder="netflix|spotify|amazon prime..."></textarea>
+    <button class="btn btn-gold btn-sm" onclick="saveAboKeywords()" style="margin-top:8px">Keywords speichern</button>
   </div>
   <div class="card card-sm" style="margin-bottom:9px">
     <div class="stitle">Datensicherung</div>
@@ -1265,7 +1295,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
   <button class="ni" onclick="showView('konto')" data-v="konto" id="navKonto">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>Konto
   </button>
-  <button class="ni" onclick="showView('verpfl')" data-v="verpfl" id="navVerpfl" style="display:none">
+  <button class="ni" onclick="showView('verpfl')" data-v="verpfl" id="navVerpfl">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Fahrt
   </button>
 </nav>
@@ -1508,14 +1538,21 @@ function installPWA(){if(pwaPrompt){pwaPrompt.prompt();pwaPrompt.userChoice.then
 let db;
 function initDB(){
   return new Promise((res,rej)=>{
-    const r=indexedDB.open('bsp7',1);
+    const r=indexedDB.open('bsp7',2); // Version erhöht für neue Stores
     r.onupgradeneeded=e=>{
       const d=e.target.result;
       if(!d.objectStoreNames.contains('b')){
         const s=d.createObjectStore('b',{keyPath:'id',autoIncrement:true});
         s.createIndex('date','date');s.createIndex('type','type');
-        // WHY: 'shop' Index für Inflations-Tracker – gleiche Händler über Zeit vergleichen
         s.createIndex('shop','shop');
+      }
+      if(!d.objectStoreNames.contains('banks')){
+        d.createObjectStore('banks',{keyPath:'id',autoIncrement:true});
+      }
+      if(!d.objectStoreNames.contains('kontoBuchungen')){
+        const s=d.createObjectStore('kontoBuchungen',{keyPath:'id'});
+        s.createIndex('bankId','bankId');
+        s.createIndex('datum','datum');
       }
     };
     r.onsuccess=e=>{db=e.target.result;res();};r.onerror=()=>rej(r.error);
@@ -1524,6 +1561,16 @@ function initDB(){
 const dba=()=>new Promise((res,rej)=>{const r=db.transaction('b','readonly').objectStore('b').getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
 const dbadd=it=>new Promise((res,rej)=>{const r=db.transaction('b','readwrite').objectStore('b').add(it);r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
 const dbdel=id=>new Promise((res,rej)=>{const r=db.transaction('b','readwrite').objectStore('b').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej();});
+
+// Bank-Funktionen
+const dbBanks=()=>new Promise((res,rej)=>{const r=db.transaction('banks','readonly').objectStore('banks').getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
+const dbAddBank=bank=>new Promise((res,rej)=>{const r=db.transaction('banks','readwrite').objectStore('banks').add(bank);r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
+const dbDelBank=id=>new Promise((res,rej)=>{const r=db.transaction('banks','readwrite').objectStore('banks').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej();});
+
+// Kontobuchungen-Funktionen
+const dbKontoBuchungen=()=>new Promise((res,rej)=>{const r=db.transaction('kontoBuchungen','readonly').objectStore('kontoBuchungen').getAll();r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
+const dbAddKontoBuchung=buchung=>new Promise((res,rej)=>{const r=db.transaction('kontoBuchungen','readwrite').objectStore('kontoBuchungen').add(buchung);r.onsuccess=()=>res(r.result);r.onerror=()=>rej();});
+const dbDelKontoBuchung=id=>new Promise((res,rej)=>{const r=db.transaction('kontoBuchungen','readwrite').objectStore('kontoBuchungen').delete(id);r.onsuccess=()=>res();r.onerror=()=>rej();});
 
 // ════════════════════════════════════════════════════════
 // ██ MODUL: STATE & KONFIGURATION
@@ -1624,6 +1671,7 @@ function showView(v){
   if(v==='mwst')renderMwst();
   if(v==='steuer')calcSteuer();
   if(v==='quartal')initQuartal();
+  if(v==='export-preview')loadExportPreview();
   if(v==='settings'){loadStampUI();updCounters();updSettingsInfo();}
 }
 function resetApiCost(){
@@ -1644,6 +1692,7 @@ function updSettingsInfo(){
   document.getElementById('settFmt').textContent=fmtEx[profile.fmt]||'–';
   if(apiKey)document.getElementById('apiKey').value=apiKey;
   updApiStat();
+  loadAboKeywords();
 }
 
 // ════════════════════════════════════════════════════════
@@ -2103,7 +2152,16 @@ async function renderGarantieWaechter(all){
 // aus den bereits vorhandenen shop/brutto/date Feldern –
 // ohne dass der Nutzer etwas markieren muss.
 // ════════════════════════════════════════════════════════
-const ABO_KEYWORDS=/netflix|spotify|amazon prime|prime video|disney|dazn|youtube premium|apple music|apple one|icloud|dropbox|adobe|microsoft 365|office 365|google one|notion|slack|zoom|github|aws|heroku|openai|anthropic|claude|chatgpt|xing|linkedin|audible|kindle unlimited|software|subscription|abo|monats|jahres/i;
+const ABO_KEYWORDS = new RegExp(localStorage.getItem('aboKeywords') || 'netflix|spotify|amazon prime|prime video|disney|dazn|youtube premium|apple music|apple one|icloud|dropbox|adobe|microsoft 365|office 365|google one|notion|slack|zoom|github|aws|heroku|openai|anthropic|claude|chatgpt|xing|linkedin|audible|kindle unlimited|software|subscription|abo|monats|jahres', 'i');
+
+// Reverse Charge Anbieter (nicht-EU, keine ausgewiesene MwSt)
+const RC_PROVIDERS = ['anthropic', 'openai', 'claude', 'chatgpt', 'github', 'adobe', 'aws', 'heroku', 'google', 'microsoft', 'apple', 'dropbox', 'notion', 'slack', 'zoom', 'xing', 'linkedin'];
+
+function isReverseCharge(beleg) {
+  if (beleg.mwst && beleg.mwst > 0) return false; // Hat ausgewiesene MwSt
+  const shop = (beleg.shop || '').toLowerCase();
+  return RC_PROVIDERS.some(provider => shop.includes(provider));
+}
 
 function detectAbos(all){
   // WHY: Gleicher Händler, ähnlicher Betrag, mindestens 2x – das ist ein Abo
@@ -2750,20 +2808,45 @@ async function checkForDuplicates() {
 
 async function askUserAboutDuplicates(duplicates) {
   return new Promise(resolve => {
-    const msg = `Mögliche Duplikate gefunden:\n${duplicates.map(d => `- ${d.shop} (${fm(d.brutto || 0)} €, ${fd(d.date)})`).join('\n')}\n\nWie möchtest du fortfahren?`;
-    const choice = confirm(msg + '\n\nOK: Trotzdem speichern\nAbbrechen: Bearbeiten');
-    resolve(choice);
+    const msg = `Mögliche Duplikate gefunden:\n${duplicates.map(d => `- ${d.shop} (${fm(d.brutto || 0)} €, ${fd(d.date)}, ${d.belegNr || 'Keine Nr.'})`).join('\n')}\n\nWie möchtest du den Beleg ablegen?`;
+    const choice = prompt(msg + '\n\n1: Als neuen Beleg speichern\n2: Abbrechen und bearbeiten\n\nGib 1 oder 2 ein:');
+    if (choice === '1') {
+      resolve(true); // Speichern
+    } else {
+      resolve(false); // Abbrechen
+    }
   });
+}
+
+// Liste von Institutionen/Keywords, die typischerweise keine MwSt berechnen
+const MWST_FREE_KEYWORDS = [
+  'finanzamt', 'finanzbehörde', 'bundesamt', 'landesamt', 'stadt', 'gemeinde', 'behörde',
+  'arzt', 'zahnarzt', 'klinik', 'krankenhaus', 'apotheke', 'therapeut', 'psychologe',
+  'schule', 'universität', 'bildungseinrichtung', 'kindergarten',
+  'kirche', 'stiftung', 'verein', 'verband',
+  'versicherung', 'bank', 'sparkasse', 'post', 'telekom'
+];
+
+function isMwstFreeInstitution(shop) {
+  if (!shop) return false;
+  const lowerShop = shop.toLowerCase();
+  return MWST_FREE_KEYWORDS.some(keyword => lowerShop.includes(keyword));
 }
 
 function checkForIssues() {
   const issues = [];
   
   if (scanType !== 'priv') {
+    const shop = document.getElementById('rShop').value || '';
     const brutto = parseFloat(document.getElementById('rBrutto').value) || 0;
     const mwst = parseFloat(document.getElementById('rMwst').value) || 0;
     const net = parseFloat(document.getElementById('rNet').value) || 0;
     const rate = parseFloat(document.getElementById('rRate').value) || cfg().mwstH;
+    
+    // Prüfe auf MwSt-freie Institutionen
+    if (isMwstFreeInstitution(shop) && mwst > 0) {
+      issues.push('Institution berechnet typischerweise keine MwSt – bitte prüfen');
+    }
     
     // Prüfe MwSt-Berechnung
     const expectedNet = brutto / (1 + rate / 100);
@@ -2773,7 +2856,7 @@ function checkForIssues() {
     
     // Prüfe auf ungewöhnliche Werte
     if (brutto > 10000) issues.push('Sehr hoher Betrag – bitte prüfen');
-    if (rate !== cfg().mwstH && rate !== cfg().mwstL) issues.push('Ungewöhnlicher MwSt-Satz');
+    if (rate !== cfg().mwstH && rate !== cfg().mwstL && !isMwstFreeInstitution(shop)) issues.push('Ungewöhnlicher MwSt-Satz');
   } else {
     const brutto = parseFloat(document.getElementById('pBrutto').value) || 0;
     if (brutto > 5000) issues.push('Sehr hoher privater Betrag – bitte prüfen');
@@ -2784,8 +2867,8 @@ function checkForIssues() {
 
 async function askUserAboutIssues(issues) {
   return new Promise(resolve => {
-    const msg = `Ungereimtheiten gefunden:\n${issues.map(i => `- ${i}`).join('\n')}\n\nTrotzdem speichern?`;
-    const choice = confirm(msg);
+    const msg = `Ungereimtheiten gefunden:\n${issues.map(i => `- ${i}`).join('\n')}\n\nTrotzdem buchen?`;
+    const choice = confirm(msg + '\n\nOK: Ja, trotzdem speichern\nAbbrechen: Bearbeiten');
     resolve(choice);
   });
 }
@@ -2834,8 +2917,25 @@ async function saveBeleg(){
 
   // ── BUSINESS-BELEG (er/ar): bisherige Logik ──
   const brutto=parseFloat(document.getElementById('rBrutto').value)||0;
-  const mwst=parseFloat(document.getElementById('rMwst').value)||0;
-  const net=parseFloat(document.getElementById('rNet').value)||0;
+  let mwst=parseFloat(document.getElementById('rMwst').value)||0;
+  let net=parseFloat(document.getElementById('rNet').value)||0;
+  let mwstRate=parseFloat(document.getElementById('rRate').value)||cfg().mwstH;
+
+  // ── REVERSE CHARGE BEHANDLUNG ──
+  const shop = document.getElementById('rShop').value || 'Unbekannt';
+  const isRC = scanType === 'er' && isReverseCharge({shop, mwst});
+  if (isRC) {
+    // Bei Reverse Charge: MwSt selbst berechnen (19% auf Brutto)
+    mwst = Math.round(brutto * 0.19 * 100) / 100;
+    net = brutto - mwst;
+    mwstRate = 19;
+    // UI aktualisieren
+    document.getElementById('rNet').value = net.toFixed(2);
+    document.getElementById('rMwst').value = mwst.toFixed(2);
+    document.getElementById('rRate').value = '19';
+    toast('Reverse Charge erkannt – MwSt selbst berechnet (19%)', 'wr');
+  }
+
   let nr;
   if(scanType==='ar'&&curRes?.belegNrExtern){
     nr=curRes.belegNrExtern;arC++;localStorage.setItem('arc',arC);
@@ -2852,7 +2952,7 @@ async function saveBeleg(){
     shop:document.getElementById('rShop').value||'Unbekannt',
     date:document.getElementById('rDate').value||new Date().toISOString().split('T')[0],
     net,mwst,brutto,
-    mwstRate:parseFloat(document.getElementById('rRate').value)||cfg().mwstH,
+    mwstRate,
     cat:document.getElementById('rCat').value,payment:document.getElementById('rPay').value,
     items:curRes?.items||[],image:capThumb||capB64,savedAt:Date.now(),
     istAbo:curRes?.istAbo||false,
@@ -3203,6 +3303,167 @@ async function exportQZip(){
   toast(`ZIP mit ${count} PDFs exportiert ✓`,'ok');
 }
 
+async function exportSteuerberaterZip(){
+  if(typeof JSZip==='undefined'||typeof window.jspdf==='undefined'){toast('Bibliotheken nicht geladen','er');return;}
+  const all=await dba();
+  if(!all.length){toast('Keine Belege','wr');return;}
+  toast('Steuerberater-Export wird erstellt …','wr');loadStamp();
+
+  const zip=new JSZip();
+  const year = new Date().getFullYear();
+
+  // 1. zusammenfassung.csv
+  const zusammenfassungRows = [];
+
+  // Übersicht
+  const erBelege = all.filter(b => b.type === 'er');
+  const arBelege = all.filter(b => b.type === 'ar');
+  const rcBelege = all.filter(b => isReverseCharge(b));
+  const kmBelege = JSON.parse(localStorage.getItem(VERPFL_KEY) || '[]');
+
+  const gesamtEinnahmen = arBelege.reduce((s, b) => s + (b.brutto || 0), 0);
+  const gesamtAusgaben = erBelege.reduce((s, b) => s + (b.brutto || 0), 0);
+  const gewinn = gesamtEinnahmen - gesamtAusgaben;
+  const mwstZahllast = erBelege.reduce((s, b) => s + (b.mwst || 0), 0) - arBelege.reduce((s, b) => s + (b.mwst || 0), 0);
+  const rcSumme = rcBelege.reduce((s, b) => s + (b.brutto || 0), 0);
+  const kmSumme = kmBelege.reduce((s, b) => s + (b.pauschale || 0), 0);
+
+  zusammenfassungRows.push(['ÜBERSICHT']);
+  zusammenfassungRows.push(['Gesamteinnahmen', gesamtEinnahmen.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Gesamtausgaben', gesamtAusgaben.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Gewinn', gewinn.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['MwSt-Zahllast', mwstZahllast.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Reverse-Charge-Summe', rcSumme.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['Kilometerpauschale gesamt', kmSumme.toFixed(2) + ' €']);
+  zusammenfassungRows.push(['']);
+
+  // ER-Liste
+  zusammenfassungRows.push(['EINGANGSRECHNUNGEN (ER)']);
+  zusammenfassungRows.push(['Belegnummer', 'Datum', 'Händler', 'Netto', cfg().steuerLabel, 'Brutto', cfg().steuerLabel+'%', 'Kategorie', 'Zahlung', 'Reverse Charge']);
+  erBelege.forEach(b => zusammenfassungRows.push([
+    b.belegNr || '',
+    b.date || '',
+    b.shop || '',
+    b.net != null ? b.net.toFixed(2) : '',
+    b.mwst != null ? b.mwst.toFixed(2) : '',
+    b.brutto != null ? b.brutto.toFixed(2) : '',
+    b.mwstRate || '',
+    b.cat || '',
+    b.payment || '',
+    isReverseCharge(b) ? 'Ja' : 'Nein'
+  ]));
+  zusammenfassungRows.push(['']);
+
+  // AR-Liste
+  zusammenfassungRows.push(['AUSGANGSRECHNUNGEN (AR)']);
+  zusammenfassungRows.push(['Belegnummer', 'Datum', 'Händler', 'Netto', cfg().steuerLabel, 'Brutto', cfg().steuerLabel+'%', 'Kategorie', 'Zahlung']);
+  arBelege.forEach(b => zusammenfassungRows.push([
+    b.belegNr || '',
+    b.date || '',
+    b.shop || '',
+    b.net != null ? b.net.toFixed(2) : '',
+    b.mwst != null ? b.mwst.toFixed(2) : '',
+    b.brutto != null ? b.brutto.toFixed(2) : '',
+    b.mwstRate || '',
+    b.cat || '',
+    b.payment || ''
+  ]));
+  zusammenfassungRows.push(['']);
+
+  // RC-Aufstellung
+  zusammenfassungRows.push(['REVERSE CHARGE AUFSTELLUNG']);
+  zusammenfassungRows.push(['Belegnummer', 'Datum', 'Anbieter', 'Netto-Betrag', 'Selbst berechnete MwSt (19%)', 'UStVA Zeile 52', 'UStVA Zeile 67']);
+  rcBelege.forEach(b => {
+    const netto = b.brutto || 0;
+    const mwst = netto * 0.19;
+    zusammenfassungRows.push([
+      b.belegNr || '',
+      b.date || '',
+      b.shop || '',
+      netto.toFixed(2),
+      mwst.toFixed(2),
+      mwst.toFixed(2), // Zeile 52
+      mwst.toFixed(2)  // Zeile 67
+    ]);
+  });
+  zusammenfassungRows.push(['']);
+
+  // Kilometerpauschale
+  zusammenfassungRows.push(['KILOMETERPAUSCHALE']);
+  zusammenfassungRows.push(['Datum', 'Adresse', 'Stunden', 'Pauschale']);
+  kmBelege.forEach(b => zusammenfassungRows.push([
+    b.datum || '',
+    b.adresse || '',
+    b.h || '',
+    b.pauschale || ''
+  ]));
+
+  zip.file('zusammenfassung.csv', '\uFEFF' + zusammenfassungRows.map(r => r.join(';')).join('\n'));
+
+  // 2. rc_reverse_charge.csv
+  const rcRows = [];
+  rcRows.push(['REVERSE CHARGE - NICHT IN NORMALER VORSTEUER ENTHALTEN']);
+  rcRows.push(['Diese Beträge müssen separat in der UStVA eingetragen werden.']);
+  rcRows.push(['']);
+  rcRows.push(['Belegnummer', 'Datum', 'Anbieter', 'Netto-Betrag', 'Selbst berechnete MwSt (19%)', 'UStVA Zeile 52 (Schuld)', 'UStVA Zeile 67 (Vorsteuer)']);
+  let rcTotalNetto = 0, rcTotalMwst = 0;
+  rcBelege.forEach(b => {
+    const netto = b.brutto || 0;
+    const mwst = netto * 0.19;
+    rcRows.push([
+      b.belegNr || '',
+      b.date || '',
+      b.shop || '',
+      netto.toFixed(2),
+      mwst.toFixed(2),
+      mwst.toFixed(2),
+      mwst.toFixed(2)
+    ]);
+    rcTotalNetto += netto;
+    rcTotalMwst += mwst;
+  });
+  rcRows.push(['SUMME', '', '', rcTotalNetto.toFixed(2), rcTotalMwst.toFixed(2), rcTotalMwst.toFixed(2), rcTotalMwst.toFixed(2)]);
+  zip.file('rc_reverse_charge.csv', '\uFEFF' + rcRows.map(r => r.join(';')).join('\n'));
+
+  // 3. belege/ Ordner mit PDFs
+  const belegeFolder = zip.folder('belege');
+  let pdfCount = 0;
+  for(const b of all){
+    if(!b.image) continue;
+    try{
+      const bytes = await belegPDFBytesCompressed(b);
+      if(!bytes) continue;
+      const filename = `${b.belegNr || 'beleg'}.pdf`;
+      belegeFolder.file(filename, bytes);
+      pdfCount++;
+    }catch(e){console.warn(e);}
+  }
+
+  // 4. README.txt
+  const readme = `Steuerberater-Export BelegScan ${year}
+
+INHALT:
+- zusammenfassung.csv: Übersicht mit Kennzahlen und allen Belegen
+- rc_reverse_charge.csv: Reverse Charge Beträge für UStVA Zeile 52 und 67
+- belege/: Alle Belege als PDFs, benannt nach Belegnummer
+
+HINWEIS ZU REVERSE CHARGE:
+Die Beträge in rc_reverse_charge.csv sind NICHT in der normalen Vorsteuer enthalten.
+Tragen Sie die Werte aus "UStVA Zeile 52" in die Umsatzsteuer-Voranmeldung Zeile 52 ein.
+Tragen Sie die Werte aus "UStVA Zeile 67" in die Umsatzsteuer-Voranmeldung Zeile 67 ein.
+`;
+  zip.file('README.txt', readme);
+
+  const blob = await zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Steuerberater_Export_${year}.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(`Steuerberater-Export mit ${pdfCount} PDFs erstellt ✓`,'ok');
+}
+
 // ════════════════════════════════════════════════════════
 // ██ MODUL: CSV & BACKUP
 // ════════════════════════════════════════════════════════
@@ -3224,6 +3485,66 @@ async function importBackup(inp){
   const f=inp.files[0];if(!f)return;
   try{const data=JSON.parse(await f.text());if(!data.belege||!Array.isArray(data.belege))throw new Error('Ungültiges Format');if(!confirm(`${data.belege.length} Belege importieren?`))return;for(const b of data.belege){const{id:_,...rest}=b;await dbadd(rest);}toast(`${data.belege.length} Belege importiert ✓`,'ok');renderHome();}catch(e){toast('Import-Fehler: '+e.message,'er');}
   inp.value='';
+}
+
+async function importBackup(inp){
+  const f=inp.files[0];if(!f)return;
+  try{const data=JSON.parse(await f.text());if(!data.belege||!Array.isArray(data.belege))throw new Error('Ungültiges Format');if(!confirm(`${data.belege.length} Belege importieren?`))return;for(const b of data.belege){const{id:_,...rest}=b;await dbadd(rest);}toast(`${data.belege.length} Belege importiert ✓`,'ok');renderHome();}catch(e){toast('Import-Fehler: '+e.message,'er');}
+  inp.value='';
+}
+
+async function loadExportPreview(){
+  const all = await dba();
+  const year = new Date().getFullYear();
+  const yearBelege = all.filter(b => b.date && new Date(b.date).getFullYear() === year);
+
+  // Jahresübersicht
+  const yearSummary = document.getElementById('exportYearSummary');
+  const totalEinnahmen = yearBelege.filter(b => b.type === 'ar').reduce((s, b) => s + (b.brutto || 0), 0);
+  const totalAusgaben = yearBelege.filter(b => b.type === 'er').reduce((s, b) => s + (b.brutto || 0), 0);
+  const gewinn = totalEinnahmen - totalAusgaben;
+  yearSummary.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Einnahmen (AR):</span><span style="color:var(--grn)">${totalEinnahmen.toFixed(2)} €</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span>Ausgaben (ER):</span><span style="color:var(--red)">${totalAusgaben.toFixed(2)} €</span></div>
+    <div style="display:flex;justify-content:space-between;border-top:1px solid var(--br);padding-top:8px"><span><strong>Gewinn:</strong></span><span style="color:var(--gold)"><strong>${gewinn.toFixed(2)} €</strong></span></div>
+  `;
+
+  // Quartalsübersicht
+  const quarterSummary = document.getElementById('exportQuarterSummary');
+  const quarters = [1,2,3,4];
+  const quarterData = quarters.map(q => {
+    const qBelege = yearBelege.filter(b => {
+      const d = new Date(b.date);
+      return Math.ceil((d.getMonth() + 1) / 3) === q;
+    });
+    const einnahmen = qBelege.filter(b => b.type === 'ar').reduce((s, b) => s + (b.brutto || 0), 0);
+    const ausgaben = qBelege.filter(b => b.type === 'er').reduce((s, b) => s + (b.brutto || 0), 0);
+    return {q, einnahmen, ausgaben, gewinn: einnahmen - ausgaben};
+  });
+  quarterSummary.innerHTML = quarterData.map(qd => `
+    <div style="margin-bottom:12px;padding:8px;border:1px solid var(--br);border-radius:var(--r8)">
+      <div style="font-weight:500;margin-bottom:4px">Q${qd.q} ${year}</div>
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span>Einnahmen:</span><span style="color:var(--grn)">${qd.einnahmen.toFixed(2)} €</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span>Ausgaben:</span><span style="color:var(--red)">${qd.ausgaben.toFixed(2)} €</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;border-top:1px solid var(--br);padding-top:4px;margin-top:4px"><span>Gewinn:</span><span style="color:var(--gold)">${qd.gewinn.toFixed(2)} €</span></div>
+    </div>
+  `).join('');
+
+  // Belegliste (letzte 50)
+  const belegList = document.getElementById('exportBelegList');
+  const recentBelege = all.sort((a, b) => new Date(b.date || '1970-01-01') - new Date(a.date || '1970-01-01')).slice(0, 50);
+  belegList.innerHTML = recentBelege.map(b => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--br)">
+      <div>
+        <div style="font-size:12px;font-weight:500">${b.belegNr || '–'}</div>
+        <div style="font-size:10px;color:var(--txt3)">${b.date || '–'} · ${b.shop || '–'}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;font-weight:500;color:${b.type === 'ar' ? 'var(--grn)' : 'var(--red)'}">${(b.brutto || 0).toFixed(2)} €</div>
+        <div style="font-size:10px;color:var(--txt3)">${b.type === 'ar' ? 'Einnahme' : 'Ausgabe'}</div>
+      </div>
+    </div>
+  `).join('');
 }
 
 // ════════════════════════════════════════════════════════
@@ -3274,6 +3595,70 @@ async function belegPDFBytes(b){
   const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  ·  ');
   pdf.text(meta,3,mmH-3);return pdf.output('arraybuffer');
 }
+
+async function belegPDFBytesCompressed(b){
+  if(typeof window.jspdf==='undefined')return null;
+  const{jsPDF}=window.jspdf;
+  const img=new Image();await new Promise((res,rej)=>{img.onload=res;img.onerror=rej;img.src=b.image;});
+
+  // Kompression: Ziel < 100KB
+  let quality = 0.60;
+  let grayscale = false;
+  let scale = Math.min(1, 600 / Math.max(img.naturalWidth, img.naturalHeight));
+  let cw = img.naturalWidth * scale, ch = img.naturalHeight * scale;
+  let size = 0;
+  let attempts = 0;
+
+  while(size === 0 || size > 100*1024 && attempts < 10){
+    const cv=document.createElement('canvas');
+    cv.width=cw; cv.height=ch;
+    const ctx=cv.getContext('2d');
+    ctx.drawImage(img,0,0,cw,ch);
+    if(grayscale){
+      const imageData = ctx.getImageData(0,0,cw,ch);
+      const data = imageData.data;
+      for(let i=0;i<data.length;i+=4){
+        const gray = data[i]*0.299 + data[i+1]*0.587 + data[i+2]*0.114;
+        data[i]=data[i+1]=data[i+2]=gray;
+      }
+      ctx.putImageData(imageData,0,0);
+    }
+    if(b.type==='er'){
+      const sw=300,sh=110,sx=cw-sw-12,sy=ch-sh-12;ctx.fillStyle='rgba(255,255,255,.93)';ctx.fillRect(sx,sy,sw,sh);
+      const tmp=document.createElement('canvas');tmp.width=sw;tmp.height=sh;drawStamp(tmp,stamp,b.belegNr||'ER-????',stampTpl);ctx.drawImage(tmp,sx,sy);
+    }
+    const imgData=cv.toDataURL('image/jpeg', quality);
+    const mmW=210,mmH=Math.round(mmW*(ch/cw));
+    const pdf=new jsPDF({orientation:mmH>mmW?'portrait':'landscape',unit:'mm',format:[mmW,mmH]});
+    pdf.addImage(imgData,'JPEG',0,0,mmW,mmH,undefined,'FAST');
+    const fh=11;pdf.setFillColor(255,255,255);pdf.rect(0,mmH-fh,mmW,fh,'F');
+    pdf.setFont('helvetica','normal');pdf.setFontSize(7);pdf.setTextColor(80);
+    const meta=[b.belegNr||'',b.type==='er'?'Eingangsrechnung':'Ausgangsrechnung',fd(b.date),b.shop||'',b.brutto!=null?fm(b.brutto)+' '+cfg().currency:'',b.cat||'',b.garantieBis?'Garantie bis '+fd(b.garantieBis):''].filter(Boolean).join('  ·  ');
+    pdf.text(meta,3,mmH-3);
+    const buffer = pdf.output('arraybuffer');
+    size = buffer.byteLength;
+
+    if(size > 100*1024){
+      if(quality > 0.30){
+        quality -= 0.10;
+      }else if(!grayscale){
+        grayscale = true;
+      }else{
+        scale *= 0.9; // Weiter verkleinern
+        cw = img.naturalWidth * scale;
+        ch = img.naturalHeight * scale;
+      }
+    }
+    attempts++;
+  }
+
+  if(size > 100*1024){
+    console.warn(`PDF für ${b.belegNr} ist ${Math.round(size/1024)}KB - Lesbarkeit könnte eingeschränkt sein`);
+  }
+
+  return pdf.output('arraybuffer');
+}
+
 async function exportStamped(){loadStamp();if(!curDet?.image){toast('Kein Bild','er');return;}await exportBelegPDF(curDet,true);}
 
 // ════════════════════════════════════════════════════════
@@ -3409,6 +3794,12 @@ function clearApiKeySettings(){
   updApiStat();updApiBanner();
   toast('Key gelöscht','ok');
 }
+function saveAboKeywords(){
+  const keywords = document.getElementById('aboKeywordsInput').value.trim();
+  if(!keywords){toast('Bitte Keywords eingeben','er');return;}
+  localStorage.setItem('aboKeywords', keywords);
+  toast('✓ Abo-Keywords gespeichert','ok');
+}
 function updApiStat(){const s=document.getElementById('apiStat');if(s)s.textContent=apiKey?'✓ Claude API aktiv. Garantie-Wächter + Abo-Detektiv + Monitor-Erkennung aktiv.':'Kein Key – manuelle Eingabe. Intelligenz-Module eingeschränkt.';}
 function resetCounters(){if(!confirm('Zähler zurücksetzen?'))return;erC=0;arC=0;localStorage.setItem('erc','0');localStorage.setItem('arc','0');updCounters();toast('Zurückgesetzt','ok');}
 
@@ -3437,12 +3828,13 @@ function kontoLoad(){ try{ return JSON.parse(localStorage.getItem(KONTO_STORE)||
 function kontoSave(arr){ localStorage.setItem(KONTO_STORE, JSON.stringify(arr)); }
 
 function initKontoView(){
+  loadLastBank();
   renderKontoBuchungen();
   updKontoStatus();
 }
 
-function updKontoStatus(){
-  const alle = kontoLoad();
+async function updKontoStatus(){
+  const alle = await dbKontoBuchungen();
   const offen = alle.filter(t=>t.status==='offen').length;
   const lbl = document.getElementById('kontoStatusLbl');
   if(lbl) lbl.textContent = alle.length===0 ? 'Noch keine Buchungen geladen' : `${alle.length} Buchungen · ${offen} offen`;
@@ -3455,11 +3847,117 @@ function setKontoLog(m,p){
 
 // ── Multi-Upload Queue ──
 function kontoQueueAdd(inp){
+  const bankName = document.getElementById('kontoBankInput').value.trim();
+  if (!bankName) {
+    toast('Bitte zuerst eine Bank eingeben', 'er');
+    return;
+  }
+  
   const files=Array.from(inp.files||[]);
   if(!files.length) return;
+  
+  // Bank-Name zu jedem File hinzufügen
+  files.forEach(f => f.bankName = bankName);
+  
   kontoQueue.push(...files);
   renderKontoQueue();
   try{inp.value='';}catch(_){}
+  
+  // Bank merken
+  rememberBank(bankName);
+}
+
+function openBankManager() {
+  // Einfacher Dialog für Bank-Verwaltung
+  const bankName = prompt('Neue Bank hinzufügen (Name):');
+  if (bankName && bankName.trim()) {
+    addBank(bankName.trim());
+  }
+}
+
+async function addBank(name) {
+  try {
+    const id = await dbAddBank({name: name, createdAt: Date.now()});
+    toast(`Bank "${name}" hinzugefügt`, 'ok');
+    loadBanks();
+  } catch (e) {
+    toast('Fehler beim Hinzufügen', 'er');
+  }
+}
+
+async function loadBanks() {
+  try {
+    const banks = await dbBanks();
+    const select = document.getElementById('kontoBankSelect');
+    select.innerHTML = '<option value="">Bank wählen...</option>';
+    banks.forEach(bank => {
+      const opt = document.createElement('option');
+      opt.value = bank.id;
+      opt.textContent = bank.name;
+      select.appendChild(opt);
+    });
+  } catch (e) {
+    console.error('Fehler beim Laden der Banken:', e);
+  }
+}
+
+async function addBankPrompt() {
+  const name = prompt('Neue Bank hinzufügen (Name):');
+  if (name && name.trim()) {
+    await addBank(name.trim());
+  }
+}
+
+async function deleteBank(id) {
+  if (!confirm('Bank wirklich löschen? Alle zugehörigen Buchungen werden entfernt.')) return;
+  try {
+    // Lösche Bank
+    await dbDelBank(id);
+    // Lösche zugehörige Buchungen
+    const buchungen = await dbKontoBuchungen();
+    for (const b of buchungen) {
+      if (b.bankId === id) {
+        await dbDelKontoBuchung(b.id);
+      }
+    }
+    toast('Bank und Buchungen gelöscht', 'ok');
+    loadBanks();
+    loadBankList();
+    renderKontoBuchungen();
+    updKontoStatus();
+  } catch (e) {
+    toast('Fehler beim Löschen', 'er');
+  }
+}
+
+async function loadBankList() {
+  try {
+    const banks = await dbBanks();
+    const list = document.getElementById('bankList');
+    if (!banks.length) {
+      list.innerHTML = '<p style="font-size:11px;color:var(--txt3)">Noch keine Banken hinzugefügt.</p>';
+      return;
+    }
+    list.innerHTML = banks.map(bank => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--br)">
+        <span style="font-size:12px;color:var(--txt)">${eh(bank.name)}</span>
+        <button class="btn btn-red btn-sm" style="font-size:10px;padding:4px 8px" onclick="deleteBank(${bank.id})">Löschen</button>
+      </div>
+    `).join('');
+  } catch (e) {
+    console.error('Fehler beim Laden der Bankliste:', e);
+  }
+}
+
+function rememberBank(bankName) {
+  localStorage.setItem('lastBank', bankName);
+}
+
+function loadLastBank() {
+  const lastBank = localStorage.getItem('lastBank');
+  if (lastBank) {
+    document.getElementById('kontoBankInput').value = lastBank;
+  }
 }
 
 function renderKontoQueue(){
@@ -3537,14 +4035,16 @@ REGELN:
         try{neu=JSON.parse(rawText.trim());}catch(_){}
         if(!neu){const m=rawText.match(/\[[\s\S]*\]/);if(m)try{neu=JSON.parse(m[0]);}catch(_){}}
         if(neu&&neu.length){
-          // Zu bestehenden hinzufügen – Duplikate vermeiden (gleicher Betrag+Datum+Beschreibung)
-          const existing=kontoLoad();
+          // Zu bestehenden hinzufügen – Duplikate vermeiden (gleicher Betrag+Datum+Beschreibung+Bank)
+          const existing = await dbKontoBuchungen();
           let added=0;
           for(const t of neu){
-            const dup=existing.find(e=>e.datum===t.datum&&e.betrag===t.betrag&&e.beschreibung===t.beschreibung);
-            if(!dup){ existing.push({...t, id:Date.now()+Math.random(), status:'offen', vorschlag:null}); added++; }
+            const dup = existing.find(e => e.datum === t.datum && e.betrag === t.betrag && e.beschreibung === t.beschreibung && e.bankName === file.bankName);
+            if(!dup){ 
+              await dbAddKontoBuchung({...t, id: Date.now() + Math.random(), status:'offen', vorschlag:null, bankName: file.bankName}); 
+              added++; 
+            }
           }
-          kontoSave(existing);
           setKontoLog(`✓ +${added} neue Buchungen`,undefined);
         }
       }catch(e){console.error(e);}
@@ -3555,28 +4055,32 @@ REGELN:
 }
 
 async function kontoAbgleichAlle(){
-  const alle=kontoLoad();
+  const alle = await dbKontoBuchungen();
   if(!alle.length) return;
-  const belege=await dba();
-  const updated=alle.map(t=>{
-    if(t.status!=='offen') return t;
-    if(t.typ==='eingang') return t;
-    const betrag=Math.abs(t.betrag);
-    const tDatum=new Date((t.datum||new Date().toISOString().split('T')[0])+'T00:00:00');
-    const match=belege.find(b=>{
-      if(!b.brutto||!b.date)return false;
-      return Math.abs(Math.abs(b.brutto)-betrag)<=0.50&&Math.abs((tDatum-new Date(b.date+'T00:00:00'))/(86400000))<=3;
+  const belege = await dba();
+  for(const t of alle){
+    if(t.status !== 'offen') continue;
+    if(t.typ === 'eingang') continue;
+    const betrag = Math.abs(t.betrag);
+    const tDatum = new Date((t.datum || new Date().toISOString().split('T')[0]) + 'T00:00:00');
+    const match = belege.find(b => {
+      if(!b.brutto || !b.date) return false;
+      return Math.abs(Math.abs(b.brutto) - betrag) <= 0.50 && Math.abs((tDatum - new Date(b.date + 'T00:00:00')) / (86400000)) <= 3;
     });
-    if(match) return {...t, status:'abgeglichen', belegShop:match.shop, belegNr:match.belegNr};
-    return {...t, vorschlag:guessKategorie(t.beschreibung)};
-  });
-  kontoSave(updated);
+    if(match) {
+      await dbAddKontoBuchung({...t, status:'abgeglichen', belegShop:match.shop, belegNr:match.belegNr});
+      await dbDelKontoBuchung(t.id);
+    } else {
+      await dbAddKontoBuchung({...t, vorschlag: guessKategorie(t.beschreibung)});
+      await dbDelKontoBuchung(t.id);
+    }
+  }
 }
 
-function renderKontoBuchungen(){
-  const alle=kontoLoad();
-  const unbekannt=alle.filter(t=>t.status==='offen'&&t.typ!=='eingang');
-  const abgeglichen=alle.filter(t=>t.status==='abgeglichen');
+async function renderKontoBuchungen(){
+  const alle = await dbKontoBuchungen();
+  const unbekannt = alle.filter(t => t.status === 'offen' && t.typ !== 'eingang');
+  const abgeglichen = alle.filter(t => t.status === 'abgeglichen');
 
   const uSec=document.getElementById('kontoUnknownSec');
   const mSec=document.getElementById('kontoMatchedSec');
@@ -3620,51 +4124,57 @@ function renderKontoBuchungen(){
 }
 
 async function kontoErfasse(id, typ){
-  const alle=kontoLoad();
-  const t=alle.find(x=>String(x.id)===String(id));
+  const alle = await dbKontoBuchungen();
+  const t = alle.find(x => String(x.id) === String(id));
   if(!t) return;
 
-  const v=t.vorschlag||{kat:'Sonstiges',typ:'priv'};
-  const item={
-    type: typ==='priv'?'priv':'er',
-    belegNr: typ==='priv'?null:nextNr('er'),
-    shop: t.beschreibung||'Kontoauszug',
-    date: t.datum||new Date().toISOString().split('T')[0],
+  const v = t.vorschlag || {kat:'Sonstiges',typ:'priv'};
+  const item = {
+    type: typ === 'priv' ? 'priv' : 'er',
+    belegNr: typ === 'priv' ? null : nextNr('er'),
+    shop: t.beschreibung || 'Kontoauszug',
+    date: t.datum || new Date().toISOString().split('T')[0],
     brutto: Math.abs(t.betrag),
-    net: typ==='priv'?null:Math.round(Math.abs(t.betrag)/1.19*100)/100,
-    mwst: typ==='priv'?null:Math.round((Math.abs(t.betrag)-Math.abs(t.betrag)/1.19)*100)/100,
-    mwstRate: typ==='priv'?null:19,
-    cat:v.kat, payment:'Karte',
-    items:[], image:null, savedAt:Date.now(),
-    istAbo:false, garantieBis:null, isDigitalScreen:false, screenType:null
+    net: typ === 'priv' ? null : Math.round(Math.abs(t.betrag) / 1.19 * 100) / 100,
+    mwst: typ === 'priv' ? null : Math.round((Math.abs(t.betrag) - Math.abs(t.betrag) / 1.19) * 100) / 100,
+    mwstRate: typ === 'priv' ? null : 19,
+    cat: v.kat, payment: 'Karte',
+    items: [], image: null, savedAt: Date.now(),
+    istAbo: false, garantieBis: null, isDigitalScreen: false, screenType: null
   };
 
-  try{
+  try {
     await dbadd(item);
     // Status updaten
-    const updated=alle.map(x=>String(x.id)===String(id)?{...x,status:'erfasst_'+typ}:x);
-    kontoSave(updated);
-    toast('Erfasst als '+(typ==='priv'?'Privat':'Business')+' ✓','ok');
-    if(typ==='biz') renderMwst();
+    await dbAddKontoBuchung({...t, status: 'erfasst_' + typ});
+    await dbDelKontoBuchung(t.id);
+    toast('Erfasst als ' + (typ === 'priv' ? 'Privat' : 'Business') + ' ✓', 'ok');
+    if(typ === 'biz') renderMwst();
     renderHome();
     renderKontoBuchungen();
     updKontoStatus();
     // Erneut abgleichen damit neue Belege gematcht werden
-    setTimeout(async()=>{await kontoAbgleichAlle();renderKontoBuchungen();},300);
-  }catch(e){toast('Fehler: '+e.message,'er');}
+    setTimeout(async() => { await kontoAbgleichAlle(); renderKontoBuchungen(); }, 300);
+  } catch(e) { toast('Fehler: ' + e.message, 'er'); }
 }
 
-function kontoIgnoriere(id){
-  const alle=kontoLoad();
-  const updated=alle.map(x=>String(x.id)===String(id)?{...x,status:'ignoriert'}:x);
-  kontoSave(updated);
+async function kontoIgnoriere(id){
+  const alle = await dbKontoBuchungen();
+  const t = alle.find(x => String(x.id) === String(id));
+  if(t) {
+    await dbAddKontoBuchung({...t, status: 'ignoriert'});
+    await dbDelKontoBuchung(t.id);
+  }
   renderKontoBuchungen();
   updKontoStatus();
 }
 
-function kontoAllesLoeschen(){
+async function kontoAllesLoeschen(){
   if(!confirm('Alle Kontoauszug-Daten löschen?')) return;
-  localStorage.removeItem(KONTO_STORE);
+  const alle = await dbKontoBuchungen();
+  for(const b of alle) {
+    await dbDelKontoBuchung(b.id);
+  }
   renderKontoBuchungen();
   updKontoStatus();
   toast('Kontoauszug-Daten gelöscht','ok');
