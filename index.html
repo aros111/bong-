@@ -34,7 +34,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-weight:300;
 @keyframes fi{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
 /* ── NAV ── */
-#nav{position:fixed;bottom:0;left:0;right:0;z-index:100;
+#nav{position:fixed;bottom:0;left:0;right:0;z-index:600;
   background:rgba(7,7,7,.9);border-top:1px solid var(--br);
   padding:8px 0 calc(8px + var(--sb));
   display:flex;align-items:center;justify-content:space-around;
@@ -5322,6 +5322,23 @@ function fmK(n){if(Math.abs(n)>=1000)return(n/1000).toLocaleString('de-DE',{mini
 function eh(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function ec(s){s=String(s||'');if(/[;"'\n]/.test(s))return'"'+s.replace(/"/g,'""')+'"';return s;}
 function toast(msg,type=''){const el=document.getElementById('toast');el.textContent=msg;el.className='show'+(type?' '+type:'');clearTimeout(toastT);toastT=setTimeout(()=>el.className='',3200);}
+
+// ════════════════════════════════════════════════════════
+// ██ MONETARISIERUNG – SCHNITTSTELLE (noch nicht aktiv)
+// WHY: Platzhalter für spätere Premium-Features via Stripe
+// Alle Features sind aktuell kostenlos (isPremium=true)
+// Aktivierung später durch separaten Monetarisierungs-Prompt
+// ════════════════════════════════════════════════════════
+// Premium-Features (vorgesehen, noch nicht gesperrt):
+//   - Unbegrenzte Scans (Free: 10/Monat)
+//   - Rechnungs-Generator PDF
+//   - DATEV-Export
+//   - Fahrtenbuch-PDF Export
+//   - Steuerberater-Direktexport
+//   - Mehrbenutzerfähigkeit
+// Lizenz-Key: localStorage 'bsp_license'
+// Zahlungsabwicklung: Stripe (Platzhalter: buy.stripe.com/bongplaceholder)
+function isPremium(){ return true; } // TODO: Stripe-Integration bei Aktivierung
 
 // ════════════════════════════════════════════════════════
 // ██ INIT
