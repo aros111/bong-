@@ -2710,7 +2710,101 @@ function retryKi(){
 // ════════════════════════════════════════════════════════
 // ██ MODUL: BELEG SPEICHERN
 // ════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════
+// ██ MODUL: DUPLIKATSPRÜFUNG & UNGEREIMTHEITEN
+// ════════════════════════════════════════════════════════
+async function checkForDuplicates() {
+  const all = await dba();
+  const duplicates = [];
+  
+  if (scanType === 'priv') {
+    const shop = document.getElementById('pShop').value || '';
+    const brutto = parseFloat(document.getElementById('pBrutto').value) || 0;
+    const date = document.getElementById('pDate').value || '';
+    
+    // Prüfe auf ähnliche Belege
+    all.filter(b => b.type === 'priv').forEach(b => {
+      let score = 0;
+      if (b.shop && shop && b.shop.toLowerCase().includes(shop.toLowerCase().substring(0, 3))) score += 1;
+      if (Math.abs((b.brutto || 0) - brutto) <= 1) score += 1;
+      if (b.date === date) score += 1;
+      if (score >= 2) duplicates.push(b);
+    });
+  } else {
+    const shop = document.getElementById('rShop').value || '';
+    const brutto = parseFloat(document.getElementById('rBrutto').value) || 0;
+    const belegNr = curRes?.belegNr || '';
+    
+    // Prüfe auf Duplikate basierend auf Rechnungsnummer, Preis, Anbieter
+    all.filter(b => b.type !== 'priv').forEach(b => {
+      let score = 0;
+      if (b.belegNr && belegNr && b.belegNr === belegNr) score += 2;
+      if (b.shop && shop && b.shop.toLowerCase().includes(shop.toLowerCase().substring(0, 3))) score += 1;
+      if (Math.abs((b.brutto || 0) - brutto) <= 1) score += 1;
+      if (score >= 2) duplicates.push(b);
+    });
+  }
+  
+  return duplicates;
+}
+
+async function askUserAboutDuplicates(duplicates) {
+  return new Promise(resolve => {
+    const msg = `Mögliche Duplikate gefunden:\n${duplicates.map(d => `- ${d.shop} (${fm(d.brutto || 0)} €, ${fd(d.date)})`).join('\n')}\n\nWie möchtest du fortfahren?`;
+    const choice = confirm(msg + '\n\nOK: Trotzdem speichern\nAbbrechen: Bearbeiten');
+    resolve(choice);
+  });
+}
+
+function checkForIssues() {
+  const issues = [];
+  
+  if (scanType !== 'priv') {
+    const brutto = parseFloat(document.getElementById('rBrutto').value) || 0;
+    const mwst = parseFloat(document.getElementById('rMwst').value) || 0;
+    const net = parseFloat(document.getElementById('rNet').value) || 0;
+    const rate = parseFloat(document.getElementById('rRate').value) || cfg().mwstH;
+    
+    // Prüfe MwSt-Berechnung
+    const expectedNet = brutto / (1 + rate / 100);
+    const expectedMwst = brutto - expectedNet;
+    if (Math.abs(net - expectedNet) > 0.1) issues.push('Nettobetrag passt nicht zur MwSt-Berechnung');
+    if (Math.abs(mwst - expectedMwst) > 0.1) issues.push('MwSt-Betrag passt nicht zur Berechnung');
+    
+    // Prüfe auf ungewöhnliche Werte
+    if (brutto > 10000) issues.push('Sehr hoher Betrag – bitte prüfen');
+    if (rate !== cfg().mwstH && rate !== cfg().mwstL) issues.push('Ungewöhnlicher MwSt-Satz');
+  } else {
+    const brutto = parseFloat(document.getElementById('pBrutto').value) || 0;
+    if (brutto > 5000) issues.push('Sehr hoher privater Betrag – bitte prüfen');
+  }
+  
+  return issues;
+}
+
+async function askUserAboutIssues(issues) {
+  return new Promise(resolve => {
+    const msg = `Ungereimtheiten gefunden:\n${issues.map(i => `- ${i}`).join('\n')}\n\nTrotzdem speichern?`;
+    const choice = confirm(msg);
+    resolve(choice);
+  });
+}
+
 async function saveBeleg(){
+  // ── DUPLIKATSPRÜFUNG ──
+  const duplicates = await checkForDuplicates();
+  if (duplicates.length > 0) {
+    const confirmed = await askUserAboutDuplicates(duplicates);
+    if (!confirmed) return; // Abbruch, wenn Nutzer nicht bestätigt
+  }
+
+  // ── UNGEREIMTHEITEN PRÜFEN ──
+  const issues = checkForIssues();
+  if (issues.length > 0) {
+    const confirmed = await askUserAboutIssues(issues);
+    if (!confirmed) return; // Abbruch bei Ungereimtheiten
+  }
+
   // ── PRIVAT-BELEG: komplett andere Logik ──
   if(scanType==='priv'){
     const item={
