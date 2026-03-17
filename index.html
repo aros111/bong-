@@ -7,950 +7,478 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BelegScan">
 <meta name="theme-color" content="#070707">
+<meta name="description" content="KI-gestützter Beleg-Scanner für deutsche Freiberufler">
 <link rel="manifest" href="./manifest.json">
 <title>BelegScan Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400&family=DM+Mono:wght@300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="./style.css">
 </head>
 <body>
 
-<!-- ══ ONBOARDING (unverändert, funktioniert) ════════ -->
-<div id="onboarding">
-  <div class="ob-step on" id="obs1">
-    <div class="ob-logo">🧾</div>
-    <div class="ob-title">BelegScan Pro</div>
-    <div class="ob-sub">Belege erfassen, Steuern tracken,<br>Garantien im Blick behalten.<br><br>Einmal einrichten – dauert 2 Minuten.</div>
-    <div class="stitle">Dein Land</div>
-    <div class="ob-cards">
-      <div class="ob-card on" id="land-de" onclick="pickLand('de')"><div class="ck">✓</div><div class="ico">🇩🇪</div><div class="lbl">Deutschland</div><div class="sub">19% / 7% MwSt<br>KU-Grenze 22.000 €</div></div>
-      <div class="ob-card" id="land-at" onclick="pickLand('at')"><div class="ck">✓</div><div class="ico">🇦🇹</div><div class="lbl">Österreich</div><div class="sub">20% / 10% USt<br>KU-Grenze 35.000 €</div></div>
-      <div class="ob-card" id="land-ch" onclick="pickLand('ch')"><div class="ck">✓</div><div class="ico">🇨🇭</div><div class="lbl">Schweiz</div><div class="sub">8.1% / 2.6% MWST<br>KU-Grenze 100.000 CHF</div></div>
-      <div class="ob-card" id="land-other" onclick="pickLand('other')"><div class="ck">✓</div><div class="ico">🌍</div><div class="lbl">Anderes Land</div><div class="sub">Manuell konfigurieren</div></div>
-    </div>
-    <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="obNext(2)">Weiter →</button>
-  </div>
-  <div class="ob-step" id="obs2">
-    <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
-    <div class="ob-title">Dein Status</div>
-    <div class="ob-sub">Die App passt sich automatisch an.</div>
-    <div class="ob-nr-opts" style="margin-bottom:20px">
-      <div class="ob-nr-opt on" id="typ-frei" onclick="pickTyp('frei')"><div><div class="nr-fmt">Freiberufler</div><div class="nr-lbl">Volle MwSt-Pflicht</div></div><div class="ck2">✓</div></div>
-      <div class="ob-nr-opt" id="typ-ku" onclick="pickTyp('ku')"><div><div class="nr-fmt">Kleinunternehmer §19</div><div class="nr-lbl">Unter der Umsatzgrenze</div></div><div class="ck2">✓</div></div>
-      <div class="ob-nr-opt" id="typ-gew" onclick="pickTyp('gew')"><div><div class="nr-fmt">Gewerbetreibender</div><div class="nr-lbl">MwSt + Gewerbesteuer</div></div><div class="ck2">✓</div></div>
-    </div>
-    <div class="ku-warn" id="kuWarn" style="display:none"><p>⚠️ Als Kleinunternehmer überwacht die App deinen Jahresumsatz und warnt dich vor der Grenze. <strong>Das kann dir tausende Euro ersparen.</strong></p></div>
-    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(1)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(3)">Weiter →</button></div>
-  </div>
-  <div class="ob-step" id="obs3">
-    <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
-    <div class="ob-title">Belegnummer</div>
-    <div class="ob-sub">Einmalig wählen – dann unveränderlich.<br>GoBD-konform, lückenlos, automatisch.</div>
-    <div class="ob-nr-opts">
-      <div class="ob-nr-opt on" id="fmt-a" onclick="pickFmt('A')"><div><div class="nr-fmt">ER-2026-0001</div><div class="nr-lbl">Typ – Jahr – Nummer (empfohlen)</div></div><div class="ck2">✓</div></div>
-      <div class="ob-nr-opt" id="fmt-b" onclick="pickFmt('B')"><div><div class="nr-fmt">2026-Q1-ER-0001</div><div class="nr-lbl">Jahr – Quartal – Typ – Nummer</div></div><div class="ck2">✓</div></div>
-      <div class="ob-nr-opt" id="fmt-c" onclick="pickFmt('C')"><div><div class="nr-fmt">2026-ER-0001</div><div class="nr-lbl">Jahr – Typ – Nummer</div></div><div class="ck2">✓</div></div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:20px"><button class="btn btn-g" onclick="obNext(2)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obNext(4)">Weiter →</button></div>
-  </div>
-  <div class="ob-step" id="obs4">
-    <div class="ob-prog"><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot on"></div><div class="ob-dot"></div></div>
-    <div class="ob-title">KI-Erkennung</div>
-    <div class="ob-sub">Mit Claude API Key erkennt die App Beträge, Händler, Garantien und Abos automatisch aus Fotos – auch von Monitoren.</div>
-    <div class="ob-api-box">
-      <div class="step-row"><div class="sn">1</div><div class="st">Gehe zu <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → kostenlosen Account erstellen.</div></div>
-      <div class="step-row"><div class="sn">2</div><div class="st">Klicke auf <strong>API Keys → Create Key</strong> und kopiere den Key.</div></div>
-      <div class="step-row"><div class="sn">3</div><div class="st">Füge ihn hier ein. Er wird nur lokal auf deinem Gerät gespeichert.</div></div>
-    </div>
-    <input class="inp" type="password" id="obApiKey" placeholder="sk-ant-… (optional)" style="margin-bottom:12px;font-size:13px">
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:20px;line-height:1.6">Ohne Key: manuelle Eingabe. Mit Key: Automatik + Garantie-Wächter + Abo-Detektiv.</p>
-    <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="obNext(3)">← Zurück</button><button class="btn btn-gold" style="flex:1;justify-content:center" onclick="obFinish()">Loslegen ✓</button></div>
-  </div>
-</div>
-
-<!-- ══ APP ════════════════════════════════════════════ -->
-<div id="app">
-
-<!-- ── HOME ── -->
-<div class="view on" id="v-home">
-  <!-- Top-Right Toolbar -->
-  <div style="position:absolute;top:16px;right:16px;z-index:90">
-    <button class="btn btn-g btn-sm" style="width:40px;height:40px;padding:0;justify-content:center;border-radius:50%;background:rgba(255,255,255,0.06);border-color:var(--br2);font-size:18px" onclick="showView('settings')">⚙</button>
-  </div>
-
-  <!-- API Key Banner – erscheint nur wenn kein Key hinterlegt ist -->
-  <div id="apiBanner" style="display:none" onclick="openApiSheet()">
-    <div class="api-banner">
-      <div class="ico">⚡</div>
-      <div class="body">
-        <div class="head">KI-Erkennung aktivieren</div>
-        <div class="sub">Fotos automatisch auslesen – Beträge, Garantien, Abos. API Key einrichten.</div>
-      </div>
-      <div class="arr">›</div>
-    </div>
-  </div>
-
-  <!-- ── EFFIZIENZ-TACHO ──
-       WHY: Macht den Wert der KI-Nutzung sofort sichtbar.
-       Formel: 120s (manuell) - 5s (KI) = 115s pro Scan gespart.
-       Hochgerechnet auf alle Scans = gesparte Lebenszeit. -->
-  <div class="tacho-card" id="tachoCard" style="display:none">
-    <div class="tacho-title">KI-Effizienz seit Start</div>
-    <div class="tacho-grid">
-      <div class="tacho-item">
-        <div class="tacho-val" id="tachoScans">0</div>
-        <div class="tacho-lbl">KI-Scans<br>gesamt</div>
-      </div>
-      <div class="tacho-item">
-        <div class="tacho-val" id="tachoZeit" style="color:var(--grn)">0 Min</div>
-        <div class="tacho-lbl">Lebenszeit<br>gespart</div>
-      </div>
-      <div class="tacho-item">
-        <div class="tacho-val" id="tachoGeld" style="color:var(--ylw)">0 €</div>
-        <div class="tacho-lbl">vs. Steuer-<br>berater gespart</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── PROGRESSIONS-SCHUTZ ──
-       WHY: Erscheint wenn Gewinn sich einer Steuerstufe nähert.
-       Gibt konkreten Investitions-Tipp um Steuerlast zu senken. -->
-  <div id="progSchutzBanner" style="display:none"></div>
-
-
-
-  <!-- Potential-Ring – ändert Farbe und Bedeutung je nach Modus -->
-  <div class="ring-wrap" style="margin-bottom:6px">
-    <div class="ring-c">
-      <svg class="ring-svg" viewBox="0 0 130 130">
-        <circle class="ring-bg" cx="65" cy="65" r="57"/>
-        <circle class="ring-f" id="ringF" cx="65" cy="65" r="57" stroke-dasharray="358.14" stroke-dashoffset="0" stroke="var(--gold)"/>
-      </svg>
-      <div class="ring-in">
-        <div class="ring-big" id="ringBig">–</div>
-        <div class="ring-tag" id="ringTag">Tage</div>
-      </div>
-    </div>
-    <div class="ring-sub" id="ringSub">–</div>
-    <div class="ring-date mono" id="ringDate">–</div>
-  </div>
-
-  <!-- Business ↔ Privat Toggle -->
-  <div class="mode-toggle" style="margin-bottom:14px;box-shadow:none">
-    <button class="mode-btn on biz" id="modeBiz" onclick="setMode('biz')">💼 Business</button>
-    <button class="mode-btn priv" id="modePriv" onclick="setMode('priv')">🏠 Privat</button>
-  </div>
-
-  <!-- Business-Content (Standard) -->
-  <div id="bizContent">
-    <div class="hero zl" id="heroCard">
-      <div class="hero-lbl" id="heroLbl">Aktueller MwSt-Stand</div>
-      <div class="hero-val" id="heroVal">0,00 €</div>
-      <div class="hero-bar"><div class="hero-bar-a" id="hbA" style="width:50%"></div><div class="hero-bar-e" id="hbE" style="width:50%"></div></div>
-      <div class="hero-cols" id="heroCols">
-        <div class="hcol"><div class="l">Eingenommen</div><div class="v" id="hAR" style="color:var(--ylw)">0,00 €</div></div>
-        <div class="hcol"><div class="l">Vorsteuer</div><div class="v" id="hER" style="color:var(--blu)">0,00 €</div></div>
-        <div class="hcol"><div class="l" id="saldoLbl">Zahllast</div><div class="v" id="hSaldo" style="color:var(--red)">0,00 €</div></div>
-      </div>
-      <div class="ku-bar-wrap" id="kuBarWrap" style="display:none">
-        <div class="ku-bar-lbl"><span id="kuBarLeft">Umsatz YTD</span><span id="kuBarRight">Grenze</span></div>
-        <div class="ku-bar-track"><div class="ku-bar-fill" id="kuBarFill" style="width:0%"></div></div>
-        <div class="ku-bar-hint" id="kuBarHint">–</div>
-      </div>
-    </div>
-    <div class="qs">
-      <div class="qs-c"><div class="qs-l">Umsatz (Jahr)</div><div class="qs-v" id="qsU" style="color:var(--ylw)">0 €</div><div class="qs-s" id="qsUc">0 Rechnungen</div></div>
-      <div class="qs-c"><div class="qs-l">Ausgaben (Jahr)</div><div class="qs-v" id="qsA" style="color:var(--blu)">0 €</div><div class="qs-s" id="qsAc">0 Belege</div></div>
-    </div>
-  </div>
-
-  <!-- Privat-Content (wird per JS ein/ausgeblendet) -->
-  <div id="privContent" style="display:none">
-    <div class="hero priv" id="heroPriv">
-      <div class="hero-lbl">Optimierbares Geld</div>
-      <div class="hero-val" id="heroPrivVal" style="color:var(--silv)">0,00 €</div>
-      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.55" id="heroPrivSub">Abos, Garantien, Sparpotentiale</div>
-    </div>
-    <!-- Insight Banner – erscheint kontextbezogen wenn echtes Sparpotential erkannt wurde -->
-    <div id="insightBanner" style="display:none"></div>
-  </div>
-
-  <!-- Intelligenz-Widgets (immer sichtbar, mode-unabhängig) -->
-  <div class="card" id="gwCard" style="display:none">
-    <div class="stitle">🛡️ Garantie-Wächter</div>
-    <div id="gwList"></div>
-  </div>
-
-  <div class="card" id="aboCard" style="display:none">
-    <div class="stitle">🔍 Abo-Detektiv</div>
-    <div id="aboList"></div>
-  </div>
-
-  <div class="card">
-    <div class="stitle">Zuletzt erfasst</div>
-    <div id="recentList"><div class="empty"><p>Noch keine Belege.<br>Tippe auf den Scanner-Button.</p></div></div>
-  </div>
-</div>
-
-<!-- ── BELEGE (Business only) ── -->
-<div class="view" id="v-belege">
-  <div class="filter-row">
-    <input class="inp" id="srch" type="text" placeholder="Suchen …" oninput="renderBelege()" style="flex:1;min-width:80px;font-size:12px;padding:8px 12px">
-    <select class="sel" id="ftT" onchange="renderBelege()"><option value="">Alle</option><option value="er">Eingang</option><option value="ar">Ausgang</option></select>
-    <select class="sel" id="ftC" onchange="renderBelege()"><option value="">Kategorie</option><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select>
-    <button class="btn btn-g btn-sm" onclick="exportCSV()">CSV</button>
-  </div>
-  <div id="bList"></div>
-</div>
-
-<!-- ── PRIVAT ── -->
-<div class="view" id="v-priv">
-  <!-- Kopfzeile: Gesamt + Buttons -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <div>
-      <div style="font-size:22px;font-weight:200;color:var(--silv)" id="privTotalDisp">0,00 €</div>
-      <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="privCountDisp">0 Belege</div>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button class="btn btn-sm" onclick="openSchnell()"
-        style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:12px;display:flex;align-items:center;gap:5px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Schnell
-      </button>
-      <button class="btn btn-sm" onclick="analysePrivatMonat()"
-        style="background:rgba(136,153,170,.1);border:1px solid rgba(136,153,170,.25);color:var(--silv);font-size:12px;display:flex;align-items:center;gap:5px">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        KI-Analyse
-      </button>
-    </div>
-  </div>
-
-  <!-- Optimierungspotential -->
-  <div id="privOptCard" style="display:none;background:rgba(136,153,170,.06);border:1px solid rgba(136,153,170,.18);
-    border-radius:var(--r12);padding:11px 14px;margin-bottom:12px;
-    display:flex;align-items:center;justify-content:space-between">
-    <div>
-      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px">Einsparpotential (geschätzt)</div>
-      <div style="font-size:18px;font-weight:200;color:var(--gold)" id="privOptBetrag">0,00 €</div>
-    </div>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.2">
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
-    </svg>
-  </div>
-
-  <!-- Kreisdiagramm Kategorien -->
-  <div id="privChartWrap" style="display:none;background:var(--s2);border:1px solid var(--br);
-    border-radius:var(--r12);padding:14px;margin-bottom:12px">
-    <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:10px">Ausgaben nach Kategorie</div>
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <svg id="privPieChart" width="110" height="110" viewBox="0 0 110 110"></svg>
-      <div id="privPieLegend" style="flex:1;min-width:120px;font-size:11px;font-weight:300;line-height:2"></div>
-    </div>
-  </div>
-
-  <!-- KI-Analyse Ergebnis -->
-  <div id="privAnalyseCard" style="display:none;background:rgba(136,153,170,.06);border:1px solid rgba(136,153,170,.15);
-    border-radius:var(--r12);padding:14px;margin-bottom:14px;font-size:13px;font-weight:300;
-    color:var(--txt2);line-height:1.7;white-space:pre-wrap"></div>
-  <div class="filter-row" style="margin-bottom:12px">
-    <select class="sel" id="pftC" onchange="renderPrivatBelege()"><option value="">Alle Kategorien</option><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Freizeit</option><option>Reise</option><option>Sonstiges</option></select>
-    <select class="sel" id="pftM" onchange="renderPrivatBelege()">
-      <option value="">Alle Monate</option>
-      <option value="01">Januar</option><option value="02">Februar</option><option value="03">März</option>
-      <option value="04">April</option><option value="05">Mai</option><option value="06">Juni</option>
-      <option value="07">Juli</option><option value="08">August</option><option value="09">September</option>
-      <option value="10">Oktober</option><option value="11">November</option><option value="12">Dezember</option>
-    </select>
-  </div>
-  <div id="pList"></div>
-</div>
-
-<!-- ── KONTO-ABGLEICH ── -->
-<div class="view" id="v-konto">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-    <div>
-      <div style="font-size:16px;font-weight:300;color:var(--txt)">Kontoauszug-Abgleich</div>
-      <div style="font-size:11px;font-weight:300;color:var(--txt3)" id="kontoStatusLbl">Noch keine Buchungen geladen</div>
-    </div>
-    <div style="display:flex;gap:6px">
-      <button class="btn btn-g btn-sm" onclick="kontoKiGesamt()" style="font-size:11px;display:flex;align-items:center;gap:5px"
-        title="KI vergleicht alle offenen Buchungen mit allen Belegen">
-        🤖 Alles vergleichen
-      </button>
-      <button class="btn btn-g btn-sm" onclick="kontoAllesLoeschen()" style="font-size:11px">Leeren</button>
-    </div>
-  </div>
-
-  <!-- Bank-Eingabe -->
-  <div style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);padding:14px;margin-bottom:12px">
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:8px">🏦 Bank eingeben</div>
-    <input type="text" id="kontoBankInput" placeholder="z.B. Sparkasse, Deutsche Bank..." style="width:100%;background:var(--s1);border:1px solid var(--br);border-radius:var(--r8);padding:8px 10px;color:var(--txt);font-size:12px" value="">
-  </div>
-
-  <!-- Multi-Upload -->
-  <input type="file" id="kontoFileMulti" accept="image/*" multiple onchange="kontoQueueAdd(this)" style="display:none">
-  <input type="file" id="kontoFileKam" accept="image/*" capture="environment" onchange="kontoQueueAdd(this)" style="display:none">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-    <button onclick="kontoQueueAddFromCam()"
-      style="background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r12);
-      padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-      <span style="font-size:12px;font-weight:300;color:var(--txt)">Foto aufnehmen</span>
-    </button>
-    <button onclick="kontoQueueAddFromGallery()"
-      style="background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r12);
-      padding:16px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--silv)" stroke-width="1.3"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-      <span style="font-size:12px;font-weight:300;color:var(--txt)">Mehrere auswählen</span>
-      <span style="font-size:10px;color:var(--txt3)">Galerie · mehrere möglich</span>
-    </button>
-  </div>
-
-  <!-- Queue-Anzeige -->
-  <div id="kontoQueue" style="display:none;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px">📋 Warteschlange</div>
-    <div id="kontoQueueList" style="font-size:12px;font-weight:300;color:var(--txt2)"></div>
-    <button class="btn btn-gold btn-sm" onclick="kontoQueueStart()" style="margin-top:8px;width:100%;justify-content:center" id="kontoQueueBtn">
-      Alle analysieren starten
-    </button>
-  </div>
-
-  <!-- Progress -->
-  <div id="kontoProg" style="display:none;margin-bottom:10px">
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px;font-family:'DM Mono',monospace" id="kontoLog">Bereit …</div>
-    <div style="background:var(--s3);border-radius:4px;height:3px">
-      <div id="kontoFill" style="background:var(--silv);height:3px;border-radius:4px;width:0%;transition:width .3s"></div>
-    </div>
-  </div>
-
-  <!-- Erkannte Buchungen – persistent, akkumuliert -->
-  <div id="kontoResultWrap">
-    <div id="kontoUnknownSec" style="display:none;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:300;color:var(--orn);margin-bottom:8px;letter-spacing:.3px;display:flex;justify-content:space-between">
-        <span>❓ KEIN BELEG GEFUNDEN</span>
-        <span id="kontoUnknownCount" style="color:var(--txt3)"></span>
-      </div>
-      <div id="kontoUnknownList"></div>
-    </div>
-    <div id="kontoMatchedSec" style="display:none;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:300;color:var(--grn);margin-bottom:8px;letter-spacing:.3px">✅ ABGEGLICHEN</div>
-      <div id="kontoMatchedList"></div>
-    </div>
-  </div>
-</div>
-
-<!-- ── SCHNELLEINGABE SHEET (Privat, kein Foto) ── -->
-<div class="ovl" id="schnellOvl" onclick="closeSchnellOuter(event)">
-  <div class="sheet">
-    <div class="sh"></div>
-    <button class="sc-btn" onclick="closeSchnell()">✖</button>
-    <div style="font-size:15px;font-weight:300;color:var(--txt);margin-bottom:4px">⚡ Schnelleingabe</div>
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:16px">Ohne Foto – tippen oder sprechen</div>
-
-    <!-- Spracheingabe -->
-    <div id="sprachWrap" style="margin-bottom:14px">
-      <button id="micBtn" onclick="toggleMic()"
-        style="width:100%;background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);
-        padding:14px;display:flex;align-items:center;justify-content:center;gap:10px;
-        cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300;transition:all .2s">
-        <svg id="micIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-          <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-        </svg>
-        <span id="micLbl">🎤 Sprechen</span>
-      </button>
-      <div id="micTranscript" style="display:none;background:var(--s2);border:1px solid var(--br2);
-        border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
-        color:var(--txt2);margin-top:8px;min-height:36px;line-height:1.5"></div>
-    </div>
-
-    <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">— oder manuell —</div>
-
-    <!-- Manuelle Felder -->
-    <div class="res-fields">
-      <div class="field"><label>Händler / Beschreibung</label><input id="sShop" type="text" placeholder="z.B. Eiswagen am See"></div>
-      <div class="field"><label>Betrag</label><input id="sBrutto" type="text" placeholder="0.00" inputmode="decimal"></div>
-      <div class="field"><label>Datum</label><input id="sDate" type="date"></div>
-      <div class="field"><label>Kategorie</label><select id="sCat">
-        <option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option>
-        <option>Kleidung</option><option>Tanken</option><option>Haushalt</option>
-        <option>Gesundheit</option><option>Freizeit</option><option>Reise</option>
-        <option>Sonstiges</option></select></div>
-      <div class="field"><label>Zahlung</label><select id="sPay">
-        <option>Bar</option><option>Karte</option><option>Online</option></select></div>
-    </div>
-
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="btn btn-gold btn-sm" style="flex:1;justify-content:center" onclick="saveSchnell()">Speichern</button>
-      <button class="btn btn-g btn-sm" onclick="closeSchnell()">Abbrechen</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── VERPFLEGUNGSPAUSCHALE / FAHRTKOSTEN ── -->
-<div class="view" id="v-verpfl">
-  <div style="font-size:16px;font-weight:300;color:var(--txt);margin-bottom:4px">Verpflegungspauschale</div>
-  <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:14px">§ 4 Abs. 5 EStG · Inland 8 € / 14 € / 28 €</div>
-
-  <!-- Betriebsstätte -->
-  <div class="card card-sm" style="margin-bottom:10px">
-    <div class="stitle">Betriebsstätte (Heimatort)</div>
-    <div style="display:flex;gap:8px">
-      <input class="inp" id="bsAdresse" type="text" placeholder="z.B. Musterstraße 1, 80331 München" style="flex:1;font-size:12px">
-      <button class="btn btn-g btn-sm" onclick="saveBetriebsstaette()">OK</button>
-    </div>
-    <p id="bsHint" style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Einmal hinterlegen – wird für Abstandsberechnung gespeichert.</p>
-  </div>
-
-  <!-- Aktueller Besuch -->
-  <div class="card card-sm" style="margin-bottom:10px">
-    <div class="stitle">Kundenbesuch erfassen</div>
-
-    <div id="verpflActiveCard" style="display:none;background:rgba(74,128,192,.07);border:1px solid rgba(74,128,192,.2);
-      border-radius:var(--r8);padding:10px 12px;margin-bottom:10px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-        <div style="font-size:11px;font-weight:300;color:var(--blu)">⏱️ Besuch läuft …</div>
-        <div style="font-size:18px;font-weight:200;color:var(--gold);font-variant-numeric:tabular-nums" id="verpflTimer">00:00:00</div>
-      </div>
-      <div style="font-size:11px;font-weight:300;color:var(--txt2)" id="verpflActiveInfo">–</div>
-      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:3px" id="verpflStartInfo">–</div>
-    </div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <button id="btnAnkunft" class="btn btn-g" onclick="verpflAnkunft()" style="font-size:12px;justify-content:center;flex-direction:column;gap:2px;padding:12px 8px">
-        <span style="font-size:18px">📍</span>
-        <span>Ich bin hier</span>
-        <span style="font-size:10px;color:var(--txt3)">Standort erfassen</span>
-      </button>
-      <button id="btnAbfahrt" class="btn btn-g" onclick="verpflAbfahrt()" style="font-size:12px;justify-content:center;flex-direction:column;gap:2px;padding:12px 8px" disabled>
-        <span style="font-size:18px">🏁</span>
-        <span>Fertig / Abfahrt</span>
-        <span style="font-size:10px;color:var(--txt3)">Besuch abschließen</span>
-      </button>
-    </div>
-
-    <div id="verpflStandortInfo" style="display:none;background:var(--s2);border:1px solid var(--br);
-      border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
-      color:var(--txt2);line-height:1.6;margin-bottom:10px" id="verpflGeoInfo"></div>
-  </div>
-
-  <!-- Tagesübersicht -->
-  <div class="card card-sm" style="margin-bottom:10px">
-    <div class="stitle">Heutige Pauschale</div>
-    <div id="verpflTagesCard">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
-        <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
-          <div style="font-size:20px;font-weight:200;color:var(--txt)" id="verpflStunden">0h</div>
-          <div style="font-size:10px;font-weight:300;color:var(--txt3)">Abwesend</div>
-        </div>
-        <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
-          <div style="font-size:20px;font-weight:200;color:var(--gold)" id="verpflPauschale">0 €</div>
-          <div style="font-size:10px;font-weight:300;color:var(--txt3)">Pauschale</div>
-        </div>
-        <div style="background:var(--s2);border-radius:var(--r8);padding:10px">
-          <div style="font-size:20px;font-weight:200;color:var(--txt)" id="verpflKm">– km</div>
-          <div style="font-size:10px;font-weight:300;color:var(--txt3)">Entfernung</div>
-        </div>
-      </div>
-      <div style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:8px;line-height:1.5">
-        Staffel: ab 8h = 8 € · ab 14h = 14 € · 24h (Übernachtung) = 28 €
-      </div>
-    </div>
-  </div>
-
-  <!-- Monatsübersicht gespeicherte Fahrten -->
-  <div class="card card-sm">
-    <div class="stitle" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Fahrten dieses Monats</span>
-      <span id="verpflMonatsSumme" style="color:var(--gold);font-size:12px">0 €</span>
-    </div>
-    <div id="verpflFahrtenList"><div class="empty" style="padding:16px 0"><p>Noch keine Fahrten erfasst.</p></div></div>
-  </div>
-</div>
-
-<!-- ── MwSt ── -->
-
-<div class="view" id="v-mwst">
-  <div class="tabs">
-    <button class="tab on" onclick="setPeriod('month',this)">Monat</button>
-    <button class="tab" onclick="setPeriod('q',this)">Quartal</button>
-    <button class="tab" onclick="setPeriod('year',this)">Jahr</button>
-    <button class="tab" onclick="setPeriod('all',this)">Gesamt</button>
-  </div>
-  <button class="btn btn-g btn-sm" onclick="showView('quartal')" style="margin-bottom:10px">Quartalsabschluss →</button>
-  <div class="sg">
-    <div class="sc-card ar"><div class="l">MwSt eingenommen</div><div class="v" id="mAR">0,00 €</div><div class="s" id="mARs">0 AR</div></div>
-    <div class="sc-card er"><div class="l">Vorsteuer abziehbar</div><div class="v" id="mER">0,00 €</div><div class="s" id="mERs">0 ER</div></div>
-  </div>
-  <div class="sg">
-    <div class="sc-card zl" id="zlCard"><div class="l">Zahllast</div><div class="v" id="mZL">0,00 €</div><div class="s">MwSt − Vorsteuer</div></div>
-    <div class="sc-card ex" id="exCard" style="display:none"><div class="l">Erstattung</div><div class="v" id="mEX">0,00 €</div><div class="s">Gutschrift ✓</div></div>
-  </div>
-  <div class="cc"><div class="cc-title">Monatsverlauf</div><div class="mchart" id="mChart"></div><div class="chart-leg"><span><i class="dot" style="background:rgba(192,144,64,.5)"></i>Umsatz AR</span><span><i class="dot" style="background:rgba(74,128,192,.4)"></i>Ausgaben ER</span></div></div>
-  <div class="cc"><div class="cc-title">MwSt nach Monat</div><table class="mtbl"><thead><tr><th>Monat</th><th>AR-MwSt</th><th>Vorsteuer</th><th>Saldo</th></tr></thead><tbody id="mTbl"></tbody></table></div>
-  <div class="cc"><div class="cc-title">Top Kategorien (Ausgaben)</div><div class="barchart" id="catChart"></div></div>
-  <!-- Inflations-Tracker -->
-  <div class="cc" id="inflCC" style="display:none"><div class="cc-title">📈 Inflations-Tracker</div><div id="inflList"></div></div>
-  <div style="display:flex;gap:7px;flex-wrap:wrap;padding-bottom:4px">
-    <button class="btn btn-g btn-sm" onclick="exportCSV()">CSV Export</button>
-    <button class="btn btn-g btn-sm" onclick="exportBackup()">Backup JSON</button>
-  </div>
-</div>
-
-<!-- ── STEUER ── -->
-<div class="view" id="v-steuer">
-  <div class="est-hero">
-    <div class="lbl">Geschätzte Einkommensteuer (Jahr)</div>
-    <div class="big" id="estJahr">0 €</div>
-    <div class="sub" id="estSub">Auf Basis der erfassten Einnahmen</div>
-  </div>
-  <div class="est-grid">
-    <div class="est-c"><div class="l">Gewinn</div><div class="v" id="estG" style="color:var(--grn)">0 €</div></div>
-    <div class="est-c"><div class="l">Eff. Satz</div><div class="v" id="estR" style="color:var(--ylw)">0 %</div></div>
-    <div class="est-c"><div class="l">∅ / Monat</div><div class="v" id="estM" style="color:var(--red)">0 €</div></div>
-  </div>
-  <div class="gauge-wrap">
-    <div class="gauge-title">Einkommensteuerstufen</div>
-    <div class="gauge-track"><div class="gauge-marker" id="gaugeM" style="left:0%"></div></div>
-    <div class="gauge-stages">
-      <div class="gs"><div class="pct">0%</div><div>0 €</div></div>
-      <div class="gs"><div class="pct">14–24%</div><div>12k €</div></div>
-      <div class="gs"><div class="pct">24–42%</div><div>17k €</div></div>
-      <div class="gs"><div class="pct">42%</div><div>67k €</div></div>
-      <div class="gs"><div class="pct">45%</div><div>278k €</div></div>
-    </div>
-    <div class="gauge-now"><div class="l" id="gaugeStufeTxt">Aktueller Grenzsteuersatz</div><div class="v" id="gaugeStufe" style="color:var(--grn)">0 %</div></div>
-    <div class="gauge-next" id="gaugeNext">–</div>
-  </div>
-  <!-- Vital-Check Widget -->
-  <div class="card card-sm" id="vitalCard" style="display:none;margin-bottom:9px">
-    <div class="stitle">🥦 Vital-Check</div>
-    <div id="vitalContent"></div>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Parameter</div>
-    <div class="g2" style="gap:8px">
-      <div class="field"><label>Steuerklasse</label><select id="stK" onchange="calcSteuer()"><option value="1">I – Ledig</option><option value="3">III – Verheiratet</option><option value="4">IV – Gleich</option></select></div>
-      <div class="field"><label>Kinder</label><input id="stKi" type="number" value="0" min="0" max="10" oninput="calcSteuer()"></div>
-      <div class="field"><label>Kirchensteuer</label><select id="stKi2" onchange="calcSteuer()"><option value="0">Nein</option><option value="0.09">9 %</option><option value="0.08">8 % Bayern</option></select></div>
-      <div class="field"><label>Ausgaben manuell (€)</label><input id="stM" type="number" value="0" min="0" oninput="calcSteuer()"></div>
-    </div>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Hinweis</div>
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);line-height:1.7">Schätzung nach §32a EStG. Kein Ersatz für einen Steuerberater.</p>
-  </div>
-  <!-- Phase 2 Platzhalter -->
-  <div class="phase-banner">
-    <div class="ph-lbl">Phase 2 – Geplant</div>
-    <div class="ph-txt">GoBD-Rechnungserstellung direkt in der App. Managed API – kein eigener Key nötig. Guthaben-Modell.</div>
-  </div>
-  <div style="display:flex;gap:7px;flex-wrap:wrap">
-    <button class="btn btn-gold btn-sm" onclick="exportSteuerberaterZip()">Steuerberater-Export (ZIP) →</button>
-    <button class="btn btn-gold btn-sm" onclick="loadExportPreview();showView('export-preview')">Export-Vorschau →</button>
-    <button class="btn btn-g btn-sm" onclick="showView('settings')">Einstellungen →</button>
-  </div>
-</div>
-
-<!-- ── QUARTAL ── -->
-<div class="view" id="v-quartal">
-  <button class="btn btn-g btn-sm" onclick="showView('mwst')" style="margin-bottom:12px">← Zurück</button>
-  <div class="stitle">Quartalsabschluss</div>
-  <div class="qsel" id="qSel"></div>
-  <div class="qsum" id="qSum"></div>
-  <div class="cc"><div class="cc-title">Belege im Quartal</div><div id="qBList"></div></div>
-  <div style="display:flex;gap:7px;flex-wrap:wrap">
-    <button class="btn btn-gold btn-sm" onclick="exportQCSV()">CSV exportieren</button>
-    <button class="btn btn-g btn-sm" onclick="exportQZip()">PDF-Paket (ZIP)</button>
-  </div>
-</div>
-
-<!-- ── EXPORT PREVIEW ── -->
-<div class="view" id="v-export-preview">
-  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
-  <div class="stitle">Export-Vorschau für Steuerberater</div>
-  <!-- Warn-Box: fehlende Belege / Ungereimtheiten -->
-  <div id="exportWarnBox" style="display:none"></div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Jahresübersicht</div>
-    <div id="exportYearSummary"></div>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Quartalsübersicht</div>
-    <div id="exportQuarterSummary"></div>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Belegliste (letzte 50)</div>
-    <div id="exportBelegList"></div>
-  </div>
-  <div style="display:flex;gap:7px;flex-wrap:wrap">
-    <button class="btn btn-gold btn-sm" onclick="exportCSV()">CSV exportieren</button>
-    <button class="btn btn-g btn-sm" onclick="exportQZip()">PDF-Paket (ZIP)</button>
-  </div>
-</div>
-
-<!-- ── SETTINGS ── -->
-<div class="view" id="v-settings">
-  <button class="btn btn-g btn-sm" onclick="showView('steuer')" style="margin-bottom:12px">← Zurück</button>
-  <div class="pwa-card">
-    <div class="l">📱 Als App installieren</div>
-    <p>iOS: <strong style="color:var(--txt)">Teilen → Zum Homescreen</strong><br>Android: <strong style="color:var(--txt)">Menü → App installieren</strong></p>
-    <button class="btn btn-g btn-sm" id="pwaBtn" onclick="installPWA()" style="margin-top:10px;display:none">App installieren</button>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Mein Profil</div>
-    <div class="field" style="margin-bottom:8px"><label>Land</label><select id="settLandInp" onchange="updateProfileSettings()"><option value="de">Deutschland</option><option value="at">Österreich</option><option value="ch">Schweiz</option><option value="other">Anderes Land</option></select></div>
-    <div class="field" style="margin-bottom:8px"><label>Status</label><select id="settTypInp" onchange="updateProfileSettings()"><option value="frei">Freiberufler</option><option value="ku">Kleinunternehmer §19</option><option value="gew">Gewerbetreibender</option></select></div>
-    <div class="field" style="margin-bottom:8px"><label>Formart Belegnummer</label><select id="settFmtInp" onchange="updateProfileSettings()"><option value="A">ER-2026-0001 (empfohlen)</option><option value="B">2026-Q1-ER-0001</option><option value="C">2026-ER-0001</option></select></div>
-    <div class="field" style="margin-bottom:8px"><label>Steuernummer (optional)</label><input type="text" class="inp" id="settTaxNr" placeholder="z.B. 12/345/67890" oninput="updateProfileSettings()" style="margin-top:4px"></div>
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);line-height:1.6">Änderungen werden sofort übernommen. <a href="#" onclick="resetOnboarding()" style="color:var(--gold)">App neu einrichten</a></p>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">KI-Verbindung</div>
-    <div style="margin-bottom:8px">
-      <div style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:6px" id="apiStat">–</div>
-      <div style="display:flex;gap:7px">
-        <input class="inp" type="password" id="apiKey" placeholder="sk-ant-… Claude API Key" style="font-size:12px;flex:1">
-        <button class="btn btn-gold btn-sm" onclick="saveApiKey()">Speichern</button>
-      </div>
-      <p style="font-size:10px;font-weight:300;color:var(--txt3);margin-top:6px;line-height:1.5">Key wird nur lokal gespeichert. Du kannst ihn jederzeit überschreiben oder löschen.</p>
-    </div>
-    <button class="btn btn-red btn-sm" onclick="clearApiKeySettings()" style="margin-bottom:4px">Key löschen</button>
-    <a href="https://console.anthropic.com" target="_blank" style="font-size:11px;color:var(--gold);text-decoration:none;display:inline-block;margin-top:6px">→ API Key erstellen</a>
-    <div style="margin-top:10px;background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:9px 12px">
-      <div style="font-size:10px;font-weight:300;color:var(--txt3);letter-spacing:.4px;text-transform:uppercase;margin-bottom:4px">API-Verbrauch (geschätzt)</div>
-      <div style="font-size:12px;font-weight:300" id="apiCostDisp">–</div>
-      <button class="btn btn-g btn-sm" onclick="resetApiCost()" style="margin-top:6px;font-size:10px">Zurücksetzen</button>
-    </div>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Stempel</div>
-    <div class="stamp-prev"><canvas id="stmpC" width="290" height="110"></canvas></div>
-    <div class="g2" style="gap:8px;margin-bottom:10px">
-      <div class="field"><label>Firma</label><input id="sFirma" type="text" placeholder="Meine Firma GbR" oninput="refreshStamp()"></div>
-      <div class="field"><label>Freitext</label><input id="sFrei" type="text" placeholder="Buchungskreis o.ä." oninput="refreshStamp()"></div>
-    </div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
-      <div class="csw on" style="background:#b71c1c" data-c="#b71c1c" onclick="pickCol(this)"></div>
-      <div class="csw" style="background:#1565c0" data-c="#1565c0" onclick="pickCol(this)"></div>
-      <div class="csw" style="background:#2e7d32" data-c="#2e7d32" onclick="pickCol(this)"></div>
-      <div class="csw" style="background:#4a148c" data-c="#4a148c" onclick="pickCol(this)"></div>
-      <div class="csw" style="background:#e65100" data-c="#e65100" onclick="pickCol(this)"></div>
-      <div class="csw" style="background:#37474f" data-c="#37474f" onclick="pickCol(this)"></div>
-      <input type="color" id="cPick" value="#b71c1c" style="width:24px;height:24px;border-radius:6px;border:1px solid var(--br);cursor:pointer;padding:1px;background:transparent" oninput="freeCol(this)">
-    </div>
-    <button class="btn btn-gold btn-sm" onclick="saveStamp()">Stempel speichern</button>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">🔍 Abo-Detektiv</div>
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.6">Passe die Keywords für die automatische Abo-Erkennung an. Trenne mit | (Pipe).</p>
-    <textarea id="aboKeywordsInput" style="width:100%;height:60px;font-size:11px;font-family:monospace;padding:8px;border:1px solid var(--br);border-radius:var(--r8);background:var(--s2);color:var(--txt);resize:none" placeholder="netflix|spotify|amazon prime..."></textarea>
-    <button class="btn btn-gold btn-sm" onclick="saveAboKeywords()" style="margin-top:8px">Keywords speichern</button>
-  </div>
-  <div class="card card-sm" style="margin-bottom:9px">
-    <div class="stitle">Datensicherung</div>
-    <p style="font-size:11px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.65">Alle Daten liegen ausschließlich lokal (IndexedDB). Kein Server.</p>
-    <div style="display:flex;gap:7px;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="exportBackup()">Backup exportieren</button>
-      <button class="btn btn-g btn-sm" onclick="document.getElementById('ufi').click()">Backup importieren</button>
-    </div>
-    <input type="file" id="ufi" accept=".json" onchange="importBackup(this)">
-  </div>
-  <!-- Phase 3 Platzhalter -->
-  <div class="phase-banner">
-    <div class="ph-lbl">Phase 3 – Roadmap</div>
-    <div class="ph-txt">Creator Elite: VIP-Einladungscodes für Multiplikatoren mit Spezial-Dashboards und White-Label Export. Benötigt Backend.</div>
-  </div>
-</div>
-
-</div><!-- /app -->
-
-<!-- ── NAV ── -->
-<nav id="nav">
-  <button class="ni on" onclick="showView('home')" data-v="home">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Start
-  </button>
-  <button class="ni" onclick="showView('belege')" data-v="belege" id="navBelege">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Belege
-  </button>
-  <div class="ni-sw">
-    <button class="ni-scan" onclick="openScanner()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
-    </button>
-  </div>
-  <button class="ni" id="navPriv" onclick="showView('priv')" data-v="priv" style="display:none">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Privat
-  </button>
-  <button class="ni" onclick="showView('mwst')" data-v="mwst" id="navMwst">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>MwSt
-  </button>
-  <button class="ni" onclick="showView('steuer')" data-v="steuer" id="navSteuer">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Steuer
-  </button>
-  <button class="ni" onclick="showView('konto')" data-v="konto" id="navKonto">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>Konto
-  </button>
-  <button class="ni" onclick="showView('verpfl')" data-v="verpfl" id="navVerpfl">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>Fahrt
-  </button>
-</nav>
-
-<!-- ── BONG-BUTTON ("Kannst du behalten!")
-     WHY: Taucht kontextbezogen auf wenn die App dem Nutzer
-     gerade echtes Geld gespart hat. Nicht als Werbung –
-     als Celebration-Moment. Als "Software-Wartung" absetzbar. -->
-<div class="bong-wrap" id="bongWrap" style="display:none">
-  <div class="bong-btn" onclick="openBongSheet()">
-    <div class="bong-ico">🍺</div>
-    <div class="bong-body">
-      <div class="head">Bong? Kannst du behalten!</div>
-      <div class="sub" id="bongSubText">Du hast gerade Steuern gespart.</div>
-    </div>
-    <button class="bong-x" onclick="closeBong(event)">✖</button>
-  </div>
-</div>
-
-<!-- ── BONG SHEET (Trinkgeld-Detail) ── -->
-<div class="ovl" id="bongOvl" onclick="closeBongOuter(event)">
-  <div class="sheet">
-    <div class="sh"></div>
-    <button class="sc-btn" onclick="closeBongSheet()">✖</button>
-    <div style="font-size:28px;margin-bottom:8px">🍺</div>
-    <div style="font-size:20px;font-weight:200;letter-spacing:-.5px;margin-bottom:6px">Bong? Kannst du behalten!</div>
-    <div style="font-size:12px;font-weight:300;color:var(--txt2);margin-bottom:20px;line-height:1.65" id="bongSheetCtx">–</div>
-
-    <!-- Live-Kalkulation: Der Steuer-Kniff
-         WHY: Nutzer sieht dass 100% der Trinkgeld-Kosten absetzbar sind.
-         Das Finanzamt zahlt also anteilig mit. Ehrlich & legal. -->
-    <div style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r12);padding:14px;margin-bottom:14px">
-      <div style="font-size:10px;letter-spacing:.6px;text-transform:uppercase;color:var(--txt3);margin-bottom:12px;font-weight:300">Live-Kalkulation</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <input class="inp" type="number" id="bongAmount" placeholder="0" min="1" max="500"
-          style="font-size:18px;font-weight:200;letter-spacing:-1px;text-align:center;width:110px"
-          oninput="calcBongLive()">
-        <span style="font-size:14px;font-weight:300;color:var(--txt3)">€ Trinkgeld</span>
-      </div>
-      <div id="bongCalc" style="font-size:12px;font-weight:300;color:var(--txt2);line-height:1.9">
-        Betrag eingeben um Effektivkosten zu sehen.
-      </div>
-    </div>
-
-    <div style="background:rgba(58,175,112,.06);border:1px solid rgba(58,175,112,.2);border-radius:var(--r12);padding:12px;margin-bottom:16px">
-      <p style="font-size:11px;font-weight:300;color:var(--grn);line-height:1.65">
-        💡 Als <strong style="font-weight:300">"Software-Wartung & Support"</strong> buchbar –
-        100% Betriebsausgabe nach §4 Abs.4 EStG. Netto-Betrag von der Steuer absetzbar,
-        19% Vorsteuer zurückfordern (falls MwSt-pflichtig).
-      </p>
-    </div>
-
-    <a href="https://buy.stripe.com/bongplaceholder" target="_blank" id="bongPayLink"
-      style="display:block;text-align:center;background:linear-gradient(135deg,var(--gold),var(--ylw));
-      color:#000;border-radius:var(--r12);padding:14px;font-size:14px;font-weight:300;
-      text-decoration:none;letter-spacing:.2px;margin-bottom:10px">
-      → Trinkgeld senden
-    </a>
-    <p style="font-size:10px;font-weight:300;color:var(--txt3);text-align:center;line-height:1.6">
-      Kein Abo. Keine Pflicht. Nur wenn du willst.<br>
-      Du erhältst eine Quittung als Betriebsausgabe.
-    </p>
-  </div>
-</div>
-
-<!-- ── API KEY SHEET ── -->
-<div class="ovl" id="apiOvl" onclick="closeApiOuter(event)">
-  <div class="sheet">
-    <div class="sh"></div>
-    <button class="sc-btn" onclick="closeApiSheet()">✖</button>
-    <div class="api-sheet-title">⚡ KI-Erkennung</div>
-    <div class="api-sheet-sub">Mit deinem eigenen Claude API Key liest die App Belege automatisch aus – Beträge, Händler, Datum, Garantien und Abos. ~1–3 Cent pro Scan. Key wird nur lokal gespeichert.</div>
-    <div class="api-steps">
-      <div class="api-step"><div class="n">1</div><div class="t">Gehe zu <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> und erstelle einen kostenlosen Account.</div></div>
-      <div class="api-step"><div class="n">2</div><div class="t">Klicke links auf <strong style="color:var(--txt)">API Keys</strong> → <strong style="color:var(--txt)">Create Key</strong>. Kopiere den Key (beginnt mit <span class="mono" style="font-size:11px;color:var(--gold)">sk-ant-</span>).</div></div>
-      <div class="api-step"><div class="n">3</div><div class="t">Füge ihn unten ein und tippe auf <strong style="color:var(--txt)">Aktivieren</strong>. Fertig.</div></div>
-    </div>
-    <div class="api-key-inp">
-      <input class="inp" type="password" id="apiKeySheet" placeholder="sk-ant-api03-…" style="font-size:13px;letter-spacing:.5px" autocomplete="off">
-      <button class="btn btn-gold" onclick="saveApiKeySheet()">Aktivieren</button>
-    </div>
-    <div class="api-notice">🔒 Dein Key wird ausschließlich lokal in diesem Browser gespeichert und nie an Server übertragen – nur direkt an die Anthropic API beim Scan.</div>
-    <div id="apiSheetStat" style="font-size:12px;font-weight:300;color:var(--grn);display:none">✓ KI-Erkennung ist aktiv</div>
-    <div style="margin-top:6px">
-      <button class="btn btn-red btn-sm" id="apiRemoveBtn" onclick="removeApiKey()" style="display:none">Key entfernen</button>
-    </div>
-  </div>
-</div>
-
-<!-- ── SCANNER SHEET ── -->
-<div class="ovl" id="scanOvl" onclick="closeScanOuter(event)">
-  <div class="sheet" style="max-height:95vh">
-    <div class="sh"></div>
-    <button class="sc-btn" onclick="closeScanner()">✖</button>
-    <!-- WHY: Kein Privat-Tab hier – der Modus kommt vom Toggle auf der Startseite -->
-    <div id="bizSeg" class="seg" style="grid-template-columns:1fr 1fr 1fr">
-      <button class="seg-btn on" id="ttER" onclick="setScanType('er')">📥 Eingangsrechnung</button>
-      <button class="seg-btn" id="ttAR" onclick="setScanType('ar')">📤 Ausgangsrechnung</button>
-      <button class="seg-btn" id="ttManual" onclick="setScanType('manual')">✏️ Manuell</button>
-    </div>
-    <!-- Privat-Modus Banner: zeigt aktuellen Modus, kein manuelles Umschalten -->
-    <div id="privScanHint" style="display:none;background:rgba(136,153,170,.07);border:1px solid rgba(136,153,170,.18);border-radius:10px;padding:9px 12px;font-size:11px;font-weight:300;color:var(--silv);line-height:1.55;margin-bottom:4px">
-      🏠 Privat-Modus aktiv · Keine Belegnummer · Nur Gesamtbetrag · Erscheint nur im Privat-Tab
-    </div>
-
-    <!-- Vorschau: wird sichtbar sobald ein Bild gewählt wurde -->
-    <div class="vf" id="camArea" style="display:none">
-      <video id="camStream" autoplay playsinline muted></video>
-      <img id="capImg" alt="">
-      <div id="vfOvl" class="vf-ovl">
-        <div class="vf-line"></div>
-        <div class="vf-c tl"></div><div class="vf-c tr"></div>
-        <div class="vf-c bl"></div><div class="vf-c br"></div>
-      </div>
-    </div>
-
-    <!-- Upload-Bereich: primäre Aktion, immer sichtbar wenn kein Bild da -->
-    <div id="camPH" style="margin-bottom:14px">
-      <!-- Primär: Foto aus Galerie / Kamera (ein input, öffnet beides auf iOS) -->
-      <input type="file" id="fi" accept="image/*" capture="environment" onchange="loadFile(this)" style="display:none">
-      <input type="file" id="fiGal" accept="image/*" onchange="loadFile(this)" style="display:none">
-
-      <button onclick="document.getElementById('fi').click()"
-        style="width:100%;background:var(--s2);border:1.5px dashed var(--br2);border-radius:var(--r16);
-        padding:28px 16px;display:flex;flex-direction:column;align-items:center;gap:10px;
-        cursor:pointer;transition:border-color .2s;margin-bottom:10px"
-        id="btnMainUpload">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.2">
-          <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-          <circle cx="12" cy="13" r="4"/>
-        </svg>
-        <span style="font-size:14px;font-weight:300;color:var(--txt)">Foto aufnehmen</span>
-        <span style="font-size:11px;font-weight:300;color:var(--txt3)">Beleg, Bon, Monitor oder Screen</span>
-      </button>
-
-      <!-- Sekundär: aus Galerie wählen (ohne capture) -->
-      <button onclick="document.getElementById('fiGal').click()"
-        style="width:100%;background:transparent;border:1px solid var(--br);border-radius:var(--r12);
-        padding:12px 16px;display:flex;align-items:center;justify-content:center;gap:8px;
-        cursor:pointer;color:var(--txt2);font-size:13px;font-weight:300">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
-        Aus Galerie wählen
-      </button>
-    </div>
-
-    <!-- Kamera-Capture-Button: nur sichtbar wenn Live-Kamera läuft -->
-    <div class="cam-ctrls" id="camCtrls" style="display:none">
-      <div style="width:44px"></div>
-      <button class="shutter" id="btnCap" onclick="captureCam()" disabled>
-        <div class="shutI" id="shutI"></div>
-      </button>
-      <div style="width:44px"></div>
-    </div>
-    <div style="text-align:center;margin-bottom:14px">
-      <button id="btnStop" onclick="stopCam()" style="display:none;background:transparent;border:none;color:var(--txt3);font-size:11px;font-weight:300;cursor:pointer;letter-spacing:.2px">Kamera beenden</button>
-    </div>
-
-    <div class="prog-wrap" id="progWrap">
-      <div class="prog-log mono" id="progLog">Bereit …</div>
-      <div class="prog-bar"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
-    </div>
-    <div class="res-wrap" id="resWrap">
-      <!-- Hinweis-Banner: zeigt ob KI oder manuell -->
-      <div id="scanModeBanner" style="margin-bottom:12px;padding:9px 12px;border-radius:8px;
-        font-size:11px;font-weight:300;line-height:1.5;display:none"></div>
-      <p style="font-size:13px;font-weight:300;color:var(--txt2);margin-bottom:13px">Daten prüfen und ggf. korrigieren:</p>
-      <!-- Business-Felder (er/ar) -->
-      <div class="res-fields" id="bizFields">
-        <div class="field"><label>Händler / Aussteller</label><input id="rShop" type="text" placeholder="–"></div>
-        <div class="field"><label>Datum</label><input id="rDate" type="date"></div>
-        <div class="field"><label>Netto</label><input id="rNet" type="text" placeholder="0.00"></div>
-        <div class="field"><label>MwSt-Betrag</label><input id="rMwst" type="text" placeholder="0.00"></div>
-        <div class="field"><label>Brutto</label><input id="rBrutto" type="text" placeholder="0.00"></div>
-        <div class="field"><label>MwSt-Satz</label><select id="rRate"></select></div>
-        <div class="field"><label>Kategorie</label><select id="rCat"><option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option><option>Kleidung</option><option>Tanken</option><option>Haushalt</option><option>Gesundheit</option><option>Dienstleistung</option><option>Software</option><option>Sonstiges</option></select></div>
-        <div class="field"><label>Zahlung</label><select id="rPay"><option>Karte</option><option>Bar</option><option>Überweisung</option><option>Online</option></select></div>
-      </div>
-      <!-- Privat-Felder (priv) – nur Gesamtbetrag + Kategorie, keine MwSt -->
-      <div class="res-fields" id="privFields" style="display:none">
-        <div class="field"><label>Händler / Geschäft</label><input id="pShop" type="text" placeholder="–"></div>
-        <div class="field"><label>Datum</label><input id="pDate" type="date"></div>
-        <div class="field"><label>Gesamtbetrag</label><input id="pBrutto" type="text" placeholder="0.00"></div>
-        <div class="field"><label>Kategorie</label><select id="pCat">
-          <option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option>
-          <option>Kleidung</option><option>Tanken</option><option>Haushalt</option>
-          <option>Gesundheit</option><option>Freizeit</option><option>Reise</option>
-          <option>Sonstiges</option></select></div>
-        <div class="field"><label>Zahlung</label><select id="pPay"><option>Karte</option><option>Bar</option><option>Online</option></select></div>
-      </div>
-
-      <!-- Manuelle Eingabe (manual) – mit Spracheingabe -->
-      <div class="res-fields" id="manualFields" style="display:none">
-        <!-- Spracheingabe -->
-        <div id="manualSprachWrap" style="margin-bottom:14px">
-          <button id="manualMicBtn" onclick="toggleManualMic()"
-            style="width:100%;background:rgba(74, 158, 107, 0.15);border:1px solid rgba(74, 158, 107, 0.4);border-radius:var(--r12);
-            padding:14px;display:flex;align-items:center;justify-content:center;gap:10px;
-            cursor:pointer;color:var(--grn);font-size:13px;font-weight:300;transition:all .2s">
-            <svg id="manualMicIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3">
-              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/>
-            </svg>
-            <span id="manualMicLbl">🎤 Aufnahme starten</span>
-          </button>
-          <div id="manualMicTranscript" style="display:none;background:var(--s2);border:1px solid var(--br2);
-            border-radius:var(--r8);padding:10px 12px;font-size:12px;font-weight:300;
-            color:var(--txt2);margin-top:8px;min-height:36px;line-height:1.5"></div>
-        </div>
-
-        <div style="font-size:11px;font-weight:300;color:var(--txt3);text-align:center;margin-bottom:12px">— oder manuell ausfüllen —</div>
-
-        <div class="field"><label>Händler / Aussteller</label><input id="mShop" type="text" placeholder="z.B. Bürobedarf Müller"></div>
-        <div class="field"><label>Datum</label><input id="mDate" type="date"></div>
-        <div class="field"><label>Brutto</label><input id="mBrutto" type="text" placeholder="0.00" inputmode="decimal"></div>
-        <div class="field"><label>Netto (optional)</label><input id="mNet" type="text" placeholder="0.00" inputmode="decimal"></div>
-        <div class="field"><label>MwSt (optional)</label><input id="mMwst" type="text" placeholder="0.00" inputmode="decimal"></div>
-        <div class="field"><label>MwSt-Satz</label><select id="mRate">
-          <option value="19">19% (Standard)</option>
-          <option value="7">7% (ermäßigt)</option>
-          <option value="0">0% (Reverse Charge)</option></select></div>
-        <div class="field"><label>Kategorie</label><select id="mCat">
-          <option>Bürobedarf</option><option>Software</option><option>Beratung</option>
-          <option>Marketing</option><option>Reisen</option><option>Fortbildung</option>
-          <option>Fahrzeug</option><option>Telefon/Internet</option><option>Sonstiges</option></select></div>
-        <div class="field"><label>Zahlung</label><select id="mPay">
-          <option>Überweisung</option><option>Karte</option><option>Bar</option><option>Lastschrift</option></select></div>
-      </div>
-
-      <div id="itemsSec" style="display:none;margin-bottom:12px">
-        <p class="stitle" style="margin-bottom:8px">Erkannte Positionen</p>
-        <table class="itbl"><thead><tr><th>Artikel</th><th style="text-align:right">Preis</th></tr></thead><tbody id="itemsB"></tbody></table>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-gold btn-sm" onclick="saveBeleg()">Speichern</button>
-        <button class="btn btn-g btn-sm" onclick="resetScan()">Neu scannen</button>
-        <button class="btn btn-g btn-sm" id="retryKiBtn" style="display:none"
-          onclick="retryKi()">⚡ KI erneut starten</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ── DETAIL SHEET ── -->
-<div class="ovl" id="detOvl" onclick="closeDetOuter(event)">
-  <div class="sheet"><div class="sh"></div><button class="sc-btn" onclick="closeDet()">✖</button>
-    <div id="detContent"></div>
-  </div>
-</div>
-
+<!-- ═══════════════════════════════════════════════════════════
+     TOAST (immer oben, global)
+═══════════════════════════════════════════════════════════════ -->
 <div id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src='js/db.js'></script>
-<script src='js/api.js'></script>
-<script src='js/scanner.js'></script>
-<script src='js/ui.js'></script>
-<script src='js/app.js'></script>
+<!-- ═══════════════════════════════════════════════════════════
+     SHELL — IMMER SICHTBARER HEADER
+═══════════════════════════════════════════════════════════════ -->
+<div id="shell-top">
+  <div class="shell-header-top">
+    <div class="shell-title-box">
+      <div class="shell-app-name">BelegScan Pro</div>
+      <div class="shell-user-info">
+        <span id="shell-name">Hallo!</span> · <span id="shell-beruf" style="opacity:.6">Bereit</span>
+      </div>
+    </div>
+    
+    <!-- Säulen-Toggle -->
+    <div class="pillar-toggle" id="pillar-toggle">
+      <button class="pt-btn on" id="pt-business" onclick="_setPillar('business')">💼</button>
+      <button class="pt-btn" id="pt-privat" onclick="_setPillar('privat')">🏠</button>
+      <button class="pt-btn" id="pt-archiv" onclick="_setPillar('archiv')">📬</button>
+      <button class="pt-btn" id="pt-leben" onclick="_setPillar('leben')">🌱</button>
+    </div>
+  </div>
+
+  <div class="shell-widgets">
+    <!-- MwSt Widget -->
+    <div class="s-widget" onclick="BSP.showView('mwst')">
+      <div class="s-w-lab">MwSt-Bsp.</div>
+      <div class="s-w-val" id="shell-mwst">0,00 €</div>
+    </div>
+    <!-- Zeitersparnis -->
+    <div class="s-widget">
+      <div class="s-w-lab">Gespart</div>
+      <div class="s-w-val" id="shell-time-saved">0h 0m</div>
+    </div>
+    <!-- API Kosten -->
+    <div class="s-widget">
+      <div class="s-w-lab">KI-Ertrag</div>
+      <div class="s-w-val" id="shell-cost-saved">0,00 € ↑</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     APP — SCROLLBARER HAUPTBEREICH
+═══════════════════════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- Container für Modul-Views (wird von Modulen befüllt) -->
+  <div id="module-views">
+
+    <!-- ── HOME VIEW ──────────────────────────────────────── -->
+    <div class="view on" id="v-home">
+      <div class="home-hero">
+        <div class="home-title" style="font-size:24px; font-weight:200; border-bottom:1px solid var(--br); padding-bottom:16px; width:100%; text-align:center">Bong-Manager</div>
+      </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="home-stats">
+        <div class="stat-card">
+          <div class="sc-lbl">Einnahmen (Jahr)</div>
+          <div class="sc-val" id="qs-einnahmen" style="color:var(--ylw)">0 €</div>
+          <div class="sc-sub" id="qs-einnahmen-cnt">0 Ausgangsrechnungen</div>
+        </div>
+        <div class="stat-card">
+          <div class="sc-lbl">Ausgaben (Jahr)</div>
+          <div class="sc-val" id="qs-ausgaben" style="color:var(--blu)">0 €</div>
+          <div class="sc-sub" id="qs-ausgaben-cnt">0 Belege</div>
+        </div>
+      </div>
+
+      <!-- Letzte Belege -->
+      <div class="recent-section" style="margin-top:16px">
+        <div class="section-title">Zuletzt erfasst</div>
+        <div id="recent-list">
+          <div class="empty">
+            Noch keine Belege.<br>
+            Tippe auf 📷 um deinen ersten Beleg zu scannen.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Weitere Views werden von Modulen befüllt ─────── -->
+    <!-- Scanner, Belege, MwSt, Steuer, Fahrt, Einstellungen -->
+    <div id="v-verpflegung" class="view"></div>
+    <div id="v-einstellungen" class="view"></div>
+
+    <!-- Leben Views -->
+    <div id="v-leben-home" class="view"></div>
+    <div id="v-leben-entwicklung" class="view"></div>
+    <div id="v-leben-inflation" class="view"></div>
+    <div id="v-leben-split" class="view"></div>
+
+    <!-- Archiv Extensions -->
+    <div id="v-archiv-reise" class="view"></div>
+    <div id="v-archiv-tagebuch" class="view"></div>
+
+  </div><!-- /module-views -->
+</div><!-- /app -->
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCANNER OVERLAY (wird von scanner.js befüllt)
+═══════════════════════════════════════════════════════════════ -->
+<div id="scan-ovl"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HAUPT-NAVIGATION
+═══════════════════════════════════════════════════════════════ -->
+<nav id="shell-nav"></nav>
+
+<!-- ── UNIVERSAL ACTION BAR (The Trio) ── -->
+<div class="action-bar" id="action-bar">
+  <!-- Mikrofon -->
+  <button class="ab-btn" onclick="SpracheUniversal.open()" aria-label="Sprache">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>
+  </button>
+  
+  <!-- Kamera (Mitte, Groß) -->
+  <div style="position:relative">
+    <div id="deadline-ring-box">
+      <div id="deadline-label" class="ab-label">Abgabe in 10d</div>
+      <svg class="ab-ring-svg" viewBox="0 0 96 96">
+        <circle class="ab-ring-bg" cx="48" cy="48" r="44"/>
+        <circle id="deadline-ring-fill" class="ab-ring-fill" cx="48" cy="48" r="44"/>
+      </svg>
+    </div>
+    <button class="ab-btn ab-btn-main" onclick="ScannerModule.open()" aria-label="Scan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+    </button>
+  </div>
+
+  <!-- Stift -->
+  <button class="ab-btn" onclick="StiftModule.open()" aria-label="Manuell">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS — Core zuerst, dann Module
+═══════════════════════════════════════════════════════════════ -->
+<script src="./core.js"></script>
+<script src="./js/onboarding.js"></script>
+<script src="./js/business/business-shell.js"></script>
+<script src="./js/privat/privat-shell.js"></script>
+<script src="./js/privat/privat-spending.js"></script>
+<script src="./js/privat/privat-energie.js"></script>
+
+<script src="./js/privat/privat-deals.js"></script>
+<script src="./js/archiv/archiv-shell.js"></script>
+<script src="./js/archiv/archiv-docs.js"></script>
+<script src="./js/archiv/archiv-fristen.js"></script>
+<script src="./js/archiv/archiv-reise.js"></script>
+<script src="./js/archiv/archiv-tagebuch.js"></script>
+<script src="./js/leben/leben-shell.js"></script>
+<script src="./js/leben/leben-core.js"></script>
+<script src="./js/leben/leben-home.js"></script>
+<script src="./js/leben/leben-entwicklung.js"></script>
+<script src="./js/leben/leben-inflation.js"></script>
+<script src="./js/leben/leben-split.js"></script>
+<script src="./js/sprache-universal.js"></script>
+<script src="./js/input-stift.js"></script>
+<script src="./js/dashboard.js"></script>
+<script src="./js/notifications.js"></script>
+<script src="./js/business/einstellungen.js"></script>
+<script src="./js/business/scanner.js"></script>
+<script src="./js/business/sprache.js"></script>
+<script src="./js/business/belege.js"></script>
+<script src="./js/business/mwst.js"></script>
+<script src="./js/business/steuer.js"></script>
+<script src="./js/business/fahrt.js"></script>
+<script src="./js/business/verpflegung.js"></script>
+<script src="./js/business/export.js"></script>
+
+<script>
+// ── Shell-Logik (nur was wirklich in der Shell bleiben muss) ──
+let _currentPillar = 'business'; // 'business', 'privat', 'archiv'
+
+function _setPillar(p) {
+  _currentPillar = p;
+  
+  // Theme-Klasse für CSS Transitions
+  document.body.className = 'p-' + p;
+
+  // Header-Buttons (Pillar Toggle)
+  document.querySelectorAll('.pt-btn').forEach(b => {
+    b.classList.toggle('on', b.id === 'pt-' + p);
+  });
+
+  // Deadline-Ring Box Sichtbarkeit
+  const dlBox = document.getElementById('deadline-ring-box');
+  if (dlBox) dlBox.style.display = p === 'business' ? 'block' : 'none';
+
+  // Navigation je nach Säule
+  if (p === 'business') {
+    const nav = document.getElementById('shell-nav');
+    if (nav) {
+      nav.innerHTML = `
+        <button class="nav-btn on" data-nav="home" onclick="BSP.showView('home')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M9 22V12h6v10"/></svg>
+          <span>Home</span>
+        </button>
+        <button class="nav-btn" data-nav="belege" onclick="BSP.showView('belege')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+          <span>Belege</span>
+        </button>
+        <button class="nav-btn" data-nav="mwst" onclick="BSP.showView('mwst')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <span>MwSt</span>
+        </button>
+        <button class="nav-btn" data-nav="einstellungen" onclick="BSP.showView('einstellungen')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          <span>Setup</span>
+        </button>
+      `;
+    }
+    BSP.showView('home');
+    _updateDeadlineRing();
+  } else if (p === 'privat' && typeof PrivatShell !== 'undefined') {
+    PrivatShell.activate();
+  } else if (p === 'archiv' && typeof ArchivShell !== 'undefined') {
+    ArchivShell.activate();
+  } else if (p === 'leben' && typeof LebenShell !== 'undefined') {
+    LebenShell.activate();
+  }
+
+  BSP.emit('pillar:changed', { pillar: p });
+}
+let _appMode = localStorage.getItem('bsp_mode') || 'biz';
+
+// ── Onboarding ─────────────────────────────────────────────
+function _obNext(step) {
+  document.querySelectorAll('.ob-step').forEach(el => el.classList.remove('on'));
+  const el = document.getElementById('obs' + step);
+  if (el) el.classList.add('on');
+  // Progress dots
+  document.querySelectorAll('.ob-dot').forEach((d, i) => d.classList.toggle('on', i < step));
+}
+
+function _toggleObKey() {
+  const inp = document.getElementById('ob_apikey');
+  if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+async function _obFinish() {
+  const vorname  = document.getElementById('ob_vorname')?.value?.trim() || '';
+  const nachname = document.getElementById('ob_nachname')?.value?.trim() || '';
+  const beruf    = document.getElementById('ob_beruf')?.value?.trim() || '';
+  const steuernr = document.getElementById('ob_steuernr')?.value?.trim() || '';
+  const apiKey   = document.getElementById('ob_apikey')?.value?.trim() || '';
+
+  if (!vorname) {
+    BSP.toast('Bitte deinen Vornamen eingeben', 'wr');
+    document.getElementById('ob_vorname')?.focus();
+    return;
+  }
+
+  await BSP.saveAllSettings({
+    vorname, nachname, beruf, steuernr,
+    _apiKey: apiKey,
+    setupDone: '1',
+    stbSatz: '120',
+    minProScan: '4',
+    belegFmt: 'A'
+  });
+
+  document.getElementById('onboarding').classList.remove('on');
+  _updateShellHeader();
+  BSP.showView('home');
+  BSP.toast('Willkommen, ' + vorname + '! 🎉', 'ok');
+}
+
+// ── Mode Toggle ─────────────────────────────────────────────
+function _setMode(m) {
+  _appMode = m;
+  localStorage.setItem('bsp_mode', m);
+  document.getElementById('modeBiz').classList.toggle('on', m === 'biz');
+  document.getElementById('modeBiz').classList.toggle('biz', true);
+  document.getElementById('modePriv').classList.toggle('on', m === 'priv');
+  BSP.emit('mode:changed', { mode: m });
+  _renderHome();
+}
+
+// ── Scanner / Sprache öffnen ────────────────────────────────
+function _openScanner() {
+  // Wird von scanner.js übernommen (BSP.on('core:ready') → Modul registriert sich)
+  if (typeof ScannerModule !== 'undefined') ScannerModule.open();
+  else BSP.toast('Scanner lädt…', 'wr');
+}
+
+function _openSprache() {
+  if (typeof SpracheModule !== 'undefined') SpracheModule.open();
+  else BSP.toast('Sprachmodul lädt…', 'wr');
+}
+
+function _openManuell() {
+  if (typeof ScannerModule !== 'undefined') ScannerModule.openManuell();
+  else BSP.toast('Scanner lädt…', 'wr');
+}
+
+// ── Shell Header aktualisieren ─────────────────────────────
+function _updateShellHeader() {
+  const s = BSP.state.settings || {};
+
+  // Name
+  const nameEl = document.getElementById('shell-name');
+  if (nameEl) nameEl.textContent = [s.vorname, s.nachname].filter(Boolean).join(' ') || '—';
+
+  const berufEl = document.getElementById('shell-beruf');
+  if (berufEl && s.beruf) berufEl.textContent = s.beruf;
+
+  // MwSt-Saldo
+  const saldo = BSP.state.mwstSaldo || 0;
+  const mwstEl = document.getElementById('shell-mwst');
+  if (mwstEl) {
+    mwstEl.textContent = BSP.fm(Math.abs(saldo)) + ' €' + (saldo < 0 ? ' ↓' : '');
+    mwstEl.className = 'sw-val ' + (saldo >= 0 ? 'red' : 'green');
+  }
+
+  // Zeitersparnis
+  const ts = BSP.getTimeSaved();
+  const timeEl = document.getElementById('shell-time-saved');
+  if (timeEl) timeEl.textContent = ts.formatted;
+
+  // API-Kostenvorteil
+  const cc = BSP.getCostComparison();
+  const costEl = document.getElementById('shell-cost-saved');
+  if (costEl) {
+    costEl.textContent = BSP.fm(cc.saved) + ' €';
+    costEl.className = 'sw-val ' + (cc.saved >= 0 ? 'green' : 'red');
+  }
+
+  // MwSt-Deadline
+  const now = new Date();
+  const deadline = new Date(now.getFullYear(), now.getMonth() + 1, 10);
+  const dLeft = Math.max(0, Math.ceil((deadline - now) / 864e5));
+  const deadlineEl = document.getElementById('shell-deadline-val');
+  if (deadlineEl) {
+    deadlineEl.textContent = dLeft + ' Tage';
+    deadlineEl.style.color = dLeft <= 3 ? 'var(--red)' : dLeft <= 7 ? 'var(--orn)' : 'var(--grn)';
+  }
+}
+
+// ── Home View Rendering ───────────────────────────────────────
+async function _renderHome() {
+  if (typeof DashboardModule !== 'undefined') {
+    await DashboardModule.render();
+  }
+}
+
+function _openDetail(id) {
+  if (typeof BelegeModule !== 'undefined') BelegeModule.openDetail(id);
+}
+
+// ── Event-Listener für Shell-Updates ─────────────────────────
+BSP.on('beleg:saved', () => { _updateShellHeader(); _renderHome(); });
+BSP.on('beleg:deleted', () => { _updateShellHeader(); _renderHome(); });
+BSP.on('mwst:updated', () => { _updateShellHeader(); });
+BSP.on('api:used', () => { _updateShellHeader(); });
+BSP.on('settings:saved', () => { _updateShellHeader(); });
+BSP.on('view:changed', ({ name }) => {
+  document.querySelectorAll('[data-nav]').forEach(n => n.classList.remove('on'));
+  const navEl = document.querySelector(`[data-nav="${name}"]`);
+  if (navEl) navEl.classList.add('on');
+  if (name === 'home') _renderHome();
+});
+
+// ── Deadline-Ring aktualisieren ──────────────────────────────
+function _updateDeadlineRing() {
+  const dl = BSP.getNextDeadline();
+  const ring = document.getElementById('deadline-ring-fill');
+  const lbl = document.getElementById('deadline-label');
+  const box = document.getElementById('deadline-ring-box');
+
+  if (!ring) return;
+
+  // Sichtbarkeit je nach Säule
+  if (box) box.style.display = _currentPillar === 'business' ? 'block' : 'none';
+
+  // Kreisumfang: 2 * π * 44 ≈ 276.46
+  // Aber dasharray im CSS ist 245? Lassen wir es berechnen:
+  const r = 44;
+  const circ = 2 * Math.PI * r;
+  ring.style.strokeDasharray = circ;
+
+  const maxDays = dl.rhythmus === 'jaehrlich' ? 365 : dl.rhythmus === 'halbjahr' ? 183 : dl.rhythmus === 'quartal' ? 92 : 31;
+  const fraction = Math.min(1, dl.daysLeft / maxDays);
+  const offset = circ * (1 - fraction);
+
+  ring.style.strokeDashoffset = offset;
+  
+  if (dl.daysLeft <= 3) ring.style.stroke = 'var(--red)';
+  else if (dl.daysLeft <= 7) ring.style.stroke = 'var(--orn)';
+  else ring.style.stroke = 'var(--grn)';
+
+  if (lbl) {
+    lbl.textContent = dl.daysLeft <= 7 ? `${dl.daysLeft}d Abgabe` : 'Frist';
+    lbl.style.color = dl.daysLeft <= 3 ? 'var(--red)' : dl.daysLeft <= 7 ? 'var(--orn)' : 'var(--accent)';
+  }
+}
+
+// ── App Start ───────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await BSP.init();
+    
+    // Initial Business-Pillar laden
+    _setPillar('business');
+    _updateShellHeader();
+    await _renderHome();
+
+    // Module initialisieren (Reihenfolge: dependencies first)
+    if (typeof OnboardingModule !== 'undefined') OnboardingModule.init();
+    if (typeof BusinessShell !== 'undefined') BusinessShell.init();
+    if (typeof PrivatShell !== 'undefined') PrivatShell.init();
+    if (typeof PrivatSpending !== 'undefined') PrivatSpending.init();
+    if (typeof PrivatEnergie !== 'undefined') PrivatEnergie.init();
+    if (typeof PrivatDeals !== 'undefined') PrivatDeals.init();
+    if (typeof PrivatZiele !== 'undefined') PrivatZiele.init();
+    if (typeof ArchivShell !== 'undefined') ArchivShell.init();
+    if (typeof ArchivDocs !== 'undefined') ArchivDocs.init();
+    if (typeof ArchivFristen !== 'undefined') ArchivFristen.init();
+    if (typeof ArchivAntwort !== 'undefined') ArchivAntwort.init();
+    if (typeof ArchivKontext !== 'undefined') ArchivKontext.init();
+    if (typeof SpracheUniversal !== 'undefined') SpracheUniversal.init();
+    if (typeof StiftModule !== 'undefined') StiftModule.init();
+    if (typeof DashboardModule !== 'undefined') { /* kein init nötig */ }
+    if (typeof NotificationModule !== 'undefined') NotificationModule.init();
+    if (typeof EinstellungenModule !== 'undefined') EinstellungenModule.init();
+    if (typeof ScannerModule !== 'undefined') ScannerModule.init();
+      if (typeof ArchivShell !== 'undefined' && ArchivShell.init) ArchivShell.init();
+      if (typeof LebenShell !== 'undefined' && LebenShell.init) LebenShell.init();
+      if (typeof LebenHome !== 'undefined') LebenHome.init();
+      if (typeof LebenCore !== 'undefined') LebenCore.init();
+      if (typeof LebenSplit !== 'undefined') LebenSplit.init();
+      if (typeof LebenInflation !== 'undefined') LebenInflation.init();
+      if (typeof LebenEntwicklung !== 'undefined') LebenEntwicklung.init();
+      if (typeof ArchivReise !== 'undefined') ArchivReise.init();
+      if (typeof ArchivTagebuch !== 'undefined') ArchivTagebuch.init();
+      if (typeof BelegeModule !== 'undefined') BelegeModule.init();
+    if (typeof MwStModule !== 'undefined') MwStModule.init();
+    if (typeof SteuerModule !== 'undefined') SteuerModule.init();
+    if (typeof FahrtModule !== 'undefined') FahrtModule.init();
+    if (typeof VerpflegungModule !== 'undefined') VerpflegungModule.init();
+    if (typeof ExportModule !== 'undefined') ExportModule.init();
+
+    // Shell-Header befüllen
+    _updateShellHeader();
+    _updateDeadlineRing();
+
+    // Service Worker registrieren
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
+    }
+  } catch(e) {
+    console.error('App init error:', e);
+    document.body.innerHTML += `<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#070707;color:#c04040;font-family:system-ui;text-align:center;padding:20px;z-index:99999">
+      <div>Fehler beim Starten:<br><code style="font-size:12px">${e.message}</code></div>
+    </div>`;
+  }
+});
+</script>
 </body>
 </html>
