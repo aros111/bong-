@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="BelegScan">
-<meta name="theme-color" content="#070707">
+<meta name="theme-color" content="#fdfdfd">
 <meta name="description" content="KI-gestützter Beleg-Scanner für deutsche Freiberufler">
 <link rel="manifest" href="./manifest.json">
 <title>BelegScan Pro</title>
@@ -52,10 +52,17 @@
       <div class="s-w-lab">Gespart</div>
       <div class="s-w-val" id="shell-time-saved">0h 0m</div>
     </div>
-    <!-- API Kosten -->
-    <div class="s-widget">
-      <div class="s-w-lab">KI-Ertrag</div>
-      <div class="s-w-val" id="shell-cost-saved">0,00 € ↑</div>
+    <!-- KI Status -->
+    <div class="s-widget" onclick="_toggleApiKeyInput()">
+      <div class="s-w-lab">KI-Status</div>
+      <div class="s-w-val" id="shell-api-status">Laden...</div>
+    </div>
+  </div>
+  <!-- Hidden API Key Input -->
+  <div id="shell-api-input-wrap" style="display:none;padding:10px 16px;background:var(--bg3);border-bottom:1px solid var(--br);animation:su .2s ease">
+    <div style="display:flex;gap:8px;align-items:center">
+      <input id="shell-api-key" type="password" class="sett-inp" placeholder="Anthropic API Key eingeben..." style="font-size:12px">
+      <button class="btn btn-gold btn-sm" onclick="_saveShellApiKey()">Sichern</button>
     </div>
   </div>
 </div>
@@ -72,6 +79,16 @@
     <div class="view on" id="v-home">
       <div class="home-hero">
         <div class="home-title" style="font-size:24px; font-weight:200; border-bottom:1px solid var(--br); padding-bottom:16px; width:100%; text-align:center">Bong-Manager</div>
+        
+        <!-- API Key Quick Access on Home -->
+        <div id="home-api-box" style="width:100%;margin-top:16px;padding:16px;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r16);display:none">
+          <div style="font-size:11px;color:var(--txt3);text-transform:uppercase;margin-bottom:8px">KI-Anbindung fehlt</div>
+          <div style="display:flex;gap:8px">
+            <input id="home-api-key" type="password" class="sett-inp" placeholder="Anthropic Key hier einfügen..." style="background:var(--bg3);padding:8px 12px;border-radius:8px">
+            <button class="btn btn-gold" onclick="_saveHomeApiKey()">✓</button>
+          </div>
+          <div style="font-size:10px;color:var(--txt3);margin-top:8px">Wird benötigt für automatische Beleg-Analyse.</div>
+        </div>
       </div>
       </div>
 
@@ -120,9 +137,11 @@
 </div><!-- /app -->
 
 <!-- ═══════════════════════════════════════════════════════════
-     SCANNER OVERLAY (wird von scanner.js befüllt)
+     SCANNER OVERLAYS
 ═══════════════════════════════════════════════════════════════ -->
 <div id="scan-ovl"></div>
+<div id="privat-scan-ovl"></div>
+<div id="archiv-scan-ovl"></div>
 
 <!-- ═══════════════════════════════════════════════════════════
      HAUPT-NAVIGATION
@@ -145,7 +164,7 @@
         <circle id="deadline-ring-fill" class="ab-ring-fill" cx="48" cy="48" r="44"/>
       </svg>
     </div>
-    <button class="ab-btn ab-btn-main" onclick="ScannerModule.open()" aria-label="Scan">
+    <button class="ab-btn ab-btn-main" onclick="_openScanner()" aria-label="Scan">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
     </button>
   </div>
@@ -163,11 +182,13 @@
 <script src="./js/onboarding.js"></script>
 <script src="./js/business/business-shell.js"></script>
 <script src="./js/privat/privat-shell.js"></script>
+<script src="./js/privat/privat-scan.js"></script>
 <script src="./js/privat/privat-spending.js"></script>
 <script src="./js/privat/privat-energie.js"></script>
 
 <script src="./js/privat/privat-deals.js"></script>
 <script src="./js/archiv/archiv-shell.js"></script>
+<script src="./js/archiv/archiv-scan.js"></script>
 <script src="./js/archiv/archiv-docs.js"></script>
 <script src="./js/archiv/archiv-fristen.js"></script>
 <script src="./js/archiv/archiv-reise.js"></script>
@@ -303,9 +324,15 @@ function _setMode(m) {
 
 // ── Scanner / Sprache öffnen ────────────────────────────────
 function _openScanner() {
-  // Wird von scanner.js übernommen (BSP.on('core:ready') → Modul registriert sich)
-  if (typeof ScannerModule !== 'undefined') ScannerModule.open();
-  else BSP.toast('Scanner lädt…', 'wr');
+  if (_currentPillar === 'privat' && typeof PrivatScanModule !== 'undefined') {
+    PrivatScanModule.open();
+  } else if (_currentPillar === 'archiv' && typeof ArchivScanModule !== 'undefined') {
+    ArchivScanModule.open();
+  } else if (typeof ScannerModule !== 'undefined') {
+    ScannerModule.open();
+  } else {
+    BSP.toast('Scanner lädt…', 'wr');
+  }
 }
 
 function _openSprache() {
@@ -318,7 +345,6 @@ function _openManuell() {
   else BSP.toast('Scanner lädt…', 'wr');
 }
 
-// ── Shell Header aktualisieren ─────────────────────────────
 function _updateShellHeader() {
   const s = BSP.state.settings || {};
 
@@ -334,7 +360,7 @@ function _updateShellHeader() {
   const mwstEl = document.getElementById('shell-mwst');
   if (mwstEl) {
     mwstEl.textContent = BSP.fm(Math.abs(saldo)) + ' €' + (saldo < 0 ? ' ↓' : '');
-    mwstEl.className = 'sw-val ' + (saldo >= 0 ? 'red' : 'green');
+    mwstEl.className = 's-w-val ' + (saldo >= 0 ? 'red' : 'green');
   }
 
   // Zeitersparnis
@@ -347,7 +373,7 @@ function _updateShellHeader() {
   const costEl = document.getElementById('shell-cost-saved');
   if (costEl) {
     costEl.textContent = BSP.fm(cc.saved) + ' €';
-    costEl.className = 'sw-val ' + (cc.saved >= 0 ? 'green' : 'red');
+    costEl.className = 's-w-val ' + (cc.saved >= 0 ? 'green' : 'red');
   }
 
   // MwSt-Deadline
@@ -357,8 +383,50 @@ function _updateShellHeader() {
   const deadlineEl = document.getElementById('shell-deadline-val');
   if (deadlineEl) {
     deadlineEl.textContent = dLeft + ' Tage';
-    deadlineEl.style.color = dLeft <= 3 ? 'var(--red)' : dLeft <= 7 ? 'var(--orn)' : 'var(--grn)';
+    deadlineEl.style.color = dLeft <= 3 ? 'var(--red)' : dLeft <= 7 ? 'var(--orn)' : 'var(--accent)';
   }
+
+  // KI-Status
+  const apiKey = (s && s._apiKey) || localStorage.getItem('bsp_apikey') || '';
+  const apiStatusEl = document.getElementById('shell-api-status');
+  if (apiStatusEl) {
+    apiStatusEl.textContent = apiKey ? 'Aktiv ✓' : 'Fehlt ⚠';
+    apiStatusEl.style.color = apiKey ? 'var(--grn)' : 'var(--red)';
+  }
+
+  // Home API Box Sichtbarkeit
+  const homeApiBox = document.getElementById('home-api-box');
+  if (homeApiBox) homeApiBox.style.display = apiKey ? 'none' : 'block';
+}
+
+// ── API Key Actions ─────────────────────────────────────────
+function _toggleApiKeyInput() {
+  const wrap = document.getElementById('shell-api-input-wrap');
+  if (!wrap) return;
+  const isOff = wrap.style.display === 'none';
+  wrap.style.display = isOff ? 'block' : 'none';
+  if (isOff) {
+    const inp = document.getElementById('shell-api-key');
+    if (inp) {
+      inp.value = BSP.state.settings?._apiKey || localStorage.getItem('bsp_apikey') || '';
+      inp.focus();
+    }
+  }
+}
+
+async function _saveShellApiKey() {
+  const val = document.getElementById('shell-api-key')?.value?.trim();
+  if (!val) return BSP.toast('Bitte Key eingeben', 'wr');
+  await BSP.saveAllSettings({ _apiKey: val });
+  document.getElementById('shell-api-input-wrap').style.display = 'none';
+  BSP.toast('API-Key gespeichert', 'ok');
+}
+
+async function _saveHomeApiKey() {
+  const val = document.getElementById('home-api-key')?.value?.trim();
+  if (!val) return BSP.toast('Bitte Key eingeben', 'wr');
+  await BSP.saveAllSettings({ _apiKey: val });
+  BSP.toast('API-Key gespeichert', 'ok');
 }
 
 // ── Home View Rendering ───────────────────────────────────────
@@ -448,6 +516,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (typeof NotificationModule !== 'undefined') NotificationModule.init();
     if (typeof EinstellungenModule !== 'undefined') EinstellungenModule.init();
     if (typeof ScannerModule !== 'undefined') ScannerModule.init();
+    if (typeof PrivatScanModule !== 'undefined') PrivatScanModule.init();
+    if (typeof ArchivScanModule !== 'undefined') ArchivScanModule.init();
       if (typeof ArchivShell !== 'undefined' && ArchivShell.init) ArchivShell.init();
       if (typeof LebenShell !== 'undefined' && LebenShell.init) LebenShell.init();
       if (typeof LebenHome !== 'undefined') LebenHome.init();
@@ -474,7 +544,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
   } catch(e) {
     console.error('App init error:', e);
-    document.body.innerHTML += `<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#070707;color:#c04040;font-family:system-ui;text-align:center;padding:20px;z-index:99999">
+    document.body.innerHTML += `<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#fdfdfd;color:#c04040;font-family:system-ui;text-align:center;padding:20px;z-index:99999">
       <div>Fehler beim Starten:<br><code style="font-size:12px">${e.message}</code></div>
     </div>`;
   }

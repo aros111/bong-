@@ -361,19 +361,24 @@ const AI = (() => {
     'claude-3-5-sonnet-20241022': { input: 3.00, output: 15.00 }
   };
 
-  async function process({ prompt, imageB64, model, maxTokens = 1024 }) {
+  async function process({ prompt, imageB64, images = [], model, maxTokens = 1024 }) {
     const apiKey = (state.settings && state.settings._apiKey) || localStorage.getItem('bsp_apikey') || '';
     if (!apiKey) throw new Error('API Key fehlt');
 
     const content = [];
-    if (imageB64) {
-      const mediaType = imageB64.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-      const data = imageB64.replace(/^data:[^;]+;base64,/, '');
+    
+    // Handle single or multiple images
+    const allImages = images.length ? images : (imageB64 ? [imageB64] : []);
+    
+    allImages.forEach(img => {
+      const mediaType = img.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+      const data = img.replace(/^data:[^;]+;base64,/, '');
       content.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data } });
-    }
+    });
+
     content.push({ type: 'text', text: prompt });
 
-    const usedModel = model || (imageB64 ? MODEL_HAIKU : MODEL_SONNET);
+    const usedModel = model || (allImages.length ? MODEL_HAIKU : MODEL_SONNET);
 
     const resp = await fetch(API_URL, {
       method: 'POST',
@@ -390,12 +395,15 @@ const AI = (() => {
       })
     });
 
-    if (!resp.ok) throw new Error(`API Fehler ${resp.status}`);
+    if (!resp.ok) {
+      if (resp.status === 401) throw new Error('API Key ungültig oder abgelaufen');
+      throw new Error(`API Fehler ${resp.status}`);
+    }
 
     const data = await resp.json();
     const text = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '';
 
-    // Kosten & Stats (Simplified for v2.0 logic)
+    // Kosten & Stats
     const usage = data.usage || {};
     const costTable = COST_TABLE[usedModel] || COST_TABLE[MODEL_HAIKU];
     const cost = ((usage.input_tokens || 0) / 1e6 * costTable.input) +
@@ -411,27 +419,57 @@ const AI = (() => {
   return { process };
 })();
 
+// Zentrale Wrapper-Funktion für alle Scans
+async function callClaude(params) {
+  if (!(state.settings?._apiKey || localStorage.getItem('bsp_apikey'))) {
+    throw new Error('Bitte zuerst API-Key in den Einstellungen eintragen');
+  }
+  return AI.process(params);
+}
+
 // Redundante ask-Funktion für Abwärtskompatibilität
 async function ask(params) { return AI.process(params); }
 
 // ── Bild komprimieren ────────────────────────────────────────
 function compressImage(dataUrl, maxPx = 600, maxKB = 100) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      let q = 0.82;
-      let result;
-      do {
-        result = canvas.toDataURL('image/jpeg', q);
-        q -= 0.06;
-      } while (result.length * 3 / 4 > maxKB * 1024 && q > 0.1);
-      resolve(result);
+      let currentMaxPx = maxPx;
+      
+      const attempt = (px) => {
+        const scale = Math.min(1, px / Math.max(img.width, img.height));
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        let q = 0.6; // Startqualität wie gefordert
+        let result;
+        do {
+          result = canvas.toDataURL('image/jpeg', q);
+          if (result.length * 3 / 4 <= maxKB * 1024) return result;
+          q -= 0.05;
+        } while (q >= 0.35); // Hard limit 0.35
+
+        return null; // Zu groß bei dieser Auflösung
+      };
+
+      let finalResult = attempt(currentMaxPx);
+      
+      // Wenn bei 0.35 noch zu groß, Auflösung iterativ reduzieren
+      while (!finalResult && currentMaxPx > 200) {
+        currentMaxPx -= 100;
+        finalResult = attempt(currentMaxPx);
+      }
+
+      if (finalResult) {
+        resolve(finalResult);
+      } else {
+        reject(new Error("Bild konnte nicht ausreichend komprimiert werden – bitte in besserer Beleuchtung neu fotografieren oder näher heranzoomen."));
+      }
     };
+    img.onerror = () => reject(new Error("Bild konnte nicht geladen werden"));
     img.src = dataUrl;
   });
 }
@@ -509,7 +547,7 @@ return {
   getBelege, addBeleg, updateBeleg, deleteBeleg,
   registerModule, getModules, getContext,
   loadSettings, saveSetting, saveAllSettings,
-  AI, ask, compressImage,
+  AI, callClaude, ask, compressImage,
   encrypt, decrypt,
   isPremium, hasTokens, deductTokens,
   fm, fd, eh, fmK, cfg, toast, nextNr, showView,

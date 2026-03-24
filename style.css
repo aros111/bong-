@@ -5,37 +5,37 @@
 
 /* ── Design Tokens ──────────────────────────────────────────── */
 :root {
-  /* Pillar: Business - Petrol */
-  --biz-bg:      #0a1a1f;
-  --biz-bg2:     #0f2530;
-  --biz-bg3:     #153040;
+  /* Pillar: Business - Petrol Light */
+  --biz-bg:      #fdfdfd;
+  --biz-bg2:     #f4f7f8;
+  --biz-bg3:     #ecf0f2;
   --biz-accent:  #2a7a8a;
-  --biz-accent2: #C8A45A;
+  --biz-accent2: #b48e42;
   --biz-ring:    #2a7a8a;
 
-  /* Pillar: Privat - Warm */
-  --priv-bg:      #1a1612;
-  --priv-bg2:     #231e18;
-  --priv-bg3:     #2d261e;
+  /* Pillar: Privat - Warm Light */
+  --priv-bg:      #fefdfb;
+  --priv-bg2:     #f8f4ef;
+  --priv-bg3:     #f2ece4;
   --priv-accent:  #c87840;
-  --priv-accent2: #d4b896;
+  --priv-accent2: #b89a74;
   --priv-ring:    #c87840;
 
-  /* Pillar: Archiv - Grey */
-  --arc-bg:      #111418;
-  --arc-bg2:     #181c22;
-  --arc-bg3:     #1f242c;
+  /* Pillar: Archiv - Grey Light */
+  --arc-bg:      #fafbfc;
+  --arc-bg2:     #f0f3f6;
+  --arc-bg3:     #e8edf2;
   --arc-accent:  #6a7a8a;
-  --arc-accent2: #a8b4c0;
+  --arc-accent2: #8a94a0;
   --arc-ring:    #6a7a8a;
 
-  /* Pillar: Leben - Green */
-  --leb-bg:      #0f1a12;
-  --leb-bg2:     #162019;
-  --leb-bg3:     #1c2820;
-  --leb-accent:  #4a8a5a;
-  --leb-accent2: #8ab89a;
-  --leb-ring:    #4a8a5a;
+  /* Pillar: Leben - Green Light */
+  --leb-bg:      #fbfdfc;
+  --leb-bg2:     #f2f8f4;
+  --leb-bg3:     #e8f2ec;
+  --leb-accent:  #3aaf70;
+  --leb-accent2: #6ab88a;
+  --leb-ring:    #3aaf70;
 
   /* Default (Business as start) */
   --bg:      var(--biz-bg);
@@ -44,20 +44,25 @@
   --accent:  var(--biz-accent);
   --accent2: var(--biz-accent2);
   --ring:    var(--biz-ring);
+  
+  /* Legacy/Scanner Variables (mapping to new system) */
+  --s1:      var(--bg);
+  --s2:      var(--bg2);
+  --s3:      var(--bg3);
 
   /* Functional Colors */
-  --br:      rgba(255,255,255,0.08);
-  --br2:     rgba(255,255,255,0.12);
-  --gold:    #c8a45a;
-  --ylw:     #c09040;
-  --blu:     #4a80c0;
-  --grn:     #3aaf70;
-  --red:     #c04040;
-  --orn:     #c07030;
-  --silv:    #8899aa;
-  --txt:     #f0f0f0;
-  --txt2:    #a0a0a0;
-  --txt3:    #686868;
+  --br:      rgba(0,0,0,0.06);
+  --br2:     rgba(0,0,0,0.1);
+  --gold:    #b48e42; /* Slightly darker gold for light bg */
+  --ylw:     #a07830;
+  --blu:     #3a60a0;
+  --grn:     #2a9f60;
+  --red:     #b03030;
+  --orn:     #b06020;
+  --silv:    #778899;
+  --txt:     #111111; /* Dark text for light theme */
+  --txt2:    #444444;
+  --txt3:    #777777;
 
   /* Layout */
   --r8:      12px;
@@ -494,7 +499,7 @@ body::after {
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(7,7,7,.92);
+  background: rgba(253,253,253,.92);
   border-top: 1px solid var(--br);
   padding: 6px 0 calc(6px + var(--sb));
   display: flex;
@@ -745,7 +750,7 @@ body::after {
 .onboarding-overlay {
   position: fixed;
   inset: 0;
-  background: radial-gradient(circle at top, #1a1a1a 0%, #070707 100%);
+  background: radial-gradient(circle at top, #ffffff 0%, #f4f7f8 100%);
   z-index: 1000;
   display: flex;
   align-items: center;

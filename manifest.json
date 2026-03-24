@@ -4,8 +4,8 @@
   "description": "KI-gestützter Beleg-Scanner für deutsche Freiberufler",
   "start_url": "/bong-/",
   "display": "standalone",
-  "background_color": "#070707",
-  "theme_color": "#070707",
+  "background_color": "#fdfdfd",
+  "theme_color": "#fdfdfd",
   "orientation": "portrait",
   "icons": [
     { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
