@@ -42,7 +42,7 @@ const ArchivShell = (() => {
     BSP.showView('home'); // Standardmäßig Inbox/Home
   }
 
-  return { init };
+  return { init, activate: _activate };
 
 })();
 ArchivShell.init();

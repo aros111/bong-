@@ -40,6 +40,4 @@ const BusinessShell = (() => {
   }
 
   return { init };
-
 })();
-BusinessShell.init();

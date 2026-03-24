@@ -10,10 +10,41 @@ const BSP = (() => {
 // ── Micro-App Registry ──────────────────────────────────────
 const _modules = {};
 
+
+// ── Event Emitter ─────────────────────────────────────────────
+const _events = {};
+function on(e, cb) { if (!_events[e]) _events[e] = []; _events[e].push(cb); }
+function off(e, cb) { if (_events[e]) _events[e] = _events[e].filter(x => x !== cb); }
+function emit(e, d) { if (_events[e]) _events[e].forEach(x => x(d)); }
+
+const state = {
+  settings: {},
+  scanCount: parseInt(localStorage.getItem('bsp_scanCount')) || 0,
+  apiCosts: parseFloat(localStorage.getItem('bsp_apiCosts')) || 0,
+  mwstSaldo: 0,
+  erCounter: parseInt(localStorage.getItem('bsp_erc')) || 0,
+  arCounter: parseInt(localStorage.getItem('bsp_arc')) || 0,
+  rcZ52: 0,
+  rcZ67: 0
+};
+
 function registerModule(id, module) {
   _modules[id] = module;
   console.log(`[BSP] Module registered: ${id}`);
   emit('module:registered', { id, module });
+}
+
+async function safeInit(id, module) {
+  try {
+    if (module && typeof module.init === 'function') {
+      await module.init();
+      console.log(`[BOOT] ${id} initialized.`);
+    }
+  } catch (e) {
+    console.error(`[BOOT] ${id} init failed:`, e);
+    // Nicht re-throwen, damit andere Module weiterlaufen
+    if (state.settings?.debug) toast(`Fehler in ${id}`, 'wr');
+  }
 }
 
 function getModules() {
@@ -23,11 +54,11 @@ function getModules() {
 // ── Context Graph ─────────────────────────────────────────────
 async function getContext() {
   const settings = state.settings || await loadSettings();
-  const kontextEntries = await dbGetAll('kontext');
+  const kontextEntries = await BSP.dbGetAll('kontext');
   const latestKontext = kontextEntries.sort((a,b) => b.savedAt - a.savedAt)[0];
   
   // Letzte Business & Privat Belege für Stimmungs-Analyse
-  const belege = await dbGetAll('belege');
+  const belege = await BSP.dbGetAll('belege');
   const recent = belege.sort((a,b) => b.savedAt - a.savedAt).slice(0, 10);
   
   return {
@@ -52,184 +83,6 @@ function _calcStress(recent) {
   return 'normal';
 }
 
-// ── IndexedDB ───────────────────────────────────────────────
-function initDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('bsp_v3', 1);
-
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-
-      if (!db.objectStoreNames.contains('belege')) {
-        const s = db.createObjectStore('belege', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('type', 'type');
-        s.createIndex('date', 'date');
-        s.createIndex('shop', 'shop');
-        s.createIndex('savedAt', 'savedAt');
-      }
-
-      if (!db.objectStoreNames.contains('fahrten')) {
-        const s = db.createObjectStore('fahrten', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('date', 'date');
-      }
-
-      if (!db.objectStoreNames.contains('verpflegung')) {
-        const s = db.createObjectStore('verpflegung', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('date', 'date');
-      }
-
-      if (!db.objectStoreNames.contains('einstellungen')) {
-        db.createObjectStore('einstellungen', { keyPath: 'key' });
-      }
-
-      if (!db.objectStoreNames.contains('konto_buchungen')) {
-        const s = db.createObjectStore('konto_buchungen', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('datum', 'datum');
-      }
-
-      if (!db.objectStoreNames.contains('privat_belege')) {
-        const s = db.createObjectStore('privat_belege', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('date', 'date');
-      }
-      if (!db.objectStoreNames.contains('privat_energie')) {
-        db.createObjectStore('privat_energie', { keyPath: 'id', autoIncrement: true });
-      }
-      if (!db.objectStoreNames.contains('privat_ziele')) {
-        db.createObjectStore('privat_ziele', { keyPath: 'id', autoIncrement: true });
-      }
-      
-      // v2.0 NEU: Preise & Portfolio
-      if (!db.objectStoreNames.contains('privat_preise')) {
-        const s = db.createObjectStore('privat_preise', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('product', 'product');
-      }
-
-      if (!db.objectStoreNames.contains('archiv_dokumente')) {
-        const s = db.createObjectStore('archiv_dokumente', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('date', 'date');
-        s.createIndex('sender', 'sender');
-      }
-      if (!db.objectStoreNames.contains('archiv_fristen')) {
-        const s = db.createObjectStore('archiv_fristen', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('deadline', 'deadline');
-      }
-      if (!db.objectStoreNames.contains('archiv_vertraege')) {
-        db.createObjectStore('archiv_vertraege', { keyPath: 'id', autoIncrement: true });
-      }
-
-      // v2.0 NEU: Kontext / Langzeit-Gedächtnis
-      if (!db.objectStoreNames.contains('kontext')) {
-        const s = db.createObjectStore('kontext', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('savedAt', 'savedAt');
-      }
-
-      if (!db.objectStoreNames.contains('pending_scans')) {
-        db.createObjectStore('pending_scans', { keyPath: 'id', autoIncrement: true });
-      }
-    };
-
-    req.onsuccess = e => {
-      _db = e.target.result;
-      _dbReadyResolve();
-      resolve();
-    };
-
-    req.onerror = () => reject(req.error);
-  });
-}
-
-// ── DB Hilfsfunktionen ───────────────────────────────────────
-async function dbGetAll(store) {
-  await _dbReady;
-  return new Promise((res, rej) => {
-    const r = _db.transaction(store, 'readonly').objectStore(store).getAll();
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-
-async function dbAdd(store, item) {
-  await _dbReady;
-  return new Promise((res, rej) => {
-    const r = _db.transaction(store, 'readwrite').objectStore(store).add(item);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-
-async function dbPut(store, item) {
-  await _dbReady;
-  return new Promise((res, rej) => {
-    const r = _db.transaction(store, 'readwrite').objectStore(store).put(item);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-
-async function dbDelete(store, id) {
-  await _dbReady;
-  return new Promise((res, rej) => {
-    const r = _db.transaction(store, 'readwrite').objectStore(store).delete(id);
-    r.onsuccess = () => res();
-    r.onerror = () => rej(r.error);
-  });
-}
-
-async function dbGet(store, key) {
-  await _dbReady;
-  return new Promise((res, rej) => {
-    const r = _db.transaction(store, 'readonly').objectStore(store).get(key);
-    r.onsuccess = () => res(r.result);
-    r.onerror = () => rej(r.error);
-  });
-}
-
-// ── Belege: typisierte Shortcuts ────────────────────────────
-async function getBelege(type) {
-  const all = await dbGetAll('belege');
-  return type ? all.filter(b => b.type === type) : all;
-}
-
-async function addBeleg(item) {
-  if (!['er', 'ar', 'priv'].includes(item.type)) throw new Error('Ungültiger Beleg-Typ');
-  item.shop = String(item.shop || 'Unbekannt').trim();
-  item.date = item.date || new Date().toISOString().split('T')[0];
-  item.brutto = parseFloat(item.brutto) || 0;
-  if (item.type !== 'priv') {
-    item.net = parseFloat(item.net) || 0;
-    item.mwst = parseFloat(item.mwst) || 0;
-    item.mwstRate = parseFloat(item.mwstRate) || 19;
-  }
-  item.items = Array.isArray(item.items) ? item.items : [];
-  item.savedAt = Date.now();
-
-  const id = await dbAdd('belege', item);
-  item.id = id;
-
-  state.scanCount++;
-  localStorage.setItem('bsp_scanCount', state.scanCount);
-  await _updateMwstSaldo();
-
-  emit('beleg:saved', item);
-  emit('mwst:updated', { saldo: state.mwstSaldo });
-  emit('stats:updated');
-
-  return id;
-}
-
-async function updateBeleg(item) {
-  await dbPut('belege', item);
-  await _updateMwstSaldo();
-  emit('beleg:saved', item);
-  emit('mwst:updated', { saldo: state.mwstSaldo });
-}
-
-async function deleteBeleg(id) {
-  await dbDelete('belege', id);
-  await _updateMwstSaldo();
-  emit('beleg:deleted', { id });
-  emit('mwst:updated', { saldo: state.mwstSaldo });
-}
 
 // ── Verschlüsselungs-Layer (AES-GCM) ────────────────────────
 async function _getEncryptionKey() {
@@ -274,7 +127,7 @@ function deductTokens(n = 1) { return true; }
 
 // ── MwSt-Saldo berechnen ────────────────────────────────────
 async function _updateMwstSaldo() {
-  const all = await getBelege();
+  const all = await BSP.getBelege();
   const now = new Date();
   const year = now.getFullYear();
   const yearBelege = all.filter(b => b.date && new Date(b.date + 'T00:00:00').getFullYear() === year);
@@ -323,7 +176,7 @@ function nextNr(type) {
 
 // ── Einstellungen laden/speichern ───────────────────────────
 async function loadSettings() {
-  const rows = await dbGetAll('einstellungen');
+  const rows = await BSP.dbGetAll('einstellungen');
   const s = {};
   rows.forEach(r => { s[r.key] = r.value; });
   state.settings = s;
@@ -332,7 +185,7 @@ async function loadSettings() {
 }
 
 async function saveSetting(key, value) {
-  await dbPut('einstellungen', { key, value });
+  await BSP.dbPut('einstellungen', { key, value });
   if (!state.settings) state.settings = {};
   state.settings[key] = value;
 }
@@ -431,6 +284,22 @@ async function callClaude(params) {
 async function ask(params) { return AI.process(params); }
 
 // ── Bild komprimieren ────────────────────────────────────────
+function b64toBlob(b64Data) {
+  const parts = b64Data.split(',');
+  const contentType = parts[0].split(':')[1].split(';')[0];
+  const byteCharacters = atob(parts[1]);
+  const byteArrays = [];
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512);
+    const byteNumbers = new Array(slice.length);
+    for (let i = 0; i < slice.length; i++) {
+        byteNumbers[i] = slice.charCodeAt(i);
+    }
+    byteArrays.push(new Uint8Array(byteNumbers));
+  }
+  return new Blob(byteArrays, {type: contentType});
+}
+
 function compressImage(dataUrl, maxPx = 600, maxKB = 100) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -485,9 +354,41 @@ function showView(name, params = {}) {
   emit('view:changed', { name, params });
 }
 
+function closeAllOverlays() {
+  const overlays = ['scanner-overlay', 'onboarding', 'shell-api-input-wrap'];
+  overlays.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  document.querySelectorAll('.toast').forEach(t => t.remove());
+  
+  // Modul-spezifische Closes (um Kamera zu stoppen)
+  if (typeof ScannerModule !== 'undefined' && ScannerModule.close) ScannerModule.close();
+  if (typeof PrivatScanModule !== 'undefined' && PrivatScanModule.close) PrivatScanModule.close();
+  if (typeof ArchivScanModule !== 'undefined' && ArchivScanModule.close) ArchivScanModule.close();
+  if (typeof SpracheUniversal !== 'undefined' && SpracheUniversal.close) SpracheUniversal.close();
+  if (typeof StiftModule !== 'undefined' && StiftModule.close) StiftModule.close();
+}
+
+// ── Hilfsfunktionen ───────────────────────────────────────────
+function fm(v) { return new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v || 0); }
+function fd(d) { return d ? new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'; }
+function eh(s) { const div = document.createElement('div'); div.textContent = s; return div.innerHTML; }
+function fmK(v) { return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : v; }
+function cfg(k, def) { return state.settings[k] !== undefined ? state.settings[k] : def; }
+
+function toast(m, t = 'info') {
+  const b = document.createElement('div');
+  b.className = `toast t-${t}`;
+  b.textContent = m;
+  document.body.appendChild(b);
+  setTimeout(() => b.classList.add('on'), 10);
+  setTimeout(() => { b.classList.remove('on'); setTimeout(() => b.remove(), 400); }, 3000);
+}
+
 // ── App-Start ───────────────────────────────────────────────
 async function init() {
-  await initDB();
+  await BSP.initDB();
   await loadSettings();
   await _updateMwstSaldo();
   const s = state.settings || {};
@@ -543,17 +444,16 @@ function osrmRoute(start, end) { return Promise.resolve({ km: 0 }); }
 return {
   state,
   on, off, emit,
-  dbGetAll, dbAdd, dbPut, dbDelete, dbGet,
-  getBelege, addBeleg, updateBeleg, deleteBeleg,
   registerModule, getModules, getContext,
   loadSettings, saveSetting, saveAllSettings,
-  AI, callClaude, ask, compressImage,
+  AI, callClaude, ask, compressImage, b64toBlob,
   encrypt, decrypt,
   isPremium, hasTokens, deductTokens,
   fm, fd, eh, fmK, cfg, toast, nextNr, showView,
   getTimeSaved, getCostComparison, getNextDeadline,
   gps, geocode, osrmRoute,
-  init
+  init, safeInit, closeAllOverlays,
+  _updateMwstSaldo
 };
 
 })();
@@ -563,3 +463,6 @@ const toast = BSP.toast.bind(BSP);
 const fm = BSP.fm.bind(BSP);
 const fd = BSP.fd.bind(BSP);
 const eh = BSP.eh.bind(BSP);
+
+// Global Export
+window.BSP = BSP;

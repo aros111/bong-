@@ -11,166 +11,169 @@ let _camStream = null;
 let _pages = []; // Array von {b64, thumb}
 let _lastResult = null;
 let _scanMode = 'er'; // 'er' | 'ar' | 'manual'
+let _capB64 = null; // Fix: Variable deklariert
 
 // ── HTML-Template des Scanner-Overlays ──────────────────────
 const OVERLAY_HTML = `
-<div class="sh" style="margin:12px auto 8px"></div>
-<div style="display:flex;align-items:center;justify-content:space-between;padding:0 16px 12px">
-  <!-- Typ-Auswahl -->
-  <div style="display:flex;background:var(--s2);border:1px solid var(--br);border-radius:100px;padding:2px;gap:2px" id="sc-seg">
-    <button class="sc-type-btn on" id="sc-t-er" onclick="ScannerModule.setType('er')">Eingang</button>
-    <button class="sc-type-btn" id="sc-t-ar" onclick="ScannerModule.setType('ar')">Ausgang</button>
-    <button class="sc-type-btn" id="sc-t-manual" onclick="ScannerModule.setType('manual')">Manuell</button>
+<div style="min-height:100dvh; display:flex; flex-direction:column; background:var(--bg); max-width:600px; margin:0 auto; width:100%; position:relative;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px; border-bottom:1px solid var(--br); background:var(--bg2); position:sticky; top:0; z-index:10;">
+    <!-- Typ-Auswahl -->
+    <div style="display:flex;background:var(--s2);border:1px solid var(--br);border-radius:100px;padding:2px;gap:2px" id="sc-seg">
+      <button class="sc-type-btn on" id="sc-t-er" onclick="ScannerModule.setType('er')">Eingang</button>
+      <button class="sc-type-btn" id="sc-t-ar" onclick="ScannerModule.setType('ar')">Ausgang</button>
+      <button class="sc-type-btn" id="sc-t-manual" onclick="ScannerModule.setType('manual')">Manuell</button>
+    </div>
+    <button onclick="ScannerModule.close()" style="background:var(--s3);border:1px solid var(--br);color:var(--txt2);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
   </div>
-  <button onclick="ScannerModule.close()" style="background:var(--s3);border:1px solid var(--br);color:var(--txt2);width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
-</div>
 
-<!-- Kamera-Bereich -->
-<div id="sc-cam-wrap" style="position:relative;background:#000;min-height:200px;overflow:hidden">
-  <video id="sc-video" autoplay playsinline muted style="width:100%;display:none;max-height:260px;object-fit:cover"></video>
-  <img id="sc-preview" style="width:100%;display:none;max-height:260px;object-fit:contain;background:#111" alt="Vorschau">
-  <!-- Platzhalter -->
-  <div id="sc-ph" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--txt3);gap:10px">
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="opacity:.4">
-      <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
-      <circle cx="12" cy="13" r="4"/>
-    </svg>
-    <div style="font-size:12px;font-weight:300">Beleg fotografieren oder aus Galerie wählen</div>
-    <!-- Buttons im Platzhalter -->
-    <div style="display:flex;gap:8px;margin-top:4px">
-      <button class="btn btn-gold btn-sm" onclick="ScannerModule.startCam()">📷 Kamera</button>
-      <label class="btn btn-g btn-sm" style="cursor:pointer">
-        🖼️ Galerie <input id="sc-file" type="file" accept="image/*" style="display:none" onchange="ScannerModule.loadFile(this)">
-      </label>
+  <!-- Kamera-Bereich -->
+  <div id="sc-cam-wrap" style="flex:1; position:relative;background:var(--bg2);overflow:hidden;border-bottom:1px solid var(--br); display:flex; flex-direction:column; justify-content:center; min-height: 60vh;">
+    <video id="sc-video" autoplay playsinline muted style="width:100%; height:100%; display:none; object-fit:cover; position:absolute; inset:0;"></video>
+    <img id="sc-preview" style="width:100%; height:100%; display:none; object-fit:contain; background:var(--bg3); position:absolute; inset:0;" alt="Vorschau">
+    
+    <!-- Platzhalter -->
+    <div id="sc-ph" style="display:flex;flex-direction:column;align-items:center;justify-content:center; flex:1; color:var(--txt2); gap:10px; z-index:2;">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" style="opacity:.6">
+        <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      <div style="font-size:12px;font-weight:400">Kamera startet...</div>
+      <!-- Buttons im Platzhalter -->
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="btn btn-gold btn-sm" onclick="ScannerModule.startCam()">📷 Neustart</button>
+        <label class="btn btn-g btn-sm" style="cursor:pointer">
+          🖼️ Galerie <input id="sc-file" type="file" accept="image/*" style="display:none" onchange="ScannerModule.loadFile(this)">
+        </label>
+      </div>
+    </div>
+    
+    <!-- Kamera-Overlay-Buttons -->
+    <div id="sc-cam-btns" style="display:none;position:absolute;bottom:20px;left:50%;transform:translateX(-50%);gap:12px;align-items:center; z-index:5;">
+      <button class="btn btn-g btn-sm" style="background:rgba(0,0,0,0.6); color:#fff; border:none;" onclick="ScannerModule.stopCam()">⏹ Stopp</button>
+      <button onclick="ScannerModule.capture()" id="sc-shutter"
+        style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.2);border:3px solid #fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s">
+        <div style="width:50px;height:50px;border-radius:50%;background:#fff;"></div>
+      </button>
+      <div style="color:var(--txt);font-size:10px;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:10px" id="sc-page-counter">Seite 1</div>
     </div>
   </div>
-  <!-- Kamera-Overlay-Buttons -->
-  <div id="sc-cam-btns" style="display:none;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:none;gap:12px;align-items:center">
-    <button class="btn btn-g btn-sm" onclick="ScannerModule.stopCam()">⏹ Stopp</button>
-    <button onclick="ScannerModule.capture()" id="sc-shutter"
-      style="width:56px;height:56px;border-radius:50%;background:var(--txt);border:3px solid var(--br2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .1s">
-      <div style="width:38px;height:38px;border-radius:50%;background:var(--txt);border:2px solid #333"></div>
-    </button>
-    <div style="color:var(--txt);font-size:10px;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:10px" id="sc-page-counter">Seite 1</div>
-  </div>
-</div>
 
-<!-- Multi-Page Prompt -->
-<div id="sc-multi-prompt" style="display:none;padding:16px;background:var(--bg3);border-bottom:1px solid var(--br);text-align:center">
-  <div style="font-size:13px;margin-bottom:12px;color:var(--accent2)">Seite hinzugefügt! Noch eine Seite scannen?</div>
-  <div style="display:flex;gap:12px;justify-content:center">
-    <button class="btn btn-g btn-sm" onclick="ScannerModule.startCam()">➕ Weitere Seite</button>
-    <button class="btn btn-gold btn-sm" onclick="ScannerModule.finishCapture()">✨ Fertig & Analyse</button>
-  </div>
-</div>
+  <!-- Multi-Page Preview & Management -->
+  <div id="sc-pages-preview" style="display:none;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--br);display:flex;gap:10px;overflow-x:auto;scrollbar-width:none"></div>
 
-<!-- Fortschritts-Bar -->
-<div id="sc-prog-wrap" style="display:none;padding:10px 16px">
-  <div style="background:var(--s3);border-radius:4px;height:3px;overflow:hidden;margin-bottom:6px">
-    <div id="sc-prog-fill" style="height:100%;background:var(--gold);width:0%;transition:width .3s"></div>
-  </div>
-  <div id="sc-prog-log" style="font-size:11px;color:var(--txt3);text-align:center">Bereit</div>
-</div>
-
-<!-- Ergebnis-Felder (Business ER/AR) -->
-<div id="sc-res-biz" style="display:none;padding:0 16px 16px">
-  <div class="g2 sett-mt">
-    <div class="field"><label>Händler</label><input id="sc-shop" class="sett-inp" type="text" list="sc-shop-list" oninput="ScannerModule.suggestShops(this.value)">
-      <datalist id="sc-shop-list"></datalist></div>
-    <div class="field"><label>Datum</label><input id="sc-date" class="sett-inp" type="date"></div>
-  </div>
-  <div class="g2 sett-mt">
-    <div class="field"><label>Brutto (€)</label><input id="sc-brutto" class="sett-inp" type="text" inputmode="decimal" oninput="ScannerModule.calcMwst()"></div>
-    <div class="field"><label>Netto (€)</label><input id="sc-net" class="sett-inp" type="text" inputmode="decimal" readonly style="opacity:.7"></div>
-  </div>
-  <div class="g2 sett-mt">
-    <div class="field"><label>MwSt (€)</label><input id="sc-mwst" class="sett-inp" type="text" inputmode="decimal" readonly style="opacity:.7"></div>
-    <div class="field"><label>MwSt-Satz</label>
-      <select id="sc-rate" class="sett-inp" onchange="ScannerModule.calcMwst()">
-        <option value="19">19% (Standard)</option>
-        <option value="7">7% (ermäßigt)</option>
-        <option value="0">0% (Reverse Charge)</option>
-      </select>
+  <!-- Multi-Page Prompt -->
+  <div id="sc-multi-prompt" style="display:none;padding:16px;background:var(--bg3);border-bottom:1px solid var(--br);text-align:center">
+    <div style="font-size:13px;margin-bottom:12px;color:var(--gold)">Seite hinzugefügt! Noch eine Seite scannen?</div>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="btn btn-g btn-sm" onclick="ScannerModule.startCam()">➕ Ja, weitere Seite</button>
+      <button class="btn btn-gold btn-sm" onclick="ScannerModule.finishCapture()">✨ Fertig & Analyse</button>
     </div>
   </div>
-  <div class="g2 sett-mt">
-    <div class="field"><label>Kategorie</label>
-      <select id="sc-cat" class="sett-inp">
-        <option>Bürobedarf</option><option>Software</option><option>Hardware</option>
-        <option>Beratung</option><option>Marketing</option><option>Reisen</option>
-        <option>Fortbildung</option><option>Fahrzeug</option><option>Telefon/Internet</option>
-        <option>Bewirtung</option><option>Restaurant</option><option>Lebensmittel</option>
-        <option>Gesundheit</option><option>Sonstiges</option>
-      </select>
+
+  <!-- Fortschritts-Bar -->
+  <div id="sc-prog-wrap" style="display:none;padding:16px">
+    <div style="background:var(--s3);border-radius:4px;height:4px;overflow:hidden;margin-bottom:8px">
+      <div id="sc-prog-fill" style="height:100%;background:var(--gold);width:0%;transition:width .3s"></div>
     </div>
-    <div class="field"><label>Zahlung</label>
-      <select id="sc-pay" class="sett-inp">
-        <option>Karte</option><option>Bar</option><option>Überweisung</option><option>Online</option>
-      </select>
-    </div>
-  </div>
-  <div class="field sett-mt"><label>Belegnr. extern (optional)</label><input id="sc-bleg-ext" class="sett-inp" type="text" placeholder="z.B. RE-2026-0042"></div>
-  
-  <!-- Beleg-Split (Business <-> Privat) -->
-  <div class="field sett-mt" style="background:rgba(200,164,90,.05);border-color:rgba(200,164,90,.2)">
-    <label style="color:var(--gold)">Privat-Anteil (%)</label>
-    <div style="display:flex;align-items:center;gap:12px">
-      <input id="sc-split-pct" class="sett-inp" type="number" value="0" min="0" max="100" oninput="ScannerModule.updateSplit()">
-      <div id="sc-split-val" style="font-size:12px;color:var(--txt2);white-space:nowrap">0,00 € Privat</div>
-    </div>
-  </div>
-  
-  <!-- Reverse Charge -->
-  <div id="sc-rc-hint" style="display:none;background:rgba(192,112,48,.08);border:1px solid rgba(192,112,48,.25);border-radius:var(--r8);padding:10px 12px;margin-top:8px;font-size:11px;color:var(--orn)">
-    ⚠️ Reverse Charge erkannt — Beleg wird gemäß UStVA Z.52/67 separat ausgewiesen
+    <div id="sc-prog-log" style="font-size:12px;color:var(--txt3);text-align:center">Bereit</div>
   </div>
 
-  <!-- Erkannte Positionen -->
-  <div id="sc-items-sec" style="display:none;margin-top:10px">
-    <div class="stitle">Erkannte Positionen</div>
-    <div id="sc-items-body"></div>
-  </div>
+  <!-- Ergebnis-Felder (Business ER/AR) -->
+  <div id="sc-res-biz" style="display:none;padding:16px; flex:1;">
+    <div class="g2 sett-mt">
+      <div class="field"><label>Händler</label><input id="sc-shop" class="sett-inp" type="text" list="sc-shop-list" oninput="ScannerModule.suggestShops(this.value)">
+        <datalist id="sc-shop-list"></datalist></div>
+      <div class="field"><label>Datum</label><input id="sc-date" class="sett-inp" type="date"></div>
+    </div>
+    <div class="g2 sett-mt">
+      <div class="field"><label>Brutto (€)</label><input id="sc-brutto" class="sett-inp" type="text" inputmode="decimal" oninput="ScannerModule.calcMwst()"></div>
+      <div class="field"><label>Netto (€)</label><input id="sc-net" class="sett-inp" type="text" inputmode="decimal" readonly style="opacity:.7"></div>
+    </div>
+    <div class="g2 sett-mt">
+      <div class="field"><label>MwSt (€)</label><input id="sc-mwst" class="sett-inp" type="text" inputmode="decimal" readonly style="opacity:.7"></div>
+      <div class="field"><label>MwSt-Satz</label>
+        <select id="sc-rate" class="sett-inp" onchange="ScannerModule.calcMwst()">
+          <option value="19">19% (Standard)</option>
+          <option value="7">7% (ermäßigt)</option>
+          <option value="0">0% (Reverse Charge)</option>
+        </select>
+      </div>
+    </div>
+    <div class="g2 sett-mt">
+      <div class="field"><label>Kategorie</label>
+        <select id="sc-cat" class="sett-inp">
+          <option>Bürobedarf</option><option>Software</option><option>Hardware</option>
+          <option>Beratung</option><option>Marketing</option><option>Reisen</option>
+          <option>Fortbildung</option><option>Fahrzeug</option><option>Telefon/Internet</option>
+          <option>Bewirtung</option><option>Restaurant</option><option>Lebensmittel</option>
+          <option>Gesundheit</option><option>Sonstiges</option>
+        </select>
+      </div>
+      <div class="field"><label>Zahlung</label>
+        <select id="sc-pay" class="sett-inp">
+          <option>Karte</option><option>Bar</option><option>Überweisung</option><option>Online</option>
+        </select>
+      </div>
+    </div>
+    <div class="field sett-mt"><label>Belegnr. extern (optional)</label><input id="sc-bleg-ext" class="sett-inp" type="text" placeholder="z.B. RE-2026-0042"></div>
+    
+    <!-- Beleg-Split (Business <-> Privat) -->
+    <div class="field sett-mt" style="background:rgba(200,164,90,.05);border-color:rgba(200,164,90,.2)">
+      <label style="color:var(--gold)">Privat-Anteil (%)</label>
+      <div style="display:flex;align-items:center;gap:12px">
+        <input id="sc-split-pct" class="sett-inp" type="number" value="0" min="0" max="100" oninput="ScannerModule.updateSplit()">
+        <div id="sc-split-val" style="font-size:12px;color:var(--txt2);white-space:nowrap">0,00 € Privat</div>
+      </div>
+    </div>
+    
+    <!-- Reverse Charge -->
+    <div id="sc-rc-hint" style="display:none;background:rgba(192,112,48,.08);border:1px solid rgba(192,112,48,.25);border-radius:var(--r8);padding:10px 12px;margin-top:8px;font-size:11px;color:var(--orn)">
+      ⚠️ Reverse Charge erkannt — Beleg wird gemäß UStVA Z.52/67 separat ausgewiesen
+    </div>
 
-  <!-- Buttons -->
-  <div style="display:flex;gap:8px;margin-top:14px">
-    <button class="btn btn-g" style="flex:.5" onclick="ScannerModule.reset()">↺ Neu</button>
-    <button class="btn btn-gold" style="flex:1;justify-content:center" onclick="ScannerModule.save()">✓ Speichern</button>
-  </div>
-</div>
+    <!-- Erkannte Positionen -->
+    <div id="sc-items-sec" style="display:none;margin-top:10px">
+      <div class="stitle">Erkannte Positionen</div>
+      <div id="sc-items-body"></div>
+    </div>
 
-<!-- Ergebnis-Felder (Privat) -->
-<div id="sc-res-priv" style="display:none;padding:0 16px 16px">
-  <div class="g2 sett-mt">
-    <div class="field"><label>Händler</label><input id="sc-p-shop" class="sett-inp" type="text"></div>
-    <div class="field"><label>Datum</label><input id="sc-p-date" class="sett-inp" type="date"></div>
-  </div>
-  <div class="g2 sett-mt">
-    <div class="field"><label>Betrag (€)</label><input id="sc-p-brutto" class="sett-inp" type="text" inputmode="decimal"></div>
-    <div class="field"><label>Kategorie</label>
-      <select id="sc-p-cat" class="sett-inp">
-        <option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option>
-        <option>Kleidung</option><option>Tanken</option><option>Haushalt</option>
-        <option>Gesundheit</option><option>Freizeit</option><option>Reise</option><option>Sonstiges</option>
-      </select>
+    <!-- Buttons -->
+    <div style="display:flex;gap:8px;margin-top:24px; padding-bottom: 24px;">
+      <button class="btn btn-g" style="flex:.5" onclick="ScannerModule.reset()">↺ Neu</button>
+      <button class="btn btn-gold" style="flex:1;justify-content:center" onclick="ScannerModule.save()">✓ Speichern</button>
     </div>
   </div>
-  <div style="display:flex;gap:8px;margin-top:14px">
-    <button class="btn btn-g" style="flex:.5" onclick="ScannerModule.reset()">↺ Neu</button>
-    <button class="btn btn-gold" style="flex:1;justify-content:center" onclick="ScannerModule.save()">✓ Speichern</button>
+
+  <!-- Ergebnis-Felder (Privat) -->
+  <div id="sc-res-priv" style="display:none;padding:16px; flex:1;">
+    <div class="g2 sett-mt">
+      <div class="field"><label>Händler</label><input id="sc-p-shop" class="sett-inp" type="text"></div>
+      <div class="field"><label>Datum</label><input id="sc-p-date" class="sett-inp" type="date"></div>
+    </div>
+    <div class="g2 sett-mt">
+      <div class="field"><label>Betrag (€)</label><input id="sc-p-brutto" class="sett-inp" type="text" inputmode="decimal"></div>
+      <div class="field"><label>Kategorie</label>
+        <select id="sc-p-cat" class="sett-inp">
+          <option>Lebensmittel</option><option>Restaurant</option><option>Elektronik</option>
+          <option>Kleidung</option><option>Tanken</option><option>Haushalt</option>
+          <option>Gesundheit</option><option>Freizeit</option><option>Reise</option><option>Sonstiges</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:24px; padding-bottom: 24px;">
+      <button class="btn btn-g" style="flex:.5" onclick="ScannerModule.reset()">↺ Neu</button>
+      <button class="btn btn-gold" style="flex:1;justify-content:center" onclick="ScannerModule.save()">✓ Speichern</button>
+    </div>
   </div>
 </div>
 `;
 
 // ── Init ─────────────────────────────────────────────────────
 function init() {
-  // Overlay-Inhalt einhängen
-  const ovl = document.getElementById('scan-ovl');
+  const ovl = document.getElementById('scanner-overlay');
   if (ovl) {
-    ovl.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:300;flex-direction:column;overflow-y:auto;padding-top:env(safe-area-inset-top,0px)';
-    const sheet = document.createElement('div');
-    sheet.style.cssText = 'background:var(--s1);border-radius:var(--r24) var(--r24) 0 0;margin-top:auto;max-height:95vh;overflow-y:auto;position:relative;';
-    sheet.innerHTML = OVERLAY_HTML;
-    ovl.appendChild(sheet);
+    // Falls das Overlay bereits befüllt ist, prüfen ob es unser Modul ist
+    // Bei Konsolidierung leeren wir es beim Öffnen.
     ovl.addEventListener('click', e => { if (e.target === ovl) close(); });
   }
 
@@ -185,9 +188,15 @@ function init() {
 
 // ── Öffnen / Schließen ───────────────────────────────────────
 function open() {
-  const ovl = document.getElementById('scan-ovl');
-  if (ovl) { ovl.style.display = 'flex'; ovl.scrollTop = 0; }
+  const ovl = document.getElementById('scanner-overlay');
+  if (!ovl) return;
+  ovl.innerHTML = OVERLAY_HTML;
+  ovl.style.display = 'flex';
+  ovl.scrollTop = 0;
   setType('er');
+  // Kamera Autostart
+  setTimeout(() => startCam(), 300);
+  
   // Datum heute setzen
   const today = new Date().toISOString().split('T')[0];
   ['sc-date', 'sc-p-date'].forEach(id => {
@@ -200,8 +209,8 @@ function openManuell() { open(); setType('manual'); }
 
 function close() {
   stopCam();
-  const ovl = document.getElementById('scan-ovl');
-  if (ovl) ovl.style.display = 'none';
+  const ovl = document.getElementById('scanner-overlay');
+  if (ovl) { ovl.style.display = 'none'; ovl.innerHTML = ''; }
 }
 
 // ── Scan-Typ setzen ──────────────────────────────────────────
@@ -249,12 +258,21 @@ function setType(t) {
 
 // ── Kamera ────────────────────────────────────────────────────
 async function startCam() {
+  stopCam();
+  console.log('[Scanner] Starting camera...');
   try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("HTTPS_REQUIRED");
+    }
     _camStream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 } }
     });
     const v = document.getElementById('sc-video');
-    if (v) { v.srcObject = _camStream; v.style.display = 'block'; }
+    if (v) { 
+      v.srcObject = _camStream; 
+      v.style.display = 'block';
+      await v.play();
+    }
     const ph = document.getElementById('sc-ph');
     if (ph) ph.style.display = 'none';
     const btns = document.getElementById('sc-cam-btns');
@@ -262,7 +280,11 @@ async function startCam() {
     const prevEl = document.getElementById('sc-preview');
     if (prevEl) prevEl.style.display = 'none';
   } catch(e) {
-    BSP.toast('Kamera nicht verfügbar – bitte Galerie nutzen', 'er');
+    console.error('[Scanner] Camera error:', e);
+    const msg = e.message === "HTTPS_REQUIRED" ? "Kamera blockiert (HTTPS nötig). Nutze Galerie!" : "Kamera nicht verfügbar – bitte Galerie nutzen";
+    BSP.toast(msg, 'er');
+    const ph = document.getElementById('sc-ph');
+    if (ph) ph.style.display = 'flex';
   }
 }
 
@@ -294,10 +316,46 @@ function capture() {
   BSP.toast('Seite ' + (_pages.length + 1) + ' erfasst', 'info');
   
   BSP.compressImage(raw, 1200, 70).then(async compressed => {
-    const thumb = await BSP.compressImage(compressed, 400, 60);
-    _pages.push({ b64: compressed, thumb: thumb });
+    const thumbStr = await BSP.compressImage(compressed, 400, 60);
+    const blob = BSP.b64toBlob(thumbStr);
+    const url = URL.createObjectURL(blob);
+    _pages.push({ b64: compressed, thumb: url, url: url });
+    _updatePageDisplay();
     _showMultiPrompt();
+  }).catch(e => {
+    BSP.toast(e.message, 'er');
+    startCam(); // Erneut versuchen
   });
+}
+
+function _updatePageDisplay() {
+  const container = document.getElementById('sc-pages-preview');
+  if (!container) return;
+  
+  if (_pages.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'flex';
+  container.innerHTML = _pages.map((p, i) => `
+    <div style="position:relative;flex-shrink:0;width:60px;height:80px;border-radius:4px;border:1px solid var(--br);overflow:hidden;background:#000">
+      <img src="${p.thumb}" style="width:100%;height:100%;object-fit:cover">
+      <div style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer" onclick="ScannerModule.removePage(${i})">×</div>
+      <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.4);color:#fff;font-size:8px;text-align:center;padding:1px">S.${i+1}</div>
+    </div>
+  `).join('');
+}
+
+function removePage(index) {
+  if (_pages[index] && _pages[index].url) URL.revokeObjectURL(_pages[index].url);
+  _pages.splice(index, 1);
+  _updatePageDisplay();
+  if (_pages.length === 0) {
+    reset();
+  } else {
+    _showMultiPrompt();
+  }
 }
 
 function finishCapture() {
@@ -333,23 +391,24 @@ function loadFile(input) {
     return;
   }
 
-  _setLog('🗜️ Bild wird vorbereitet …'); _setP(10);
   const r = new FileReader();
   r.onload = async e => {
     const raw = e.target.result;
     _setLog('🗜️ Iterative Kompression …');
     
-    let quality = 0.9;
-    let compressed = raw;
-    while (compressed.length > 150000 && quality > 0.1) {
-      compressed = await BSP.compressImage(raw, 1200, quality * 100);
-      quality -= 0.15;
+    try {
+      const compressed = await BSP.compressImage(raw, 600, 100); // Max 600px, 100KB wie gefordert
+      const thumbStr = await BSP.compressImage(compressed, 300, 40);
+      const blob = BSP.b64toBlob(thumbStr);
+      const url = URL.createObjectURL(blob);
+      _pages.push({ b64: compressed, thumb: url, url: url });
+      _updatePageDisplay();
+      _setP(100);
+      _showMultiPrompt();
+    } catch(err) {
+      _setLog('❌ ' + err.message);
+      BSP.toast(err.message, 'er');
     }
-    
-    const thumb = await BSP.compressImage(compressed, 400, 70);
-    _pages.push({ b64: compressed, thumb: thumb });
-    _setP(100);
-    _showMultiPrompt();
   };
   r.readAsDataURL(f);
 }
@@ -423,14 +482,13 @@ REGELN:
   try {
     _setLog('🤖 Claude analysiert ' + _pages.length + ' Seite(n) …'); _setP(40);
     
-    // Multi-Image Support für den AI-Prozess
-    const result = await BSP.AI.process({ 
+    const result = await BSP.callClaude({ 
       prompt, 
       images: _pages.map(p => p.b64), 
       maxTokens: 1024 
     });
     
-    const rawText = result.text || result; // Abwärtskompatibilität
+    const rawText = result; 
     _setP(90);
 
     // JSON robustissimo parsen
@@ -605,10 +663,20 @@ async function save() {
         ? new Date(new Date(date).getTime() + _lastResult.garantieMonate * 30 * 864e5).toISOString().split('T')[0]
         : null,
       items: _lastResult?.items || [],
-      image: _pages[0]?.thumb || _pages[0]?.b64 || null,
-      images: _pages.map(p => p.thumb || p.b64),
+      // Digitaler Stempel wird auf jede Seite angewendet
+      images: await Promise.all(_pages.map(async p => await _applyStamp(p.b64, {
+        nr: item?.belegNr || 'NEW', // Belegnr erst nach Stempel-Fix verfügbar
+        date, brutto, net: netto, mwst, cat: get('sc-cat')
+      }))),
       savedAt: Date.now()
     };
+    // Belegnummer im Stempel korrigieren (wir brauchen sie vor dem Map)
+    const finalNr = item.belegNr;
+    item.images = await Promise.all(_pages.map(async p => await _applyStamp(p.b64, {
+      nr: finalNr,
+      date, brutto, net: netto, mwst, cat: get('sc-cat')
+    })));
+    item.image = item.images[0]; // Erstes Bild als Thumbnail
   }
 
   try {
@@ -644,6 +712,7 @@ async function save() {
 
 // ── Reset ─────────────────────────────────────────────────────
 function reset() {
+  if (_pages) _pages.forEach(p => { if (p.url) URL.revokeObjectURL(p.url); });
   _pages = []; _lastResult = null;
   stopCam();
   const prev = document.getElementById('sc-preview');
@@ -663,6 +732,8 @@ function reset() {
   if (sec) sec.style.display = 'none';
   const rc = document.getElementById('sc-rc-hint');
   if (rc) rc.style.display = 'none';
+  const previewBox = document.getElementById('sc-pages-preview');
+  if (previewBox) { previewBox.innerHTML = ''; previewBox.style.display = 'none'; }
   // Datei-Input zurücksetzen
   const fi = document.getElementById('sc-file');
   if (fi) fi.value = '';
@@ -691,6 +762,46 @@ function updateSplit() {
   if (val) val.textContent = BSP.fm(brutto * (pct / 100)) + ' € Privat';
 }
 
+function _applyStamp(imgB64, data) {
+  return new Promise(resolve => {
+    const s = BSP.state.settings || {};
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      // Stempel-Box
+      const boxW = img.width * 0.35;
+      const boxH = 85;
+      const x = img.width - boxW - 20;
+      const y = img.height - boxH - 20;
+
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.fillRect(x, y, boxW, boxH);
+      ctx.strokeStyle = s.stempelColor || '#c8a45a';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, boxW, boxH);
+
+      // Text
+      ctx.fillStyle = s.stempelColor || '#c8a45a';
+      ctx.font = 'bold 14px Inter, sans-serif';
+      ctx.fillText(s.firmenname || s.stempelName || 'BelegScan Pro', x + 10, y + 20);
+      
+      ctx.font = '11px Inter, sans-serif';
+      ctx.fillText(`Nr: ${data.nr} | Datum: ${data.date}`, x + 10, y + 40);
+      ctx.fillText(`Netto: ${BSP.fm(data.net)} | MwSt: ${BSP.fm(data.mwst)}`, x + 10, y + 55);
+      ctx.fillText(`Brutto: ${BSP.fm(data.brutto)} €`, x + 10, y + 70);
+      ctx.fillText(`Kat: ${data.cat}`, x + 10, y + 80);
+
+      resolve(canvas.toDataURL('image/jpeg', 0.8));
+    };
+    img.src = imgB64;
+  });
+}
+
 function _markError(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -703,7 +814,7 @@ function _markError(id) {
 // ── Öffentliche API ───────────────────────────────────────────
 return {
   init, open, openManuell, close,
-  setType, startCam, stopCam, capture, loadFile,
+  setType, startCam, stopCam, capture, loadFile, removePage, finishCapture,
   calcMwst, suggestShops, save, reset, updateSplit
 };
 

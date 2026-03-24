@@ -40,7 +40,7 @@ const PrivatShell = (() => {
     BSP.showView('privat-home');
   }
 
-  return { init };
+  return { init, activate: _activate };
 
 })();
 PrivatShell.init();

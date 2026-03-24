@@ -25,10 +25,10 @@ const OnboardingModule = (() => {
       <!-- STEP 2: Name & Steuern -->
       <div class="ob-step" data-step="2">
         <h2>Wer bist du? 👤</h2>
-        <div class="field"><label>Vorname</label><input id="ob_vorname" type="text" placeholder="Max"></div>
+        <div class="field"><label>Vorname <span style="color:var(--red)">*</span></label><input id="ob_vorname" type="text" placeholder="Max" oninput="OnboardingModule.checkTest(this)"></div>
         <div class="field"><label>Nachname</label><input id="ob_nachname" type="text" placeholder="Mustermann"></div>
         <div class="sett-grid">
-          <div class="field"><label>Steuernummer</label><input id="ob_steuernr" type="text" placeholder="123/456/7890"></div>
+          <div class="field"><label>Steuernummer <span style="color:var(--red)">*</span></label><input id="ob_steuernr" type="text" placeholder="123/456/7890"></div>
           <div class="field"><label>USt-IdNr.</label><input id="ob_ustidnr" type="text" placeholder="DE123456789"></div>
         </div>
       </div>
@@ -123,10 +123,27 @@ const OnboardingModule = (() => {
   }
 
   function next() {
+    if (_currentStep === 2) {
+      const v = document.getElementById('ob_vorname')?.value?.trim();
+      const s = document.getElementById('ob_steuernr')?.value?.trim();
+      if (!v || !s) return BSP.toast('Vorname & Steuernr. sind Pflicht', 'wr');
+    }
+
     if (_currentStep === 8) return _finish();
     
     _currentStep++;
     _updateUI();
+  }
+
+  function checkTest(el) {
+    if (el.value.toLowerCase() === 'test') {
+      BSP.toast('Test-Modus aktiv: Fast-Link aktiviert', 'ok');
+      document.getElementById('ob-next').innerHTML = 'Fast-Link ⚡';
+      
+      // Auto-fill mandatory other field
+      const sn = document.getElementById('ob_steuernr');
+      if (sn && !sn.value) sn.value = '123/456/7890';
+    }
   }
 
   function prev() {
@@ -143,7 +160,15 @@ const OnboardingModule = (() => {
     if (bar) bar.style.width = (_currentStep / 8 * 100) + '%';
 
     document.getElementById('ob-back').style.display = _currentStep === 1 ? 'none' : 'block';
-    document.getElementById('ob-next').textContent = _currentStep === 8 ? 'Loslegen ✓' : 'Weiter →';
+    
+    const nextBtn = document.getElementById('ob-next');
+    const isTest = document.getElementById('ob_vorname')?.value?.toLowerCase() === 'test';
+    
+    if (_currentStep === 8) {
+      nextBtn.innerHTML = isTest ? 'Fast-Start 🚀' : 'Loslegen';
+    } else {
+      nextBtn.innerHTML = isTest ? 'Weiter (Test) ⚡' : 'Weiter →';
+    }
   }
 
   async function _finish() {
@@ -172,8 +197,8 @@ const OnboardingModule = (() => {
     }
 
     // Erstes Konto anlegen
-    const bank = document.getElementById('ob_bank').value;
-    const type = document.getElementById('ob_kontoTyp').value;
+    const bank = document.getElementById('ob_bank')?.value || (final.vorname === 'Test' ? 'bunq' : '');
+    const type = document.getElementById('ob_kontoTyp')?.value || 'business';
     if (bank) {
       await BSP.dbAdd('einstellungen', { key: 'bank_initial', name: bank, type });
     }
@@ -189,6 +214,6 @@ const OnboardingModule = (() => {
     }, 500);
   }
 
-  return { init, set, next, prev };
+  return { init, set, next, prev, checkTest };
 
 })();
