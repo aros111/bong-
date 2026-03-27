@@ -181,6 +181,7 @@
 <script src="./core.js"></script>
 <script src="./js/services/db.js"></script>
 <script src="./js/services/ai.js"></script>
+<script src="./js/services/datev.js"></script>
 <script src="./js/onboarding.js"></script>
 <script src="./js/business/business-shell.js"></script>
 <script src="./js/privat/privat-shell.js"></script>
@@ -213,6 +214,8 @@
 <script src="./js/business/fahrt.js"></script>
 <script src="./js/business/verpflegung.js"></script>
 <script src="./js/business/export.js"></script>
+<script src="./js/business/konto.js"></script>
+<script src="./js/business/abo.js"></script>
 
 <script>
 const _initedPillars = new Set();
@@ -231,6 +234,8 @@ async function _initPillarModules(p) {
     await BSP.safeInit('FahrtModule', typeof FahrtModule !== 'undefined' ? FahrtModule : null);
     await BSP.safeInit('VerpflegungModule', typeof VerpflegungModule !== 'undefined' ? VerpflegungModule : null);
     await BSP.safeInit('ExportModule', typeof ExportModule !== 'undefined' ? ExportModule : null);
+    await BSP.safeInit('KontoModule', typeof KontoModule !== 'undefined' ? KontoModule : null);
+    await BSP.safeInit('AboModule', typeof AboModule !== 'undefined' ? AboModule : null);
     await BSP.safeInit('EinstellungenModule', typeof EinstellungenModule !== 'undefined' ? EinstellungenModule : null);
   } else if (p === 'privat') {
     await BSP.safeInit('PrivatShell', typeof PrivatShell !== 'undefined' ? PrivatShell : null);
@@ -288,6 +293,8 @@ async function _setPillar(p) {
       `;
       if (actionWrap) {
         actionWrap.innerHTML = `
+          <div class="pa-card" onclick="BSP.showView('konto')">🏦 Bankkonten</div>
+          <div class="pa-card" onclick="BSP.showView('abos')">🔁 Abos</div>
           <div class="pa-card" onclick="BSP.showView('fahrt')">🚗 Fahrten</div>
           <div class="pa-card" onclick="BSP.showView('verpflegung')">🍱 Verpflegung</div>
           <div class="pa-card" onclick="BSP.showView('steuer')">🏛️ Steuer</div>
