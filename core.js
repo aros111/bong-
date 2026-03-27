@@ -206,11 +206,10 @@ async function saveAllSettings(data) {
 // ── Headless AI Layer ───────────────────────────────────────
 const AI = (() => {
   const API_URL = 'https://api.anthropic.com/v1/messages';
-  const MODEL_HAIKU = 'claude-3-5-haiku-20241022';
+  const MODEL_HAIKU = 'claude-3-5-sonnet-20241022';
   const MODEL_SONNET = 'claude-3-5-sonnet-20241022';
 
   const COST_TABLE = {
-    'claude-3-5-haiku-20241022': { input: 0.25, output: 1.25 },
     'claude-3-5-sonnet-20241022': { input: 3.00, output: 15.00 }
   };
 
