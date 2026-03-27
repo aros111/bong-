@@ -2,12 +2,12 @@
 
 (() => {
   const API_URL = 'https://api.anthropic.com/v1/messages';
-  const MODEL_HAIKU = 'claude-3-haiku-20240307';
-  const MODEL_SONNET = 'claude-3-5-sonnet-20241022';
+  const MODEL_HAIKU = 'claude-haiku-4-5-20251001';
+  const MODEL_SONNET = 'claude-sonnet-4-5';
 
   const COST_TABLE = {
-    'claude-3-haiku-20240307': { input: 0.25, output: 1.25 },
-    'claude-3-5-sonnet-20241022': { input: 3.00, output: 15.00 }
+    'claude-haiku-4-5-20251001': { input: 0.25, output: 1.25 },
+    'claude-sonnet-4-5': { input: 3.00, output: 15.00 }
   };
 
   const AI = {
