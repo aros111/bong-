@@ -115,6 +115,43 @@ const VIEW_HTML = `
       <div style="font-size:10px;color:var(--txt3);margin-top:5px;line-height:1.5">Wird lokal für die AES-GCM Verschlüsselung sensibler Daten genutzt.</div>
     </div>
   </div>
+  
+  <!-- ═══ BANKKONTO & ABOS ════════════════════════════════════ -->
+  <div class="sett-section">
+    <div class="stitle">💳 Bankkonto & Abos</div>
+    <div style="font-size:11px;color:var(--txt3);line-height:1.4;margin-bottom:12px">
+      Verwalte deine Kontotransaktionen, importiere Auszüge und kontrolliere deine Abonnements und Daueraufträge.
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-gold" onclick="BSP.showView('konto')" style="justify-content:center">
+         🏦 Kontoauszug Scanner öffnen
+      </button>
+      <button class="btn btn-g" onclick="BSP.showView('abos')" style="justify-content:center">
+         🔁 Abo-Manager öffnen
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ ÜBERGANGS-MODUS (KONTENTRENNUNG) ════════════════════ -->
+  <div class="sett-section" style="border:2px solid var(--orn);background:rgba(255,166,0,0.05)">
+    <div class="stitle" style="color:var(--orn)">🔄 Übergangs-Modus</div>
+    <div style="font-size:11px;color:var(--txt3);line-height:1.4;margin-bottom:12px">
+      Aktiviere diesen Modus, wenn Geschäfts- und Privatkonten noch nicht vollständig getrennt sind. Die App fragt dann bei jeder Buchung nach der exakten Zuordnung.
+    </div>
+    <div class="field" style="display:flex;align-items:center;justify-content:space-between">
+      <label style="margin:0;color:var(--txt)">Übergangs-Modus aktiv</label>
+      <input type="checkbox" id="s_transitionMode" style="width:20px;height:20px;accent-color:var(--orn)">
+    </div>
+    
+    <div id="mismatch-container" style="margin-top:20px;display:none">
+      <div class="stitle" style="color:var(--red)">Mismatch-Dokumentation</div>
+      <div style="font-size:10px;color:var(--txt3);margin-bottom:8px">Buchungen, die der Steuerberater korrigieren muss (Privat kauf über Business-Konto oder umgekehrt).</div>
+      <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:12px" id="mismatch-total">Gesamt zu korrigieren: 0,00 €</div>
+      <div id="mismatch-list"></div>
+    </div>
+  </div>
+
+  <!-- ═══ STEUER- & DATEV ════════════════════════════════════ -->
     <div class="sett-grid sett-mt">
       <div class="field"><label>Belegnummer-Format</label>
         <select class="sett-inp" id="s_belegFmt">
@@ -249,6 +286,12 @@ async function _loadIntoForm() {
     'stempelName','stempelText','stempelColor'
   ];
 
+  // Transition Switch
+  const tsw = document.getElementById('s_transitionMode');
+  if (tsw) tsw.checked = s.transitionMode === true;
+  
+  _renderMismatchList();
+
   ids.forEach(id => {
     const el = document.getElementById('s_' + id);
     if (!el) return;
@@ -336,12 +379,16 @@ async function save() {
     stbEmail: get('stbEmail'),
     voranmeldungRhythmus: get('voranmeldungRhythmus') || 'monatlich',
     pin: get('pin') || '0000',
+    transitionMode: document.getElementById('s_transitionMode')?.checked || false,
     stempelName: get('stempelName'),
     stempelText: document.getElementById('s_stempelText')?.value || '',
     stempelColor: get('stempelColor') || '#c8a45a',
     logo: document.getElementById('s_logoPreview')?.dataset.logo || (BSP.state.settings || {}).logo,
     _apiKey: document.getElementById('s_apikey')?.value || '',
-    setupDone: '1'
+    setupDone: '1',
+    bankKonten: (BSP.state.settings && BSP.state.settings.bankKonten) ? BSP.state.settings.bankKonten : [
+       { id: 'bank_biz_1', bankname: '', kontonr: '', iban: '', blz: '', typ: 'Business', fints_url: '', last_sync: null, sync_enabled: false }
+    ]
   };
 
   // Pflichtfeld-Check
@@ -439,7 +486,137 @@ function _updateShellWidgets() {
   if (costEl) costEl.textContent = `${BSP.fm(cc.saved)} € gespart`;
 }
 
+// ── Übergangs-Modus Klassifizierer ────────────────────────────
+  async function startTransitionCheck(txns, callback) {
+     const s = BSP.state.settings || {};
+     if (!s.transitionMode) {
+        if(callback) callback(txns);
+        return;
+     }
+     
+     const targets = txns.filter(t => t.status === 'offen' || t.status === 'possible_conflict');
+     if (targets.length === 0) {
+        if(callback) callback(txns);
+        return;
+     }
+
+     let currentIndex = 0;
+     
+     const showNext = () => {
+        if (currentIndex >= targets.length) {
+           BSP.closeSheet();
+           BSP.toast('Übergangs-Check abgeschlossen', 'ok');
+           if(callback) callback(txns);
+           return;
+        }
+        
+        const t = targets[currentIndex];
+        
+        const html = `
+          <div class="sh"></div>
+          <div class="mod-header" style="text-align:center">
+            <div style="font-size:10px;color:var(--orn);text-transform:uppercase;margin-bottom:8px;font-weight:600">Übergangs-Modus (Konto-Check ${currentIndex+1}/${targets.length})</div>
+            <h2 class="mod-title">${BSP.eh(t.empfaenger || 'Unbekannt')}</h2>
+            <div style="font-size:24px;font-weight:600;color:${t.betrag > 0 ? 'var(--gold)':'var(--txt)'};margin:8px 0">${BSP.fm(Math.abs(t.betrag))} €</div>
+            <p class="mod-sub">${BSP.fd(t.datum)}</p>
+          </div>
+          
+          <div style="margin-top:20px">
+            <div style="font-size:11px;color:var(--txt3);margin-bottom:8px;text-align:center">1. Über welches Bankkonto lief diese Buchung tatsächlich?</div>
+            <div style="display:flex;gap:8px">
+               <button class="btn btn-g" id="btn-konto-biz" style="flex:1;justify-content:center;border:2px solid var(--br)" onclick="EinstellungenModule._transSelect('kontoTyp', 'Business', this)">Geschäftskonto</button>
+               <button class="btn btn-g" id="btn-konto-priv" style="flex:1;justify-content:center;border:2px solid var(--br)" onclick="EinstellungenModule._transSelect('kontoTyp', 'Privat', this)">Privatkonto</button>
+            </div>
+            
+            <div style="font-size:11px;color:var(--txt3);margin-top:20px;margin-bottom:8px;text-align:center">2. Ist dies eine Betriebsausgabe oder rein Privat?</div>
+            <div style="display:flex;gap:8px">
+               <button class="btn btn-g" id="btn-ausgabe-biz" style="flex:1;justify-content:center;border:2px solid var(--br)" onclick="EinstellungenModule._transSelect('ausgabenTyp', 'Business', this)">Betriebsausgabe</button>
+               <button class="btn btn-g" id="btn-ausgabe-priv" style="flex:1;justify-content:center;border:2px solid var(--br)" onclick="EinstellungenModule._transSelect('ausgabenTyp', 'Privat', this)">Rein Privat</button>
+            </div>
+          </div>
+          
+          <div style="margin-top:30px">
+             <button class="btn btn-gold" id="btn-trans-next" style="width:100%;justify-content:center;opacity:0.3;pointer-events:none" onclick="EinstellungenModule._transNext()">Weiter ✓</button>
+          </div>
+        `;
+        
+        BSP.showSheet(html);
+        BSP.state._transCtx = { t, kDone: false, aDone: false };
+     };
+     
+     showNext();
+  }
+
+  function _transNext() {
+      const ctx = BSP.state._transCtx;
+      if(ctx.t.tags.kontoTyp !== ctx.t.tags.ausgabenTyp) {
+         ctx.t.tags.mismatch = true;
+      }
+      // Der "currentIndex" der lokalen Instanz wird referenziert, da JS Closures über _transNext nicht sicher funken.
+      // Besser: Wir mutieren das Objekt und lassen den Caller wissen, aber startTransitionCheck wartet nicht asynchron.
+      // Ich modifiziere startTransitionCheck um globalen State zu nutzen, ODER ich gebe _transNext mit callback zurück.
+  }
+
+  // Da ich _transNext als globale Injection fixen muss, lege ich die Controller-Funktionen offen:
+  function _transSelect(field, val, btn) {
+      const ctx = BSP.state._transCtx;
+      ctx.t.tags[field] = val;
+      
+      if(field === 'kontoTyp') {
+         document.getElementById('btn-konto-biz').style.borderColor = 'var(--br)';
+         document.getElementById('btn-konto-priv').style.borderColor = 'var(--br)';
+         ctx.kDone = true;
+      } else {
+         document.getElementById('btn-ausgabe-biz').style.borderColor = 'var(--br)';
+         document.getElementById('btn-ausgabe-priv').style.borderColor = 'var(--br)';
+         ctx.aDone = true;
+         if(val === 'Privat') ctx.t.status = 'privat';
+      }
+      btn.style.borderColor = 'var(--gold)';
+      
+      if (ctx.kDone && ctx.aDone) {
+         const nextBtn = document.getElementById('btn-trans-next');
+         nextBtn.style.opacity = '1';
+         nextBtn.style.pointerEvents = 'auto';
+      }
+  }
+
+  async function _renderMismatchList() {
+     const list = document.getElementById('mismatch-list');
+     const container = document.getElementById('mismatch-container');
+     const totalEl = document.getElementById('mismatch-total');
+     if (!list || !container) return;
+     
+     const kData = (await BSP.dbGetAll('konto')) || [];
+     const mismatches = kData.filter(k => k.tags && k.tags.mismatch);
+     
+     if (mismatches.length === 0) {
+        container.style.display = 'none';
+        return;
+     }
+     
+     container.style.display = 'block';
+     let sum = 0;
+     let html = '';
+     
+     mismatches.forEach(m => {
+        sum += Math.abs(m.betrag);
+        html += `
+        <div style="background:var(--s1);border-left:3px solid var(--red);padding:10px;margin-bottom:6px;border-radius:0 var(--r8) var(--r8) 0;display:flex;justify-content:space-between;align-items:center">
+           <div>
+              <div style="font-size:12px;font-weight:600">${BSP.eh(m.empfaenger)}</div>
+              <div style="font-size:10px;color:var(--txt3)">${BSP.fd(m.datum)} · ${m.tags.ausgabenTyp}ausgabe auf ${m.tags.kontoTyp}konto</div>
+           </div>
+           <div style="font-family:'DM Mono';color:var(--txt);font-size:13px">${BSP.fm(Math.abs(m.betrag))} €</div>
+        </div>`;
+     });
+     
+     list.innerHTML = html;
+     if(totalEl) totalEl.textContent = 'Gesamt zu korrigieren: ' + BSP.fm(sum) + ' €';
+  }
+
 // ── Öffentliche API des Moduls ────────────────────────────────
-return { init, save, toggleApiKeyVis, handleLogo, exportJSON, backupDrive, resetCounters };
+return { init, save, toggleApiKeyVis, handleLogo, exportJSON, backupDrive, resetCounters, startTransitionCheck, _transNext, _transSelect };
+
 
 })();

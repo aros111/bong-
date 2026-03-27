@@ -68,9 +68,60 @@
     }
   };
 
-  // ── Zentrale Wrapper-Funktion ────────────────────────────────
+  // ── Währungsumrechnung (EZB API) ───────────────────────────
+  async function fetchECBRate(currency, dateStr) {
+    if (!currency || currency === 'EUR') return 1;
+    try {
+      const url = `https://data-api.ecb.europa.eu/service/data/EXR/D.${currency}.EUR.SP00.A?endPeriod=${dateStr || new Date().toISOString().split('T')[0]}&lastNObservations=1`;
+      const res = await fetch(url, { headers: { 'Accept': 'text/xml' }});
+      if (!res.ok) return null;
+      const xml = await res.text();
+      const match = xml.match(/<generic:ObsValue value="([0-9.]+)"\/>/);
+      if (match && match[1]) return parseFloat(match[1]);
+      return null;
+    } catch (e) {
+      console.warn('[BSP] EZB Fetch Error:', e);
+      return null;
+    }
+  }
+
+  // ── Zentrale Wrapper-Funktion mit Interceptors ────────────────
   BSP.callClaude = async function(params) {
-    return AI.process(params);
+    let injectedPrompt = params.prompt || '';
+    
+    // Wenn JSON erwartet wird, injiziere die DATEV Export Regeln (Klartext & Währung)
+    if (injectedPrompt.includes('{') || injectedPrompt.toLowerCase().includes('json')) {
+      injectedPrompt += `\n\nZUSATZ-REGELN FÜR DEN DATEV-EXPORT (WICHTIG):
+1. KLARTEXT-HINWEIS: Wenn die gekauften Artikel sehr technisch, kryptisch oder englisch benannt sind (z.B. "USB-C PD 100W GaN", "AirPods Pro", "SSD NVMe 2TB", "AWS EC2 instance", "O2 Free M"), MUSST du ein Feld "klartext" im JSON ausgeben, das in kurzem, einfachem Deutsch erklärt, was das ist (z.B. "Laptop-Ladegerät USB-C", "Kabellose Kopfhörer Apple", "Festplatte intern", "Server-Hosting", "Handyvertrag"). Ist die Bezeichnung völlig trivial (z.B. "Briefmarken", "Tanken"), lass das Feld komplett weg.
+2. WÄHRUNG: Analysiere zwingend, in welcher Währung der Beleg ausgestellt ist. Gib als "waehrung" den ISO-Code zurück (z.B. "EUR", "USD", "CHF", "GBP").`;
+    }
+
+    const jsonString = await AI.process({ ...params, prompt: injectedPrompt });
+
+    try {
+      const parsed = JSON.parse(jsonString);
+      
+      // Task 4: Fremdwährung erkannt -> EZB Kurs abrufen
+      if (parsed.waehrung && parsed.waehrung.toUpperCase() !== 'EUR' && parsed.brutto) {
+        const rate = await fetchECBRate(parsed.waehrung.toUpperCase(), parsed.datum);
+        if (rate) {
+          parsed.originalWaehrung = parsed.waehrung.toUpperCase();
+          parsed.originalBrutto = Number(parsed.brutto);
+          parsed.originalNetto = parsed.netto ? Number(parsed.netto) : null;
+          parsed.wechselkurs = rate;
+          
+          parsed.brutto = Number((parsed.originalBrutto / rate).toFixed(2));
+          if (parsed.netto) parsed.netto = Number((parsed.originalNetto / rate).toFixed(2));
+          if (parsed.mwst) parsed.mwst = Number((parsed.mwst / rate).toFixed(2));
+          
+          parsed.waehrung = 'EUR';
+        }
+      }
+      return JSON.stringify(parsed);
+    } catch(e) {
+      // Wenn Response kein JSON ist, oder Parse fehlschlägt
+      return jsonString;
+    }
   };
 
   // Redundante ask-Funktion für Abwärtskompatibilität

@@ -1,14 +1,23 @@
 // ══════════════════════════════════════════════════════════════
 // MODUL: VERPFLEGUNG
 // Verpflegungspauschalen §9 Abs.4a EStG, Timer für laufende Reise
-// Kommuniziert NUR über BSP.* — niemals direkt mit anderen Modulen
+// BMF 2026 Matrix integriert (Inland & Ausland)
 // ══════════════════════════════════════════════════════════════
 'use strict';
 
 const VerpflegungModule = (() => {
 
-// Pauschalbeträge Inland 2024/2025
-const PAUSCHALE = { voll: 28, ab8: 14, unter8: 0 };
+// Pauschalbeträge BMF 2026
+const PAUSCHALE_2026 = {
+  'Deutschland': { voll: 32, ab8: 16 },
+  'Österreich': { voll: 50, ab8: 33 },
+  'Schweiz Bern/Genf': { voll: 82, ab8: 55 },
+  'USA New York': { voll: 66, ab8: 44 },
+  'Großbritannien London': { voll: 66, ab8: 44 },
+  'Frankreich Paris': { voll: 58, ab8: 39 },
+  'Luxemburg': { voll: 63, ab8: 42 } // Fallback für alle nicht erfassten Auslandsreisen laut DB
+};
+
 let _timerStart = null;
 let _timerInterval = null;
 
@@ -16,7 +25,7 @@ const VIEW_HTML = `
 <div id="v-verpflegung" class="view">
   <div class="mod-header">
     <div class="mod-title">Verpflegung</div>
-    <div class="mod-sub">§9 Abs. 4a EStG · Inland: 14 € (≥8h) · 28 € (Reisetag)</div>
+    <div class="mod-sub">2026 BMF Table · Inland: 16 € (≥8h) · 32 € (24h)</div>
   </div>
 
   <!-- Jahres-Summary -->
@@ -41,18 +50,31 @@ const VIEW_HTML = `
         <button class="btn btn-red btn-sm" onclick="VerpflegungModule.timerStop(true)" style="display:none" id="verp-timer-save">✓ Speichern</button>
       </div>
     </div>
-    <div id="verp-timer-hint" style="font-size:10px;color:var(--txt3);margin-top:6px">Timer starten wenn die Dienstreise beginnt</div>
+    <div id="verp-timer-hint" style="font-size:10px;color:var(--txt3);margin-top:6px">Timer starten wenn die Dienstreise beginnt (Inland)</div>
   </div>
 
   <!-- Manuelle Eingabe -->
   <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
-    <div class="stitle">Manuell eintragen</div>
+    <div class="stitle">Manuell eintragen (2026)</div>
     <div class="sett-grid">
       <div class="field"><label>Datum</label><input class="sett-inp" id="verp-date" type="date"></div>
-      <div class="field"><label>Dauer</label>
+      
+      <div class="field"><label>Reiseland</label>
+        <select class="sett-inp" id="verp-land" onchange="VerpflegungModule.handleLandSelect()">
+          <option value="Deutschland">Deutschland</option>
+          <option value="Österreich">Österreich</option>
+          <option value="Schweiz Bern/Genf">Schweiz Bern/Genf</option>
+          <option value="USA New York">USA New York</option>
+          <option value="Großbritannien London">Großbritannien London</option>
+          <option value="Frankreich Paris">Frankreich Paris</option>
+          <option value="Andere (Ausland)">Andere (Ausland) ...</option>
+        </select>
+      </div>
+
+      <div class="field" style="grid-column: span 2"><label>Dauer</label>
         <select class="sett-inp" id="verp-dauer" onchange="VerpflegungModule.updatePreview()">
-          <option value="voll">Ganzer Tag (28 €)</option>
-          <option value="ab8">8–24 Stunden (14 €)</option>
+          <option value="voll">Ganzer Tag (32 €)</option>
+          <option value="ab8">8–24h An/Abreise (16 €)</option>
           <option value="unter8">Unter 8 Stunden (0 €)</option>
         </select>
       </div>
@@ -87,17 +109,50 @@ function init() {
   BSP.on('view:changed', ({ name }) => { if (name === 'verpflegung') render(); });
 }
 
+function handleLandSelect() {
+  const el = document.getElementById('verp-land');
+  if (el && el.value === 'Andere (Ausland)') {
+    const custom = prompt('Welches Land? (Pauschale wird automatisch auf Auffangwert 63€/42€ gesetzt)');
+    if (custom && custom.trim() !== '') {
+      // Temporär als Option hinzufügen
+      const opt = document.createElement('option');
+      opt.value = custom;
+      opt.textContent = custom;
+      el.insertBefore(opt, el.lastElementChild);
+      el.value = custom;
+      // Dynamisch Fallback in Tabelle eintragen
+      if (!PAUSCHALE_2026[custom]) PAUSCHALE_2026[custom] = { voll: 63, ab8: 42 };
+    } else {
+      el.value = 'Deutschland'; // Reset falls abgebrochen
+    }
+  }
+  updatePreview();
+}
+
 function updatePreview() {
   const dauer = document.getElementById('verp-dauer')?.value || 'voll';
-  const betrag = PAUSCHALE[dauer] || 0;
+  const land = document.getElementById('verp-land')?.value || 'Deutschland';
+  
+  const rates = PAUSCHALE_2026[land] || PAUSCHALE_2026['Luxemburg'];
+  const betrag = dauer === 'unter8' ? 0 : rates[dauer];
+
+  // Labels dynamisch updaten
+  const sel = document.getElementById('verp-dauer');
+  if (sel && sel.options.length >= 3) {
+    sel.options[0].text = \`Ganzer Tag (\${rates.voll} €)\`;
+    sel.options[1].text = \`8–24h An/Abreise (\${rates.ab8} €)\`;
+    sel.options[2].text = \`Unter 8 Stunden (0 €)\`;
+  }
+
   const prev = document.getElementById('verp-preview');
-  if (prev) prev.textContent = betrag > 0 ? `Pauschale: ${betrag} €` : 'Kein Abzug möglich (< 8h)';
+  if (prev) {
+    prev.textContent = betrag > 0 ? \`Berechnete Pauschale für \${land}: \${betrag} €\` : 'Kein Abzug möglich (< 8h)';
+  }
 }
 
 // ── Timer ─────────────────────────────────────────────────────
 function timerToggle() {
   if (_timerStart) {
-    // Pause
     clearInterval(_timerInterval);
     _timerInterval = null;
     const btn = document.getElementById('verp-timer-btn');
@@ -121,7 +176,7 @@ function _tickTimer() {
   const m = Math.floor((elapsed % 3600) / 60);
   const s = elapsed % 60;
   const el = document.getElementById('verp-timer');
-  if (el) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if (el) el.textContent = \`\${String(h).padStart(2,'0')}:\${String(m).padStart(2,'0')}:\${String(s).padStart(2,'0')}\`;
 }
 
 function timerStop(saveIt) {
@@ -140,14 +195,16 @@ function timerStop(saveIt) {
   const btn = document.getElementById('verp-timer-btn');
   if (btn) btn.textContent = '▶ Start';
   const hint = document.getElementById('verp-timer-hint');
-  if (hint) hint.textContent = 'Timer starten wenn die Dienstreise beginnt';
+  if (hint) hint.textContent = 'Timer starten wenn die Dienstreise beginnt (Inland)';
 
   if (saveIt) {
     let dauer = 'unter8';
     if (hours >= 24) dauer = 'voll';
     else if (hours >= 8) dauer = 'ab8';
 
-    const betrag = PAUSCHALE[dauer];
+    const rates = PAUSCHALE_2026['Deutschland'];
+    const betrag = dauer === 'unter8' ? 0 : rates[dauer];
+
     if (betrag === 0) {
       BSP.toast('Unter 8h – kein Abzug möglich', 'wr');
       return;
@@ -155,6 +212,7 @@ function timerStop(saveIt) {
     _saveEntry({
       date: new Date().toISOString().split('T')[0],
       dauer,
+      land: 'Deutschland',
       stundenGerundet: Math.round(hours * 10) / 10,
       ziel: 'Über Timer erfasst',
       pauschale: betrag
@@ -166,13 +224,17 @@ function timerStop(saveIt) {
 async function add() {
   const get = id => document.getElementById(id)?.value?.trim() || '';
   const dauer = get('verp-dauer') || 'voll';
-  const betrag = PAUSCHALE[dauer] || 0;
+  const land = get('verp-land') || 'Deutschland';
+  
+  const rates = PAUSCHALE_2026[land] || PAUSCHALE_2026['Luxemburg'];
+  const betrag = dauer === 'unter8' ? 0 : rates[dauer];
 
   if (betrag === 0) { BSP.toast('Unter 8h – kein Pauschalbetrag', 'wr'); return; }
 
   const entry = {
     date: get('verp-date') || new Date().toISOString().split('T')[0],
     dauer,
+    land,
     ziel: get('verp-ziel') || 'Dienstreise',
     pauschale: betrag,
     savedAt: Date.now()
@@ -185,8 +247,11 @@ async function add() {
 async function _saveEntry(entry) {
   entry.savedAt = entry.savedAt || Date.now();
   try {
-    await BSP.dbAdd('verpflegung', entry);
-    BSP.toast(`${entry.pauschale} € Pauschale gespeichert ✓`, 'ok');
+    // Falls DB existiert
+    if (BSP.dbAdd) {
+      await BSP.dbAdd('verpflegung', entry);
+    }
+    BSP.toast(\`\${entry.pauschale} € Pauschale (\${entry.land}) gespeichert ✓\`, 'ok');
     await render();
   } catch(e) {
     BSP.toast('Fehler: ' + e.message, 'er');
@@ -196,7 +261,10 @@ async function _saveEntry(entry) {
 // ── Render ───────────────────────────────────────────────────
 async function render() {
   try {
-    const all = await BSP.dbGetAll('verpflegung');
+    let all = [];
+    if (BSP.dbGetAll) {
+      all = await BSP.dbGetAll('verpflegung');
+    }
     const year = new Date().getFullYear();
     const yearEntries = all.filter(e => e.date && new Date(e.date + 'T00:00:00').getFullYear() === year);
     yearEntries.sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
@@ -216,27 +284,28 @@ async function render() {
       return;
     }
 
-    const duarLabels = { voll: 'Reisetag', ab8: '≥ 8h', unter8: '< 8h' };
-    list.innerHTML = yearEntries.map(e => `
+    const duarLabels = { voll: '24h', ab8: '≥ 8h', unter8: '< 8h' };
+    list.innerHTML = yearEntries.map(e => \`
       <div class="ri">
         <div class="ri-bar" style="background:var(--orn)"></div>
-        <div class="ri-th" style="font-size:20px">🍽</div>
+        <div class="ri-th" style="font-size:20px">✈️</div>
         <div class="ri-inf">
-          <div class="ri-sh">${BSP.eh(e.ziel || 'Dienstreise')}</div>
+          <div class="ri-sh">\${BSP.eh(e.ziel || 'Dienstreise')}</div>
           <div class="ri-me">
-            <span class="badge" style="background:rgba(192,112,48,.12);color:var(--orn)">${duarLabels[e.dauer] || e.dauer}</span>
-            <span>${BSP.fd(e.date)}</span>
+            <span class="badge" style="background:rgba(192,112,48,.12);color:var(--orn)">\${e.land || 'Deutschland'}</span>
+            <span class="badge" style="background:rgba(192,112,48,.12);color:var(--orn)">\${duarLabels[e.dauer] || e.dauer}</span>
+            <span>\${BSP.fd(e.date)}</span>
           </div>
         </div>
         <div class="ri-r">
-          <div class="ri-r-amt" style="color:var(--gold)">${e.pauschale} €</div>
+          <div class="ri-r-amt" style="color:var(--gold)">\${e.pauschale} €</div>
         </div>
-      </div>`).join('');
+      </div>\`).join('');
   } catch(e) {
     console.warn('Verpflegung render error:', e);
   }
 }
 
-return { init, add, render, timerToggle, timerStop, updatePreview };
+return { init, add, render, timerToggle, timerStop, updatePreview, handleLandSelect };
 
 })();

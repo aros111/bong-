@@ -60,7 +60,7 @@ const BelegeModule = (() => {
           <div class="ri-th">${b.image ? `<img src="${b.image}">` : '🧾'}</div>
           <div class="ri-inf">
             <div class="ri-sh">${BSP.eh(b.shop)}</div>
-            <div class="ri-me"><span>${BSP.fd(b.date)}</span> · <span>${b.cat || '—'}</span></div>
+            <div class="ri-me">${(b.cat||'').includes('Bewirtung') ? '<span class="badge" style="background:var(--orn);color:#fff;padding:2px 6px;border-radius:4px;font-size:9px;margin-right:4px">Bewirtung 70/30</span>' : ''}<span>${BSP.fd(b.date)}</span> · <span>${b.cat || '—'}</span></div>
           </div>
           <div class="ri-r">
             <div class="ri-r-amt">${BSP.fm(b.brutto)} €</div>

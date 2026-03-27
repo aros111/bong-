@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bong-manager-v3.7.4';
+const CACHE_NAME = 'bong-manager-v3.8.0';
 
 const ASSETS = [
   './',
