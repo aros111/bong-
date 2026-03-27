@@ -231,7 +231,7 @@ const AI = (() => {
 
     content.push({ type: 'text', text: prompt });
 
-    const usedModel = model || (allImages.length ? MODEL_HAIKU : MODEL_SONNET);
+    const usedModel = model || (allImages.length ? MODEL_SONNET : MODEL_HAIKU);
 
     const resp = await fetch(API_URL, {
       method: 'POST',
