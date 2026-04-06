@@ -46,6 +46,7 @@
             'Content-Type': 'application/json',
             'x-api-key': apiKey,
             'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'pdfs-2024-09-25',
             'anthropic-dangerous-direct-browser-access': 'true'
           },
           signal: controller.signal,
@@ -165,51 +166,28 @@
     return new Blob(byteArrays, {type: contentType});
   };
 
-  BSP.compressImage = function(dataUrl, maxPx = 600, maxKB = 100) {
+  BSP.compressImage = function(dataUrl, maxPx = 1600, maxKB = 4900) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        let currentMaxPx = maxPx;
+        const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        let q = 0.8; 
+        let result = canvas.toDataURL('image/jpeg', q);
         
-        const attempt = (px) => {
-          const scale = Math.min(1, px / Math.max(img.width, img.height));
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-
-          let q = 0.6; // Startqualität wie gefordert
-          let result;
-          do {
-            result = canvas.toDataURL('image/jpeg', q);
-            if (result.length * 3 / 4 <= maxKB * 1024) return result;
-            q -= 0.05;
-          } while (q >= 0.35); // Hard limit 0.35
-
-          return null; // Zu groß bei dieser Auflösung
-        };
-
-        let finalResult = attempt(currentMaxPx);
+        while (result.length * 3 / 4 > maxKB * 1024 && q > 0.6) {
+           q -= 0.1;
+           result = canvas.toDataURL('image/jpeg', q);
+        }
         
-        // Wenn bei 0.35 noch zu groß, Auflösung iterativ reduzieren
-        while (!finalResult && currentMaxPx > 200) {
-          currentMaxPx -= 100;
-          finalResult = attempt(currentMaxPx);
-        }
-
-        if (finalResult) {
-          resolve(finalResult);
-        } else {
-          reject(new Error("Bild konnte nicht ausreichend komprimiert werden – bitte in besserer Beleuchtung neu fotografieren oder näher heranzoomen."));
-        }
+        resolve(result); 
       };
       img.onerror = () => reject(new Error("Bild konnte nicht geladen werden"));
       img.src = dataUrl;
     });
   };
-
-  // AI-Objekt an BSP hängen, damit BSP.AI.process() global verfügbar ist
-  BSP.AI = AI;
-
-  console.log('[BSP] ai.js injected.');
 })();

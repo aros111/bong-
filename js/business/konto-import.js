@@ -125,48 +125,19 @@ const KontoImport = (() => {
     
     for (let f of inp.files) {
       if (f.type.includes('pdf')) {
-        if (typeof pdfjsLib === 'undefined') {
-          BSP.toast('PDF Scanner lädt noch, bitte kurz warten...', 'wr');
-          continue;
-        }
-        try {
-          const arrayBuffer = await f.arrayBuffer();
-          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-          const numPages = pdfDoc.numPages;
-          
-          // Entnehme maximal 15 Seiten um Speicher zu schonen
-          const maxP = Math.min(numPages, 15);
-          for (let i = 1; i <= maxP; i++) {
-             BSP.showScrim(`Lese PDF... Seite ${i}/${maxP}`);
-             const page = await pdfDoc.getPage(i);
-             const viewport = page.getViewport({ scale: 1.5 });
-             const canvas = document.createElement('canvas');
-             const ctx = canvas.getContext('2d');
-             canvas.height = viewport.height;
-             canvas.width = viewport.width;
-             
-             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-             
-             const rawB64 = canvas.toDataURL('image/jpeg', 0.8);
-             const compB64 = await BSP.compressImage(rawB64, 1600, 400); 
-             
-             const mainBlob = BSP.b64toBlob(compB64);
-             const objectUrl = URL.createObjectURL(mainBlob);
-             const thumbB64 = await BSP.compressImage(compB64, 400, 60);
-             const thumbBlob = BSP.b64toBlob(thumbB64);
-             const thumbUrl = URL.createObjectURL(thumbBlob);
-             
-             _pages.push({ blob: mainBlob, objectUrl, thumbUrl, isPdfPage: true });
-          }
-        } catch(e) {
-          BSP.toast('Fehler beim PDF lesen: ' + e.message, 'er');
-          console.error(e);
-        }
+        await new Promise(resolve => {
+           const reader = new FileReader();
+           reader.onload = e => {
+              _pages.push({ isPdf: true, isRawPdf: true, b64: e.target.result, file: f });
+              resolve();
+           };
+           reader.readAsDataURL(f);
+        });
       } else {
         await new Promise(resolve => {
           const reader = new FileReader();
           reader.onload = async (e) => {
-            const compB64 = await BSP.compressImage(e.target.result, 1600, 400);
+            const compB64 = await BSP.compressImage(e.target.result, 1600, 4900);
             const mainBlob = BSP.b64toBlob(compB64);
             const objectUrl = URL.createObjectURL(mainBlob);
 
@@ -289,60 +260,55 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
     try {
       BSP.showScrim('Analysiere Kontoauszug...');
       
-      let finalB64 = '';
-      if (_pages.length === 1) {
-        finalB64 = await _blobToB64(_pages[0].blob);
-      } else {
-        BSP.showScrim('Fasse Dokumente zusammen...');
-        const loadedImages = await Promise.all(_pages.map(async p => {
-          const b64 = await _blobToB64(p.blob);
-          return new Promise(res => {
-             const img = new Image();
-             img.onload = () => res(img);
-             img.src = b64;
-          });
-        }));
-        
-        const targetWidth = 1200;
-        let totalHeight = 0;
-        loadedImages.forEach(img => {
-          totalHeight += img.height * (targetWidth / img.width);
-        });
-        
-        let finalWidth = targetWidth;
-        let finalHeight = totalHeight;
-        
-        // KI Obergrenze ist physikalisch 8000px. Überlauf-Schutz:
-        if (totalHeight > 7900) {
-           const scaleFactor = 7900 / totalHeight;
-           finalHeight = 7900;
-           finalWidth = Math.floor(targetWidth * scaleFactor);
-        }
-        
-        const fCanvas = document.createElement('canvas');
-        fCanvas.width = finalWidth;
-        fCanvas.height = finalHeight;
-        const fctx = fCanvas.getContext('2d');
-        fctx.fillStyle = 'white';
-        fctx.fillRect(0,0,finalWidth,finalHeight);
-        
-        let cY = 0;
-        loadedImages.forEach(img => {
-          const h = img.height * (finalWidth / img.width);
-          fctx.drawImage(img, 0, cY, finalWidth, h);
-          cY += h;
-        });
-        
-        finalB64 = fCanvas.toDataURL('image/jpeg', 0.6);
+      let contents = [];
+      for (let p of _pages) {
+         if (p.isRawPdf) contents.push(p.b64);
+         else if (p.blob) contents.push(await _blobToB64(p.blob));
+         else if (p.b64) contents.push(p.b64);
       }
 
       BSP.showScrim('Sende an KI, bitte warten...');
-      res = await BSP.callClaude({ prompt: KI_PROMPT, images: [finalB64], model: 'claude-sonnet-4-5', maxTokens: 4096 });
+      res = await BSP.callClaude({ prompt: KI_PROMPT, images: contents, model: 'claude-sonnet-4-5', maxTokens: 4096 });
     } catch(err) {
-      BSP.toast('Fehler bei der Analyse: ' + err.message, 'er');
-      _revokeAllPages();
-      BSP.hideScrim();
-      return;
+      if (err.message.includes('400') && _pages.some(p => p.isRawPdf)) {
+         BSP.showScrim('Native PDF-Analyse fehlgeschlagen. Konvertiere in Einzelbilder...');
+         let fallbackContents = [];
+         for (let p of _pages) {
+            if (p.isRawPdf && typeof pdfjsLib !== 'undefined') {
+                const arrayBuffer = await p.file.arrayBuffer();
+                const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                const maxP = Math.min(pdfDoc.numPages, 10);
+                for (let i = 1; i <= maxP; i++) {
+                   BSP.showScrim(`Konvertiere PDF Seite ${i}/${maxP}`);
+                   const page = await pdfDoc.getPage(i);
+                   const viewport = page.getViewport({ scale: 1.5 });
+                   const canvas = document.createElement('canvas');
+                   canvas.height = viewport.height; canvas.width = viewport.width;
+                   await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+                   const pageB64 = canvas.toDataURL('image/jpeg', 0.8);
+                   fallbackContents.push(await BSP.compressImage(pageB64, 1600, 4900));
+                }
+            } else if (p.blob) {
+                fallbackContents.push(await _blobToB64(p.blob));
+            } else if (p.b64) {
+                fallbackContents.push(p.b64);
+            }
+         }
+         try {
+             BSP.showScrim('Sende Einzelbilder an KI...');
+             res = await BSP.callClaude({ prompt: KI_PROMPT, images: fallbackContents, model: 'claude-sonnet-4-5', maxTokens: 4096 });
+         } catch(e2) {
+             BSP.toast('Fehler bei der Analyse: ' + e2.message, 'er');
+             _revokeAllPages();
+             BSP.hideScrim();
+             return;
+         }
+      } else {
+        BSP.toast('Fehler bei der Analyse: ' + err.message, 'er');
+        _revokeAllPages();
+        BSP.hideScrim();
+        return;
+      }
     } finally {
       BSP.hideScrim(); 
       _revokeAllPages();
@@ -855,3 +821,5 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
   return { startScan, handleUpload, closeScan, capturePage, resumeCam, processAllPages };
 
 })();
+
+
