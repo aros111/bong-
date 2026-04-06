@@ -99,7 +99,9 @@ const KontoShell = (() => {
     `).join('') + '<div style="height:140px;flex-shrink:0;pointer-events:none"></div>';
   }
 
-  function showAddBank() {
+  function showAddBank(prefillData = null) {
+    const pName = prefillData?.bankname || '';
+    const pIban = prefillData?.iban || '';
     const html = `
       <div class="sh"></div>
       <div class="mod-header">
@@ -108,7 +110,7 @@ const KontoShell = (() => {
       </div>
       <div class="field sett-mt">
         <label>Bankname (z.B. N26, Sparkasse)</label>
-        <input type="text" id="add-bank-name" class="sett-inp">
+        <input type="text" id="add-bank-name" class="sett-inp" value="${BSP.eh(pName)}">
       </div>
       <div class="field sett-mt">
         <label>Kontobezeichnung (z.B. Hauptkonto, Kreditkarte)</label>
@@ -116,7 +118,7 @@ const KontoShell = (() => {
       </div>
       <div class="field sett-mt">
         <label>IBAN (Optional, für Export wichtig)</label>
-        <input type="text" id="add-bank-iban" class="sett-inp" placeholder="DE12 3456...">
+        <input type="text" id="add-bank-iban" class="sett-inp" placeholder="DE12 3456..." value="${BSP.eh(pIban)}">
       </div>
       <div class="field sett-mt" style="margin-bottom:20px">
         <label>Typ</label>
@@ -150,6 +152,7 @@ const KontoShell = (() => {
     BSP.closeSheet();
     BSP.toast('Bank hinzugefügt', 'ok');
     renderBankList();
+    BSP.emit('bank:created', { id });
   }
 
   function openBank(bankId) {
