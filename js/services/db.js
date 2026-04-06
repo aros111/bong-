@@ -7,7 +7,7 @@
 
   BSP.initDB = function() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('bsp_v3', 5); // Upgrade zu Version 5 für Bankverwaltung & Updates
+      const req = indexedDB.open('bsp_v3', 6); // Upgrade zu Version 6 für Konto All-In-One Matcher
 
       req.onupgradeneeded = e => {
         const db = e.target.result;

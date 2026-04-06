@@ -1,6 +1,5 @@
 // ══════════════════════════════════════════════════════════════
-// MODUL: KONTO IMPORT
-// Scanner/Upload Logik & KI Extraktion für das Konto Modul
+// MODUL: KONTO IMPORT (All-In-One Import, Matching & Review Logic)
 // ══════════════════════════════════════════════════════════════
 'use strict';
 
@@ -13,18 +12,16 @@ const KontoImport = (() => {
   let _currentBankId = null;
   let _pendingImport = null;
 
-  // Event-Listener für Bank-Neuanlage mit Zwischenspeicherung
+  // Event-Listener für automatisches Resume nach Bank-Neuanlage
   BSP.on("bank:created", (data) => {
     if (_pendingImport) {
       _currentBankId = data.id;
-      _presentResults(_pendingImport);
+      _performMatching(_pendingImport);
       _pendingImport = null;
     }
   });
 
-
   const OVERLAY_HTML = `
-  <!-- ═══ SCANNER OVERLAY (Multi-Page) ═══ -->
   <div id="ko-scan-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:#000;z-index:9000;flex-direction:column">
     
     <div style="position:absolute;top:0;left:0;right:0;padding:20px;display:flex;justify-content:space-between;z-index:9001;background:linear-gradient(to bottom, rgba(0,0,0,0.8), transparent)">
@@ -54,7 +51,7 @@ const KontoImport = (() => {
       <div style="display:flex;gap:12px;justify-content:center">
         <button class="btn btn-g btn-sm" onclick="document.getElementById('ko-upload-inp').click()">📥 Upload</button>
         <button class="btn btn-g btn-sm" onclick="KontoImport.resumeCam()">📷 Kamera</button>
-        <button class="btn btn-gold btn-sm" onclick="KontoImport.processAllPages()">✨ Fertig & Analyse</button>
+        <button class="btn btn-gold btn-sm" onclick="KontoImport.processAllPages()">✨ Analysieren</button>
       </div>
     </div>
 
@@ -63,7 +60,7 @@ const KontoImport = (() => {
       <button id="ko-capture-btn" style="width:72px;height:72px;border-radius:50%;background:none;border:4px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="KontoImport.capturePage()">
         <div style="width:56px;height:56px;background:#fff;border-radius:50%"></div>
       </button>
-      <button id="ko-finish-btn" class="btn btn-gold" style="display:none;position:absolute;right:30px" onclick="KontoImport.processAllPages()">Fertig ✓</button>
+      <button id="ko-finish-btn" class="btn btn-gold" style="display:none;position:absolute;right:30px" onclick="KontoImport.processAllPages()">Analysieren</button>
     </div>
   </div>
   `;
@@ -184,7 +181,6 @@ const KontoImport = (() => {
     btnBox.appendChild(flash);
     setTimeout(() => flash.remove(), 150);
 
-    // Canvas
     _canvasEl.width = _videoEl.videoWidth;
     _canvasEl.height = _videoEl.videoHeight;
     const ctx = _canvasEl.getContext('2d');
@@ -214,41 +210,134 @@ const KontoImport = (() => {
     _pages = [];
   }
 
+  function _blobToB64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Blob lesen fehlgeschlagen'));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // 1. KI-ANALYSE
+  // ════════════════════════════════════════════════════════════
+
+  const KI_PROMPT = `Analysiere diesen Kontoauszug. Antworte NUR mit reinem JSON, kein anderer Text, kein Markdown, keine Erklärung:
+{
+  "bankdaten": {
+    "bankname": "Name der Bank",
+    "iban": "DE12 3456 7890",
+    "kontoinhaber": "Name des Inhabers"
+  },
+  "buchungen": [
+    {
+      "datum": "2026-03-01",
+      "betrag": -47.50,
+      "verwendungszweck": "REWE SAGT DANKE",
+      "auftraggeber_empfaenger": "REWE",
+      "typ": "ausgabe",
+      "skr03_vorschlag": "Bürobedarf"
+    }
+  ],
+  "anfangssaldo": 1000.00,
+  "endsaldo": 952.50,
+  "zeitraum_von": "2026-03-01",
+  "zeitraum_bis": "2026-03-31"
+}
+Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Felder als null.`;
+
+  async function processAllPages() {
+    if (!_pages.length) return;
+    closeScan();
+    let res = null;
+
+    try {
+      BSP.showScrim('Analysiere Kontoauszug...');
+      const b64Array = await Promise.all(_pages.map(async p => {
+        if (p.isPdf) return p.b64;
+        return await _blobToB64(p.blob);
+      }));
+      res = await BSP.callClaude({ prompt: KI_PROMPT, images: b64Array, model: 'claude-sonnet-4-5' });
+    } catch(err) {
+      BSP.toast('Fehler bei der Analyse: ' + err.message, 'er');
+      _revokeAllPages();
+      BSP.hideScrim();
+      return;
+    } finally {
+      BSP.hideScrim(); 
+      _revokeAllPages();
+    }
+
+    console.log('KI Raw Response:', res);
+    
+    // JSON Parse in try-catch to not fail silently
+    const parsedData = _parseKIResponse(res);
+    if (!parsedData) return;
+
+    // Bank-Check logic
+    if (parsedData.bankdaten && _currentBankId) {
+       const banken = await BSP.dbGetAll('konto_banken') || [];
+       const dbBank = banken.find(b => b.id === _currentBankId);
+       
+       if (dbBank) {
+         let diff = false;
+         if (parsedData.bankdaten.iban && dbBank.iban && parsedData.bankdaten.iban.replace(/\\s/g,'') !== dbBank.iban.replace(/\\s/g,'')) diff = true;
+         if (parsedData.bankdaten.bankname && dbBank.name && !dbBank.name.toLowerCase().includes(parsedData.bankdaten.bankname.toLowerCase().substring(0,4))) diff = true;
+
+         if (diff) {
+            const action = await _showBankMismatchSheet(parsedData, dbBank);
+            if (action === 'new') {
+               _pendingImport = parsedData; // store safely in memory
+               KontoShell.showAddBank(parsedData.bankdaten); 
+               return; // halt and wait for bank:created event
+            }
+         }
+       }
+    }
+
+    await _performMatching(parsedData);
+  }
 
   function _parseKIResponse(response) {
-    const jsonMatch = response.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    // Schritt 1: JSON aus Response extrahieren
+    const jsonMatch = response.match(/\\{[\\s\\S]*\\}|\\[[\\s\\S]*\\]/);
     if (!jsonMatch) {
-      BSP.toast('KI hat kein strukturiertes Ergebnis geliefert', 'wr');
+      BSP.toast('KI hat kein strukturiertes Ergebnis geliefert. (Siehe Konsole)', 'wr');
       return null;
     }
     
+    // Schritt 2: Parsen mit Fallback zu RAW anzeige
     let data;
     try {
       data = JSON.parse(jsonMatch[0]);
     } catch(e) {
-      BSP.toast('Ergebnis konnte nicht verarbeitet werden', 'wr');
+      // Zeige die Rohtexte an, damit der User sieht wo es klemmt
+      BSP.showSheet(`<div class="sh"></div><div class="mod-header"><div class="mod-title">KI JSON Parse Fehler</div></div><textarea style="width:100%;height:300px;font-family:monospace;font-size:11px" disabled>${BSP.eh(response)}</textarea><br><button class="btn btn-g" onclick="BSP.closeSheet()">Schließen</button>`);
+      BSP.toast('Ergebnis konnte nicht verarbeitet werden.', 'wr');
       return null;
     }
     
-    const buchungenArray = Array.isArray(data) ? data : (data.buchungen || data.transactions || data.items || data.entries || Object.values(data).find(v => Array.isArray(v)));
+    // Schritt 3: Buchungen finden egal wie sie heißen
+    const buchungen = data.buchungen || data.transactions || data.items || data.entries || Object.values(data).find(v => Array.isArray(v));
     
-    if (!buchungenArray || buchungenArray.length === 0) {
-      BSP.toast('Keine Buchungen im Dokument erkannt', 'wr');
+    if (!buchungen || buchungen.length === 0) {
+      BSP.toast('Keine Buchungen erkannt', 'wr');
       return null;
     }
     
-    // Normalize fields
-    buchungenArray.forEach(b => {
-      b.empfaenger = b.empfaenger || b.auftraggeber || '';
-      b.betrag = b.betrag || 0;
+    // Normalisieren
+    buchungen.forEach(b => {
+      b.empfaenger = b.empfaenger || b.auftraggeber_empfaenger || b.auftraggeber || '';
+      b.betrag = parseFloat(b.betrag) || 0;
     });
 
     return { 
-      buchungen: buchungenArray, 
+      buchungen, 
       bankdaten: data.bankdaten || null,
-      anfangssaldo: data.anfangssaldo !== undefined ? data.anfangssaldo : (data.saldoAlt !== undefined ? data.saldoAlt : null),
-      endsaldo: data.endsaldo !== undefined ? data.endsaldo : (data.saldoNeu !== undefined ? data.saldoNeu : null),
-      zeitraum_von: data.zeitraum_von || data.zeitraum || null,
+      anfangssaldo: data.anfangssaldo,
+      endsaldo: data.endsaldo,
+      zeitraum_von: data.zeitraum_von || null,
       zeitraum_bis: data.zeitraum_bis || null
     };
   }
@@ -266,7 +355,7 @@ const KontoImport = (() => {
         <div class="sh"></div>
         <div class="mod-header">
           <h2 class="mod-title" style="color:var(--orn)">Bankdaten-Abgleich</h2>
-          <p class="mod-sub">Die erkannten Daten weichen von der Auswahl ab.</p>
+          <p class="mod-sub">Die erkannten Daten im Dokument weichen von der App-Auswahl ab.</p>
         </div>
         <div style="background:var(--s2); border:1px solid var(--br); border-radius:var(--r16); padding:16px; margin-bottom:16px;">
           <div style="font-weight:600; margin-bottom:8px;">Erkannt im Kontoauszug:</div>
@@ -292,126 +381,119 @@ const KontoImport = (() => {
 
       setTimeout(() => {
         document.getElementById('btn-mm-update').onclick = async () => {
-          // Update DB
           dbBank.iban = parsedData.bankdaten.iban || dbBank.iban;
           dbBank.name = parsedData.bankdaten.bankname || dbBank.name;
           await BSP.dbPut('konto_banken', dbBank);
           resolve('update');
         };
-        document.getElementById('btn-mm-ignore').onclick = () => {
-          resolve('ignore');
-        };
-        document.getElementById('btn-mm-new').onclick = () => {
-          resolve('new');
-        };
+        document.getElementById('btn-mm-ignore').onclick = () => { resolve('ignore'); };
+        document.getElementById('btn-mm-new').onclick = () => { resolve('new'); };
       }, 100);
     });
   }
 
-  function _blobToB64(blob) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error('Blob lesen fehlgeschlagen'));
-      reader.readAsDataURL(blob);
-    });
-  }
+  // ════════════════════════════════════════════════════════════
+  // 2. AUTOMATISCHER ABGLEICH MIT BELEGEN
+  // ════════════════════════════════════════════════════════════
 
-  async function processAllPages() {
-    if (!_pages.length) return;
-    closeScan();
-
-    const prompt = `Analysiere diesen Kontoauszug. Antworte NUR mit einem JSON-Objekt, kein anderer Text:
-{
-  "bankdaten": {
-    "bankname": "Name der Bank",
-    "iban": "DE12 3456 7890",
-    "kontoinhaber": "Name des Inhabers",
-    "zeitraum_von": "2026-03-01",
-    "zeitraum_bis": "2026-03-31",
-    "anfangssaldo": 1234.56,
-    "endsaldo": 987.06
-  },
-  "buchungen": [
-    {
-      "datum": "2026-03-01",
-      "betrag": -47.50,
-      "verwendungszweck": "REWE SAGT DANKE",
-      "auftraggeber": "REWE",
-      "typ": "lastschrift"
-    }
-  ]
-}
-Negative Beträge sind Ausgaben, positive sind Eingänge. Fehlende Felder als null.`;
-
-    let parsedData = null;
-
-    try {
-      BSP.showScrim('Analysiere Kontoauszug...');
-      const b64Array = await Promise.all(_pages.map(async p => {
-        if (p.isPdf) return p.b64;
-        return await _blobToB64(p.blob);
-      }));
-      
-      const res = await BSP.callClaude({ prompt, images: b64Array, model: 'claude-sonnet-4-5' });
-      console.log('KI Raw Response:', res);
-      
-      parsedData = _parseKIResponse(res);
-      if (!parsedData) return;
-
-    } catch(err) {
-      BSP.toast('Fehler bei der Analyse: ' + err.message, 'er');
-      return;
-    } finally {
-      _revokeAllPages();
-      BSP.hideScrim();
-    }
-
-    // Bank-Check logic
-    if (parsedData.bankdaten && _currentBankId) {
-       const banken = await BSP.dbGetAll('konto_banken') || [];
-       const dbBank = banken.find(b => b.id === _currentBankId);
-       
-       if (dbBank) {
-         let diff = false;
-         if (parsedData.bankdaten.iban && dbBank.iban && parsedData.bankdaten.iban.replace(/\s/g,'') !== dbBank.iban.replace(/\s/g,'')) diff = true;
-         if (parsedData.bankdaten.bankname && dbBank.name && !dbBank.name.toLowerCase().includes(parsedData.bankdaten.bankname.toLowerCase().substring(0,4))) diff = true;
-
-         if (diff) {
-            const action = await _showBankMismatchSheet(parsedData, dbBank);
-            if (action === 'new') {
-               _pendingImport = parsedData; // store it
-               KontoShell.showAddBank(parsedData.bankdaten); 
-               return; // halt and wait for bank:created event
-            }
-         }
-       }
-    }
-
-    _presentResults(parsedData);
-  }
-
-  async function _presentResults(data) {
-    let temporaryTxns = JSON.parse(JSON.stringify(data.buchungen || []));
+  async function _performMatching(parsedData) {
+    BSP.showScrim('Gleiche Transaktionen mit Belegen ab...');
     
+    let alleBelege = [];
+    try { alleBelege = await BSP.dbGetAll('belege') || []; } catch(e){}
+    BSP.hideScrim();
+
+    const transactions = parsedData.buchungen;
+
+    for (let txn of transactions) {
+      txn.id = 'txn_' + Date.now() + Math.random().toString().slice(2,8);
+      txn.bankId = _currentBankId;
+      txn.status = 'offen'; // Standard-Status
+      txn.buchungstyp = txn.buchungstyp || txn.typ || 'Sonstige';
+
+      const tShop = (txn.empfaenger || '').toLowerCase();
+      
+      // Eingänge (Rechnungen die wir gestellt haben = ar)
+      if (txn.betrag > 0) {
+        const arBelege = alleBelege.filter(b => b.type === 'ar');
+        const possibleAR = arBelege.filter(b => {
+          if (!b.date || !b.brutto) return false;
+          const daysDiff = Math.abs((new Date(b.date+'T00:00:00') - new Date(txn.datum+'T00:00:00')) / 864e5);
+          const amtDiff = Math.abs(Math.abs(b.brutto) - Math.abs(txn.betrag));
+          return daysDiff <= 3 && amtDiff <= 0.50; // +- 3 Tage, +- 50 Cent
+        });
+
+        let bestMatch = null; let scoreMax = 0;
+        for (let m of possibleAR) {
+          let sc = 0;
+          const bEmpf = (m.empfaenger || m.shop || '').toLowerCase();
+          if (tShop.includes(bEmpf.split(' ')[0]) || bEmpf.includes(tShop.split(' ')[0])) sc += 5;
+          const diff = Math.abs(Math.abs(m.brutto) - Math.abs(txn.betrag));
+          if (diff === 0) sc += 5; else if (diff <= 0.05) sc += 4; else if (diff <= 0.50) sc += 1;
+          if (m.date === txn.datum) sc += 2;
+          if (sc > scoreMax) { scoreMax = sc; bestMatch = m; }
+        }
+
+        if (scoreMax >= 3 && bestMatch) {
+          txn.status = 'abgeglichen';
+          txn.belegId = bestMatch.id;
+        } else {
+          txn.hasAlert = 'Mögliche fehlende Ausgangsrechnung';
+        }
+
+      // Ausgaben (Rechnungen die wir bekommen haben = er/bar)
+      } else {
+        const possibleBelege = alleBelege.filter(b => {
+          if (!b.date || !b.brutto) return false;
+          const daysDiff = Math.abs((new Date(b.date+'T00:00:00') - new Date(txn.datum+'T00:00:00')) / 864e5);
+          const amtDiff = Math.abs(Math.abs(b.brutto) - Math.abs(txn.betrag));
+          return daysDiff <= 3 && amtDiff <= 0.50;
+        });
+
+        let bestMatch = null; let scoreMax = 0;
+        for (let m of possibleBelege) {
+          let sc = 0;
+          const bShop = (m.shop || '').toLowerCase();
+          if (tShop.includes(bShop) || bShop.includes(tShop)) sc += 5;
+          const diff = Math.abs(Math.abs(m.brutto) - Math.abs(txn.betrag));
+          if (diff === 0) sc += 5; else if (diff <= 0.05) sc += 4; else if (diff <= 0.50) sc += 1;
+          if (m.date === txn.datum) sc += 2;
+          if (sc > scoreMax) { scoreMax = sc; bestMatch = m; }
+        }
+
+        if (scoreMax >= 5 && bestMatch) {
+          txn.status = 'abgeglichen';
+          txn.belegId = bestMatch.id;
+        }
+      }
+    }
+    
+    _showReviewDashboard(parsedData, transactions);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // 3. ERGEBNIS ANZEIGEN (Dashboard)
+  // ════════════════════════════════════════════════════════════
+
+  function _showReviewDashboard(parsedData, transactions) {
     let sumIn = 0; let countIn = 0;
     let sumOut = 0; let countOut = 0;
     
-    temporaryTxns.forEach((t) => {
-       const b = parseFloat(t.betrag) || 0;
+    transactions.forEach(t => {
+       const b = t.betrag || 0;
        if (b >= 0) { sumIn += b; countIn++; }
        else { sumOut += Math.abs(b); countOut++; }
     });
 
-    const saldoNeu = data.endsaldo !== null ? `${data.endsaldo.toFixed(2)} €` : '?';
-    const saldoAlt = data.anfangssaldo !== null ? `${data.anfangssaldo.toFixed(2)} €` : '?';
-    const zVon = data.zeitraum_von || '?';
-    const zBis = data.zeitraum_bis || '?';
+    const saldoNeu = parsedData.endsaldo !== null && parsedData.endsaldo !== undefined ? `${parsedData.endsaldo.toFixed(2)} €` : '?';
+    const saldoAlt = parsedData.anfangssaldo !== null && parsedData.anfangssaldo !== undefined ? `${parsedData.anfangssaldo.toFixed(2)} €` : '?';
+    const zVon = parsedData.zeitraum_von || '?';
+    const zBis = parsedData.zeitraum_bis || '?';
 
     let ht = `
       <div class="sh"></div>
       <div class="mod-header" style="margin-bottom:12px;">
-        <h2 class="mod-title">Buchungen prüfen</h2>
+        <h2 class="mod-title">Übersicht Kontoauszug</h2>
         <p class="mod-sub">Zeitraum: ${BSP.eh(zVon)} bis ${BSP.eh(zBis)}</p>
       </div>
       
@@ -437,31 +519,40 @@ Negative Beträge sind Ausgaben, positive sind Eingänge. Fehlende Felder als nu
         </div>
       </div>
 
-      <div style="max-height:55vh; overflow-y:auto; margin-bottom:16px;">
+      <div style="max-height:50vh; overflow-y:auto; margin-bottom:16px;">
     `;
     
-    temporaryTxns.forEach((t, i) => {
+    transactions.forEach((t) => {
       const isPos = (t.betrag || 0) >= 0;
       const bColor = isPos ? 'var(--grn)' : 'var(--red)';
+      
+      let badgeHtml = '';
+      if (t.status === 'abgeglichen') badgeHtml = `<div class="badge" style="background:var(--grn);color:#fff">✓ Beleg erkannt</div>`;
+      else if (t.hasAlert) badgeHtml = `<div class="badge" style="background:var(--red);color:#fff">⚠️ ${BSP.eh(t.hasAlert)}</div>`;
+      else badgeHtml = `<div class="badge" style="background:var(--orn);color:#fff">Offen</div>`;
+
       ht += `
-        <div style="background:var(--s2); padding:10px; border-radius:var(--r8); margin-bottom:8px; border:1px solid var(--br)">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <input id="prev-date-${i}" class="sett-inp" type="date" value="${t.datum || ''}" style="width:130px; font-size:13px; margin:0">
-            <div style="display:flex; align-items:center;">
-              <input id="prev-amt-${i}" class="sett-inp" type="number" step="0.01" value="${t.betrag || 0}" style="width:90px; text-align:right; font-weight:600; color:${bColor}; margin:0; padding-right:8px;">
-              <span style="font-size:13px; color:${bColor}; font-weight:600;">€</span>
-            </div>
+        <div style="background:var(--s2); padding:12px; border-radius:var(--r8); margin-bottom:8px; border:1px solid var(--br)">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+            <div style="font-size:13px; color:var(--txt2);">${t.datum || ''}</div>
+            <div style="font-weight:600; color:${bColor};">${t.betrag.toFixed(2)} €</div>
           </div>
-          <input id="prev-empf-${i}" class="sett-inp" type="text" value="${BSP.eh(t.empfaenger || '')}" placeholder="Empfänger/Auftraggeber" style="margin-bottom:6px; font-size:14px; font-weight:500;">
-          <input id="prev-zweck-${i}" class="sett-inp" type="text" value="${BSP.eh(t.verwendungszweck || '')}" placeholder="Verwendungszweck" style="font-size:13px; color:var(--txt2);">
+          <div style="font-weight:500; font-size:14px; margin-bottom:2px">${BSP.eh(t.empfaenger)}</div>
+          <div style="font-size:12px; color:var(--txt3); margin-bottom:8px;">${BSP.eh(t.verwendungszweck)}</div>
+          ${badgeHtml}
         </div>
       `;
     });
+    
+    const unmatchedCount = transactions.filter(t => t.status !== 'abgeglichen').length;
+    
     ht += `
       </div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-g" style="flex:1;justify-content:center" onclick="BSP.closeSheet()">Abbrechen</button>
-        <button class="btn btn-gold" style="flex:1;justify-content:center" id="ko-preview-save">Alle übernehmen</button>
+        <button class="btn btn-g" style="flex:1;justify-content:center" onclick="BSP.closeSheet()">Verwerfen</button>
+        ${unmatchedCount > 0 
+          ? `<button class="btn btn-gold" style="flex:2;justify-content:center" id="ki-review-start">${unmatchedCount} offene Positionen klären</button>` 
+          : `<button class="btn btn-gold" style="flex:2;justify-content:center" id="ki-review-save">Alles Speichern</button>` }
       </div>
       <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
     `;
@@ -469,30 +560,153 @@ Negative Beträge sind Ausgaben, positive sind Eingänge. Fehlende Felder als nu
     BSP.showSheet(ht);
     
     setTimeout(() => {
-      const saveBtn = document.getElementById('ko-preview-save');
-      if (saveBtn) {
-        saveBtn.onclick = async () => {
-          temporaryTxns.forEach((t, i) => {
-            t.datum = document.getElementById(`prev-date-${i}`)?.value || t.datum;
-            t.empfaenger = document.getElementById(`prev-empf-${i}`)?.value || t.empfaenger;
-            t.auftraggeber = t.empfaenger;
-            t.verwendungszweck = document.getElementById(`prev-zweck-${i}`)?.value || t.verwendungszweck;
-            t.betrag = parseFloat(document.getElementById(`prev-amt-${i}`)?.value) || t.betrag;
-            t.bankId = _currentBankId;
-          });
-          BSP.closeSheet();
-          BSP.showScrim('Speichere & Abgleich...');
-          try {
-            await KontoAbgleich.executeAlgorithm(temporaryTxns, _currentBankId);
-          } catch(err) {
-            BSP.toast('Fehler beim Abgleich: ' + err.message, 'er');
-          } finally {
-            BSP.hideScrim();
-          }
-        };
-      }
+      const btnStart = document.getElementById('ki-review-start');
+      if (btnStart) btnStart.onclick = () => _startInteractiveReview(transactions);
+
+      const btnSave = document.getElementById('ki-review-save');
+      if (btnSave) btnSave.onclick = () => _saveAllTransactions(transactions);
     }, 100);
   }
+
+  // ════════════════════════════════════════════════════════════
+  // 4. INTERAKTIVE DURCHARBEITUNG
+  // ════════════════════════════════════════════════════════════
+
+  function _getSKR03Liste() {
+    return [
+      "Bürobedarf", "Reisekosten", "Werbekosten", "Wareneingang", "Fremdleistungen",
+      "Lizenzgebühren", "Porto", "Telefon/Internet", "Miete", "Softwareabonnements",
+      "Geringwertige Wirtschaftsgüter", "Bewirtungskosten", "Sonstige"
+    ];
+  }
+
+  async function _startInteractiveReview(transactions) {
+    const unmatched = transactions.filter(t => t.status !== 'abgeglichen');
+    let currentIndex = 0;
+
+    const transitionActive = typeof BSP.isTransitionModeActive !== 'undefined' ? BSP.isTransitionModeActive() : false;
+
+    function showNext() {
+       if (currentIndex >= unmatched.length) {
+         _saveAllTransactions(transactions);
+         return;
+       }
+       const t = unmatched[currentIndex];
+       const bColor = t.betrag >= 0 ? 'var(--grn)' : 'var(--red)';
+
+       // Generate SKR03 options
+       const skrListe = _getSKR03Liste();
+       let skrOptions = ``;
+       // fallback matching if the AI suggestion is not exactly in list
+       let aiSug = t.skr03_vorschlag || 'Sonstige';
+       if (!skrListe.includes(aiSug)) skrListe.unshift(aiSug); // add dynamic if strictly needed
+       skrListe.forEach(s => {
+         skrOptions += `<option value="${BSP.eh(s)}" ${s === aiSug ? 'selected' : ''}>${BSP.eh(s)}</option>`;
+       });
+
+       const privBusHtml = transitionActive ? `
+         <div style="font-weight:600;margin-bottom:8px">1. Bereich zuordnen:</div>
+         <div style="display:flex;gap:10px;margin-bottom:20px;">
+           <button class="btn btn-g" style="flex:1;justify-content:center;background:var(--bg3)" id="btn-bus">🏢 Business</button>
+           <button class="btn btn-g" style="flex:1;justify-content:center;background:var(--bg3)" id="btn-priv">🏡 Privat</button>
+         </div>
+       ` : `<input type="hidden" id="force-business" value="1">`; // Fallback to business
+
+       let ht = `
+         <div class="sh"></div>
+         <div class="mod-header" style="margin-bottom:12px;">
+            <div class="mod-title">Details klären</div>
+            <div class="mod-sub">Position ${currentIndex + 1} von ${unmatched.length}</div>
+         </div>
+         
+         <div style="background:var(--s2); padding:16px; border-radius:var(--r12); margin-bottom:20px; text-align:center; border:1px solid var(--br)">
+            <div style="font-size:24px; font-weight:700; color:${bColor}; margin-bottom:8px;">${t.betrag.toFixed(2)} €</div>
+            <div style="font-weight:500; font-size:15px; margin-bottom:4px;">${BSP.eh(t.empfaenger)}</div>
+            <div style="font-size:13px; color:var(--txt3); margin-bottom:12px;">${BSP.eh(t.datum)} • ${BSP.eh(t.verwendungszweck)}</div>
+            ${t.hasAlert ? `<div class="badge" style="background:var(--red);color:#fff;margin:auto">⚠️ ${BSP.eh(t.hasAlert)}</div>` : ''}
+         </div>
+
+         ${privBusHtml}
+
+         <div id="skr03-box" style="margin-bottom:24px; ${transitionActive ? 'opacity:0.3;pointer-events:none;transition:0.2s' : ''}">
+            <div style="font-weight:600;margin-bottom:8px">2. Kategorie (SKR03):</div>
+            <select id="skr-select" class="sett-inp">
+              ${skrOptions}
+            </select>
+            <div style="font-size:12px;color:var(--txt3);margin-top:6px;">KI-Kategorie Vorschlag automatisch vorausgewählt.</div>
+         </div>
+
+         <div style="display:flex;gap:8px">
+           <button class="btn btn-g" style="flex:1;justify-content:center" id="ki-rev-skip">Später klären</button>
+           <button class="btn btn-gold" style="flex:1;justify-content:center" id="ki-rev-next">Bestätigen</button>
+         </div>
+         <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
+       `;
+
+       BSP.showSheet(ht);
+
+       setTimeout(() => {
+          let chosenArea = transitionActive ? null : 'Business';
+
+          const btnBus = document.getElementById('btn-bus');
+          const btnPriv = document.getElementById('btn-priv');
+          const skrBox = document.getElementById('skr03-box');
+
+          if (btnBus && btnPriv && skrBox) {
+            btnBus.onclick = () => { chosenArea = 'Business'; btnBus.style.background = 'var(--blu)'; btnPriv.style.background = 'var(--bg3)'; skrBox.style.opacity = '1'; skrBox.style.pointerEvents = 'auto'; };
+            btnPriv.onclick = () => { chosenArea = 'Privat'; btnPriv.style.background = 'var(--orn)'; btnBus.style.background = 'var(--bg3)'; skrBox.style.opacity = '0.3'; skrBox.style.pointerEvents = 'none'; };
+          }
+
+          document.getElementById('ki-rev-next').onclick = () => {
+             if (!chosenArea) return BSP.toast('Bitte Bereich wählen (Business/Privat)', 'wr');
+             t.bereich = chosenArea;
+             if (chosenArea === 'Business') {
+                t.skr03 = document.getElementById('skr-select').value;
+             }
+             t.status = 'geklärt'; // or some valid final state
+             currentIndex++;
+             showNext();
+          };
+
+          document.getElementById('ki-rev-skip').onclick = () => {
+             t.status = 'pending_review';
+             currentIndex++;
+             showNext();
+          };
+       }, 100);
+    }
+    
+    showNext();
+  }
+
+  // ════════════════════════════════════════════════════════════
+  // 5. BATCH SPEICHERN
+  // ════════════════════════════════════════════════════════════
+
+  async function _saveAllTransactions(transactions) {
+     BSP.showScrim('Speichere Buchungen...');
+     let gesichert = 0;
+     try {
+       for (let t of transactions) {
+         // Exports logic requirement: "Geldeingänge Geschäftskonto -> immer in Export. Geldeingänge Privatkonto -> nur wenn Business getaggt, mit Hinweis."
+         // This export formatting logic relies on tags and bereich
+         t.tags = t.tags || {};
+         t.tags.kontoTyp = t.bereich || 'Business';
+         
+         await BSP.dbAdd('konto_buchungen', t);
+         gesichert++;
+       }
+       BSP.emit('konto:imported');
+       BSP.closeSheet();
+       BSP.toast(`${gesichert} Transaktionen gesichert`, 'ok');
+       if (typeof KontoUebersicht !== 'undefined') KontoUebersicht.renderList(_currentBankId);
+     } catch(e) {
+       BSP.toast('Fehler beim Speichern: ' + e.message, 'er');
+     } finally {
+       BSP.hideScrim();
+     }
+  }
+
   return { startScan, handleUpload, closeScan, capturePage, resumeCam, processAllPages };
 
 })();
