@@ -66,7 +66,13 @@
         }
 
         const data = await resp.json();
-      const text = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '';
+      let rawText = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '';
+
+      // Hardcode JSON Stripper directly on Raw Text (User Instruction)
+      rawText = rawText.replace(/```json/gi, '').replace(/```/gi, '').trim();
+      if (rawText.indexOf('{') !== -1) {
+        rawText = rawText.substring(rawText.indexOf('{'), rawText.lastIndexOf('}') + 1);
+      }
 
       // Kosten & Stats
       const usage = data.usage || {};
@@ -78,7 +84,7 @@
       localStorage.setItem('bsp_apiCosts', BSP.state.apiCosts);
       BSP.emit('api:used', { cost, model: usedModel });
 
-      return text;
+      return rawText;
       } catch (err) {
         if (err.name === 'AbortError') {
           throw new Error('KI-Anfrage Timeout nach 60s. Bitte überprüfen Sie Ihre Internetverbindung oder verkleinern Sie das Bild/PDF.');
@@ -117,16 +123,6 @@
     }
 
     let text = await AI.process({ ...params, prompt: injectedPrompt });
-
-    // Zentrale Bereinigung für JSON-Antworten
-    if (injectedPrompt.includes('{') || injectedPrompt.toLowerCase().includes('json')) {
-      text = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-      const firstBrace = text.indexOf('{');
-      const lastBrace = text.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1) {
-        text = text.substring(firstBrace, lastBrace + 1);
-      }
-    }
 
     try {
       const parsed = JSON.parse(text);
