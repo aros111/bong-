@@ -248,7 +248,7 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
         return await _blobToB64(p.blob);
       }));
       
-      const res = await BSP.callClaude({ prompt, images: b64Array, model: 'claude-3-5-sonnet-20241022' });
+      const res = await BSP.callClaude({ prompt, images: b64Array, model: 'claude-sonnet-4-5' });
       _revokeAllPages();
 
       let data = JSON.parse(res);

@@ -572,7 +572,7 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK (Ohne Markdowns):
 
     try {
       if(!BSP.callClaude) throw new Error('API nicht geladen (callClaude fehlt).');
-      const raw = await BSP.callClaude({ prompt, model: 'claude-3-5-sonnet-20241022' });
+      const raw = await BSP.callClaude({ prompt, model: 'claude-sonnet-4-5' });
       let parsed = null;
       try { parsed = JSON.parse(raw.trim()); } catch(e) {}
       if (!parsed) {
