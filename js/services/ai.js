@@ -116,10 +116,20 @@
 2. WÄHRUNG: Analysiere zwingend, in welcher Währung der Beleg ausgestellt ist. Gib als "waehrung" den ISO-Code zurück (z.B. "EUR", "USD", "CHF", "GBP").`;
     }
 
-    const jsonString = await AI.process({ ...params, prompt: injectedPrompt });
+    let text = await AI.process({ ...params, prompt: injectedPrompt });
+
+    // Zentrale Bereinigung für JSON-Antworten
+    if (injectedPrompt.includes('{') || injectedPrompt.toLowerCase().includes('json')) {
+      text = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        text = text.substring(firstBrace, lastBrace + 1);
+      }
+    }
 
     try {
-      const parsed = JSON.parse(jsonString);
+      const parsed = JSON.parse(text);
       
       // Task 4: Fremdwährung erkannt -> EZB Kurs abrufen
       if (parsed.waehrung && parsed.waehrung.toUpperCase() !== 'EUR' && parsed.brutto) {
@@ -140,7 +150,7 @@
       return JSON.stringify(parsed);
     } catch(e) {
       // Wenn Response kein JSON ist, oder Parse fehlschlägt
-      return jsonString;
+      return text;
     }
   };
 

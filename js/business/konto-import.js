@@ -345,45 +345,16 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
   }
 
   function _parseKIResponse(response) {
-    // Schritt 1: Markdown-Wrapper (```json) entfernen und strikt trimmen
-    let cleanRes = response.replace(/```json/gi, '').replace(/```/g, '').trim();
-    
-    // Alles vor dem ersten { oder [ und nach dem letzten } oder ] abschneiden
-    const firstBrace = cleanRes.indexOf('{');
-    const firstBracket = cleanRes.indexOf('[');
-    const lastBrace = cleanRes.lastIndexOf('}');
-    const lastBracket = cleanRes.lastIndexOf(']');
-    
-    let startIdx = firstBrace !== -1 ? firstBrace : firstBracket;
-    if (firstBrace !== -1 && firstBracket !== -1) startIdx = Math.min(firstBrace, firstBracket);
-
-    let endIdx = lastBrace !== -1 ? lastBrace : lastBracket;
-    if (lastBrace !== -1 && lastBracket !== -1) endIdx = Math.max(lastBrace, lastBracket);
-
-    if (startIdx === -1 || endIdx === -1) {
-      BSP.toast('KI hat kein strukturiertes Ergebnis geliefert. (Siehe Konsole)', 'wr');
-      return null;
-    }
-    
-    let jsonStr = cleanRes.substring(startIdx, endIdx + 1);
-    
-    // Unmaskierte Zeilenumbrüche und Tabs (von der KI oft fälschlich generiert) killen den JSON.parse.
-    // Wir ersetzen alle echten Linebreaks und Tabs mit Leerzeichen.
-    // (Echte \n Escape-Sequenzen bleiben erhalten, da sie aus backslash und n bestehen)
-    jsonStr = jsonStr.replace(/[\n\r\t]+/g, ' ');
-
-    // Schritt 2: Parsen mit Fallback zu RAW anzeige
     let data;
     try {
-      data = JSON.parse(jsonStr);
+      data = JSON.parse(response);
     } catch(e) {
-      // Zeige die Rohtexte an, damit der User sieht wo es klemmt
-      BSP.showSheet(`<div class="sh"></div><div class="mod-header"><div class="mod-title">KI JSON Parse Fehler</div></div><textarea style="width:100%;height:300px;font-family:monospace;font-size:11px" disabled>${BSP.eh(response)}</textarea><br><button class="btn btn-g" onclick="BSP.closeSheet()">Schließen</button>`);
+      BSP.showSheet(`<div class="sh"></div><div class="mod-header"><div class="mod-title">KI JSON Parse Fehler</div></div><textarea style="width:100%;height:300px;font-family:monospace;font-size:11px" disabled>${BSP.eh(response)}</textarea><br><button class="btn btn-g" onclick="BSP.closeSheet()">Schlie�en</button>`);
       BSP.toast('Ergebnis konnte nicht verarbeitet werden.', 'wr');
       return null;
     }
     
-    // Schritt 3: Buchungen finden egal wie sie heißen
+    // Schritt 3: Buchungen finden egal wie sie hei�en
     const buchungen = data.buchungen || data.transactions || data.items || data.entries || Object.values(data).find(v => Array.isArray(v));
     
     if (!buchungen || buchungen.length === 0) {
@@ -821,5 +792,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
   return { startScan, handleUpload, closeScan, capturePage, resumeCam, processAllPages };
 
 })();
+
+
 
 
