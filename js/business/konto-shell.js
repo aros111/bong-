@@ -76,14 +76,7 @@ const KontoShell = (() => {
       return;
     }
 
-    const uploadBtnHtml = `
-      <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:20px;text-align:center">
-        <div style="font-weight:500;margin-bottom:12px">Einen neuen Kontoauszug importieren?</div>
-        <button class="btn btn-gold" style="justify-content:center;width:100%" onclick="KontoShell.showGlobalUpload()">📥 Dokument hochladen / scannen</button>
-      </div>
-    `;
-
-    listEl.innerHTML = uploadBtnHtml + banken.map(b => `
+    listEl.innerHTML = banken.map(b => `
       <div class="card" style="padding:16px; cursor:pointer;" onclick="KontoShell.openBank('${b.id}')">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px">
           <div>

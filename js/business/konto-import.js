@@ -55,6 +55,17 @@ const KontoImport = (() => {
       </div>
     </div>
 
+    
+    <!-- Text Prompt Overlay -->
+    <div id="ko-text-prompt" style="display:none;position:absolute;inset:0;background:var(--bg);z-index:9005;flex-direction:column;padding:20px;">
+        <h3 style="margin-bottom:10px;color:var(--gold)">Text einfügen</h3>
+        <textarea id="ko-text-inp" style="flex:1;width:100%;background:var(--s1);color:var(--text);border:1px solid var(--br);border-radius:var(--r8);padding:10px;font-family:monospace;font-size:13px;" placeholder="Kopierte Umsätze hier einfügen..."></textarea>
+        <div style="display:flex;gap:10px;margin-top:15px">
+           <button class="btn btn-g" style="flex:1;justify-content:center" onclick="document.getElementById('ko-text-prompt').style.display='none'">Abbrechen</button>
+           <button class="btn btn-gold" style="flex:1;justify-content:center" onclick="KontoImport.submitText()">Übernehmen</button>
+        </div>
+    </div>
+
     <!-- Controls -->
     <div id="ko-scan-controls" style="height:140px;background:#000;display:flex;align-items:center;justify-content:center;position:relative;padding:0 30px;z-index:9002">
       <button id="ko-capture-btn" style="width:72px;height:72px;border-radius:50%;background:none;border:4px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer" onclick="KontoImport.capturePage()">
@@ -255,29 +266,38 @@ const KontoImport = (() => {
   // 1. KI-ANALYSE
   // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-  const KI_PROMPT = `Analysiere diesen Kontoauszug. Antworte NUR mit reinem JSON, kein anderer Text, kein Markdown, keine ErklÃ¤rung:
-{
-  "bankdaten": {
-    "bankname": "Name der Bank",
-    "iban": "DE12 3456 7890",
-    "kontoinhaber": "Name des Inhabers"
-  },
-  "buchungen": [
-    {
-      "datum": "2026-03-01",
-      "betrag": -47.50,
-      "verwendungszweck": "REWE SAGT DANKE",
-      "auftraggeber_empfaenger": "REWE",
-      "typ": "ausgabe",
-      "skr03_vorschlag": "BÃ¼robedarf"
+  const KI_PROMPT = `Analysiere diesen Kontoauszug. Extrahiere JEDE Buchung.
+Antworte NUR mit einem JSON-Array, absolut kein Markdown, keine Erkl�rung:
+[{
+  "datum": "TT.MM.JJJJ",
+  "empfaenger": "Name der Gegenpartei",
+  "verwendungszweck": "Beschreibung oder leer",
+  "betrag": -12.50,
+  "kategorie": "privat" | "business" | "unklar"
+}]
+
+Kategorisierungsregeln:
+- "business": Rechnungen, Software-Abos, B2B, Beh�rden, Kfz, Stripe/PayPal eingehend
+- "privat": Supermarkt, Restaurant, Tankstelle, Kleidung, Unterhaltung
+- "unklar": Eigene �berweisungen, nicht eindeutig
+Betrag negativ = Ausgabe, positiv = Einnahme. NUR das JSON-Array zur�ckgeben.`;
+
+
+  function showTextPrompt() {
+    document.getElementById('ko-text-inp').value = '';
+    document.getElementById('ko-text-prompt').style.display = 'flex';
+  }
+
+  function submitText() {
+    const txt = document.getElementById('ko-text-inp').value.trim();
+    if (!txt) {
+       BSP.toast('Bitte Text eingeben', 'wr');
+       return;
     }
-  ],
-  "anfangssaldo": 1000.00,
-  "endsaldo": 952.50,
-  "zeitraum_von": "2026-03-01",
-  "zeitraum_bis": "2026-03-31"
-}
-Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlende Felder als null.`;
+    _pages.push({ isText: true, text: txt });
+    document.getElementById('ko-text-prompt').style.display = 'none';
+    _showMultiPrompt();
+  }
 
   async function processAllPages() {
     if (!_pages.length) return;
@@ -345,8 +365,8 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
       return null;
     }
     
-    // Schritt 3: Buchungen finden egal wie sie heißen
-    const buchungen = data.buchungen || data.transactions || data.items || data.entries || Object.values(data).find(v => Array.isArray(v));
+    // Schritt 3: Array direkt verarbeiten falls die KI ein reines Array zurückgibt
+    const buchungen = Array.isArray(data) ? data : (data.buchungen || data.transactions || data.items || data.entries || Object.values(data).find(v => Array.isArray(v)) || []);
     
     if (!buchungen || !Array.isArray(buchungen) || buchungen.length === 0) {
       BSP.showSheet(`<div class="sh"></div><div class="mod-header"><div class="mod-title">Analyse fehlgeschlagen</div></div><div style="padding:15px;color:var(--text);font-size:14px;line-height:1.5;">Die KI konnte keine eindeutigen Transaktionen auf den hochgeladenen Dokumenten erkennen. Bitte überprüfe die Bildqualität oder versuche es mit einem anderen Beleg.</div><br><button class="btn btn-g" onclick="BSP.closeSheet()">Schließen</button>`);
@@ -514,8 +534,8 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
 
         const eSaldo = parseFloat(parsedData.endsaldo);
     const aSaldo = parseFloat(parsedData.anfangssaldo);
-    const saldoNeu = !isNaN(eSaldo) ? eSaldo.toFixed(2) + ' �' : '?';
-    const saldoAlt = !isNaN(aSaldo) ? aSaldo.toFixed(2) + ' �' : '?';
+    const saldoNeu = !isNaN(eSaldo) ? eSaldo.toFixed(2) + ' �' : '?';
+    const saldoAlt = !isNaN(aSaldo) ? aSaldo.toFixed(2) + ' �' : '?';
     const zVon = parsedData.zeitraum_von || '?';
     const zBis = parsedData.zeitraum_bis || '?';
 
@@ -555,10 +575,14 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
       const isPos = (t.betrag || 0) >= 0;
       const bColor = isPos ? 'var(--grn)' : 'var(--red)';
       
-      let badgeHtml = '';
-      if (t.status === 'abgeglichen') badgeHtml = `<div class="badge" style="background:var(--grn);color:#fff">âœ“ Beleg erkannt</div>`;
-      else if (t.hasAlert) badgeHtml = `<div class="badge" style="background:var(--red);color:#fff">âš ï¸ ${BSP.eh(t.hasAlert)}</div>`;
-      else badgeHtml = `<div class="badge" style="background:var(--orn);color:#fff">Offen</div>`;
+      const cat = t.kategorie || 'unklar';
+      let badgeHtml = `
+        <select class="ki-cat-select" data-id="${t.id}" style="padding:6px 10px; border-radius:8px; font-size:13px; font-weight:500; border:1px solid var(--br); background:var(--s1); color:var(--text); width:100%; margin-top:8px; margin-bottom:4px">
+          <option value="business" ` + (cat === 'business' ? 'selected' : '') + `>?? Business</option>
+          <option value="privat" ` + (cat === 'privat' ? 'selected' : '') + `>?? Privat</option>
+          <option value="unklar" ` + (cat === 'unklar' ? 'selected' : '') + `>? Unklar / Ignorieren</option>
+        </select>
+      `;
 
       ht += `
         <div style="background:var(--s2); padding:12px; border-radius:var(--r8); margin-bottom:8px; border:1px solid var(--br)">
@@ -593,7 +617,13 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
       if (btnStart) btnStart.onclick = () => _startInteractiveReview(transactions);
 
       const btnSave = document.getElementById('ki-review-save');
-      if (btnSave) btnSave.onclick = () => _saveAllTransactions(transactions);
+      if (btnSave) btnSave.onclick = () => {
+         document.querySelectorAll('.ki-cat-select').forEach(sel => {
+            const txn = transactions.find(tx => tx.id === sel.getAttribute('data-id'));
+            if (txn) txn.bereich = sel.value === 'privat' ? 'Privat' : (sel.value === 'unklar' ? 'Unklar' : 'Business');
+         });
+         _saveAllTransactions(transactions);
+      };
     }, 100);
   }
 
@@ -784,9 +814,11 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
      }
   }
 
-  return { startScan, handleUpload, closeScan, capturePage, resumeCam, processAllPages };
+  return { startScan, handleUpload, closeScan, capturePage, resumeCam, showTextPrompt, submitText, processAllPages };
 
 })();
+
+
 
 
 

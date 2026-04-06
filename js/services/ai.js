@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 (() => {
   const API_URL = 'https://api.anthropic.com/v1/messages';
@@ -33,7 +33,7 @@
 
       content.push({ type: 'text', text: prompt });
 
-      // Dynamische Weiche: Sonnet 3.5 für Bilder, Haiku 3.0 für Text
+      // Dynamische Weiche: Sonnet 3.5 fÃ¼r Bilder, Haiku 3.0 fÃ¼r Text
       const usedModel = model || (allImages.length ? MODEL_SONNET : MODEL_HAIKU);
 
       const controller = new AbortController();
@@ -61,7 +61,7 @@
         clearTimeout(timeoutId);
 
         if (!resp.ok) {
-          if (resp.status === 401) throw new Error('API Key ungültig oder abgelaufen');
+          if (resp.status === 401) throw new Error('API Key ungÃ¼ltig oder abgelaufen');
           throw new Error(`API Fehler ${resp.status}`);
         }
 
@@ -87,14 +87,14 @@
       return rawText;
       } catch (err) {
         if (err.name === 'AbortError') {
-          throw new Error('KI-Anfrage Timeout nach 60s. Bitte überprüfen Sie Ihre Internetverbindung oder verkleinern Sie das Bild/PDF.');
+          throw new Error('KI-Anfrage Timeout nach 60s. Bitte Ã¼berprÃ¼fen Sie Ihre Internetverbindung oder verkleinern Sie das Bild/PDF.');
         }
         throw err;
       }
     }
   };
 
-  // ── Währungsumrechnung (EZB API) ───────────────────────────
+  // â”€â”€ WÃ¤hrungsumrechnung (EZB API) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   async function fetchECBRate(currency, dateStr) {
     if (!currency || currency === 'EUR') return 1;
     try {
@@ -111,15 +111,15 @@
     }
   }
 
-  // ── Zentrale Wrapper-Funktion mit Interceptors ────────────────
+  // â”€â”€ Zentrale Wrapper-Funktion mit Interceptors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   BSP.callClaude = async function(params) {
     let injectedPrompt = params.prompt || '';
     
-    // Wenn JSON erwartet wird, injiziere die DATEV Export Regeln (Klartext & Währung)
+    // Wenn JSON erwartet wird, injiziere die DATEV Export Regeln (Klartext & WÃ¤hrung)
     if (injectedPrompt.includes('{') || injectedPrompt.toLowerCase().includes('json')) {
-      injectedPrompt += `\n\nZUSATZ-REGELN FÜR DEN DATEV-EXPORT (WICHTIG):
-1. KLARTEXT-HINWEIS: Wenn die gekauften Artikel sehr technisch, kryptisch oder englisch benannt sind (z.B. "USB-C PD 100W GaN", "AirPods Pro", "SSD NVMe 2TB", "AWS EC2 instance", "O2 Free M"), MUSST du ein Feld "klartext" im JSON ausgeben, das in kurzem, einfachem Deutsch erklärt, was das ist (z.B. "Laptop-Ladegerät USB-C", "Kabellose Kopfhörer Apple", "Festplatte intern", "Server-Hosting", "Handyvertrag"). Ist die Bezeichnung völlig trivial (z.B. "Briefmarken", "Tanken"), lass das Feld komplett weg.
-2. WÄHRUNG: Analysiere zwingend, in welcher Währung der Beleg ausgestellt ist. Gib als "waehrung" den ISO-Code zurück (z.B. "EUR", "USD", "CHF", "GBP").`;
+      injectedPrompt += `\n\nZUSATZ-REGELN FÃœR DEN DATEV-EXPORT (WICHTIG):
+1. KLARTEXT-HINWEIS: Wenn die gekauften Artikel sehr technisch, kryptisch oder englisch benannt sind (z.B. "USB-C PD 100W GaN", "AirPods Pro", "SSD NVMe 2TB", "AWS EC2 instance", "O2 Free M"), MUSST du ein Feld "klartext" im JSON ausgeben, das in kurzem, einfachem Deutsch erklÃ¤rt, was das ist (z.B. "Laptop-LadegerÃ¤t USB-C", "Kabellose KopfhÃ¶rer Apple", "Festplatte intern", "Server-Hosting", "Handyvertrag"). Ist die Bezeichnung vÃ¶llig trivial (z.B. "Briefmarken", "Tanken"), lass das Feld komplett weg.
+2. WÃ„HRUNG: Analysiere zwingend, in welcher WÃ¤hrung der Beleg ausgestellt ist. Gib als "waehrung" den ISO-Code zurÃ¼ck (z.B. "EUR", "USD", "CHF", "GBP").`;
     }
 
     let text = await AI.process({ ...params, prompt: injectedPrompt });
@@ -127,7 +127,7 @@
     try {
       const parsed = JSON.parse(text);
       
-      // Task 4: Fremdwährung erkannt -> EZB Kurs abrufen
+      // Task 4: FremdwÃ¤hrung erkannt -> EZB Kurs abrufen
       if (parsed.waehrung && parsed.waehrung.toUpperCase() !== 'EUR' && parsed.brutto) {
         const rate = await fetchECBRate(parsed.waehrung.toUpperCase(), parsed.datum);
         if (rate) {
@@ -145,17 +145,17 @@
       }
       return JSON.stringify(parsed);
     } catch(e) {
-      // Wenn Response kein JSON ist, oder Parse fehlschlägt
+      // Wenn Response kein JSON ist, oder Parse fehlschlÃ¤gt
       return text;
     }
   };
 
-  // Redundante ask-Funktion für Abwärtskompatibilität
+  // Redundante ask-Funktion fÃ¼r AbwÃ¤rtskompatibilitÃ¤t
   BSP.ask = async function(params) {
     return AI.process(params);
   };
 
-  // ── Bild komprimieren ────────────────────────────────────────
+  // â”€â”€ Bild komprimieren â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   BSP.b64toBlob = function(b64Data) {
     const parts = b64Data.split(',');
     const contentType = parts[0].split(':')[1].split(';')[0];

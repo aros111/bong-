@@ -7,7 +7,7 @@
 
   BSP.initDB = function() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('bsp_v3', 6); // Upgrade zu Version 6 für Konto All-In-One Matcher
+      const req = indexedDB.open('bsp_v3', 7); // Upgrade zu Version 7 für Chat History
 
       req.onupgradeneeded = e => {
         const db = e.target.result;
@@ -113,6 +113,12 @@
           fb.createIndex('status', 'status');    // Offen | In Prompt aufgenommen | Erledigt
           fb.createIndex('prioritaet', 'prioritaet'); // Hoch | Mittel | Niedrig
           fb.createIndex('zeitstempel', 'zeitstempel');
+        }
+
+        // ═══ Version 7: chat_history Store ═══
+        if (!db.objectStoreNames.contains('chat_history')) {
+          const ch = db.createObjectStore('chat_history', { keyPath: 'id', autoIncrement: true });
+          ch.createIndex('timestamp', 'timestamp');
         }
       };
 

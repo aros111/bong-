@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bong-manager-v4.5.6';
+const CACHE_NAME = 'bong-manager-v4.5.8';
 
 const ASSETS = [
   './',
@@ -105,4 +105,6 @@ self.addEventListener('sync', e => {
     );
   }
 });
+
+
 
