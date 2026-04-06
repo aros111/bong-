@@ -124,14 +124,48 @@ const KontoImport = (() => {
     BSP.showScrim('Lade Dateien (' + inp.files.length + ')...');
     
     for (let f of inp.files) {
-      await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          if (f.type.includes('pdf')) {
-            const pdfB64 = e.target.result;
-            _pages.push({ isPdf: true, b64: pdfB64, objectUrl: null, thumbUrl: null });
-            resolve();
-          } else {
+      if (f.type.includes('pdf')) {
+        if (typeof pdfjsLib === 'undefined') {
+          BSP.toast('PDF Scanner lädt noch, bitte kurz warten...', 'wr');
+          continue;
+        }
+        try {
+          const arrayBuffer = await f.arrayBuffer();
+          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const numPages = pdfDoc.numPages;
+          
+          // Entnehme maximal 15 Seiten um Speicher zu schonen
+          const maxP = Math.min(numPages, 15);
+          for (let i = 1; i <= maxP; i++) {
+             BSP.showScrim(`Lese PDF... Seite ${i}/${maxP}`);
+             const page = await pdfDoc.getPage(i);
+             const viewport = page.getViewport({ scale: 1.5 });
+             const canvas = document.createElement('canvas');
+             const ctx = canvas.getContext('2d');
+             canvas.height = viewport.height;
+             canvas.width = viewport.width;
+             
+             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+             
+             const rawB64 = canvas.toDataURL('image/jpeg', 0.8);
+             const compB64 = await BSP.compressImage(rawB64, 1600, 400); 
+             
+             const mainBlob = BSP.b64toBlob(compB64);
+             const objectUrl = URL.createObjectURL(mainBlob);
+             const thumbB64 = await BSP.compressImage(compB64, 400, 60);
+             const thumbBlob = BSP.b64toBlob(thumbB64);
+             const thumbUrl = URL.createObjectURL(thumbBlob);
+             
+             _pages.push({ blob: mainBlob, objectUrl, thumbUrl, isPdfPage: true });
+          }
+        } catch(e) {
+          BSP.toast('Fehler beim PDF lesen: ' + e.message, 'er');
+          console.error(e);
+        }
+      } else {
+        await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
             const compB64 = await BSP.compressImage(e.target.result, 1600, 400);
             const mainBlob = BSP.b64toBlob(compB64);
             const objectUrl = URL.createObjectURL(mainBlob);
@@ -142,10 +176,10 @@ const KontoImport = (() => {
 
             _pages.push({ blob: mainBlob, objectUrl, thumbUrl });
             resolve();
-          }
-        };
-        reader.readAsDataURL(f);
-      });
+          };
+          reader.readAsDataURL(f);
+        });
+      }
     }
     inp.value = '';
     BSP.hideScrim();
@@ -254,11 +288,46 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
 
     try {
       BSP.showScrim('Analysiere Kontoauszug...');
-      const b64Array = await Promise.all(_pages.map(async p => {
-        if (p.isPdf) return p.b64;
-        return await _blobToB64(p.blob);
-      }));
-      res = await BSP.callClaude({ prompt: KI_PROMPT, images: b64Array, model: 'claude-sonnet-4-5' });
+      
+      let finalB64 = '';
+      if (_pages.length === 1) {
+        finalB64 = await _blobToB64(_pages[0].blob);
+      } else {
+        BSP.showScrim('Fasse Dokumente zusammen...');
+        const loadedImages = await Promise.all(_pages.map(async p => {
+          const b64 = await _blobToB64(p.blob);
+          return new Promise(res => {
+             const img = new Image();
+             img.onload = () => res(img);
+             img.src = b64;
+          });
+        }));
+        
+        const targetWidth = 1200;
+        let totalHeight = 0;
+        loadedImages.forEach(img => {
+          totalHeight += img.height * (targetWidth / img.width);
+        });
+        
+        const fCanvas = document.createElement('canvas');
+        fCanvas.width = targetWidth;
+        fCanvas.height = totalHeight;
+        const fctx = fCanvas.getContext('2d');
+        fctx.fillStyle = 'white';
+        fctx.fillRect(0,0,targetWidth,totalHeight);
+        
+        let cY = 0;
+        loadedImages.forEach(img => {
+          const h = img.height * (targetWidth / img.width);
+          fctx.drawImage(img, 0, cY, targetWidth, h);
+          cY += h;
+        });
+        
+        finalB64 = fCanvas.toDataURL('image/jpeg', 0.6);
+      }
+
+      BSP.showScrim('Sende an KI, bitte warten...');
+      res = await BSP.callClaude({ prompt: KI_PROMPT, images: [finalB64], model: 'claude-sonnet-4-5', maxTokens: 4096 });
     } catch(err) {
       BSP.toast('Fehler bei der Analyse: ' + err.message, 'er');
       _revokeAllPages();
@@ -604,7 +673,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
     const unmatched = transactions.filter(t => t.status !== 'abgeglichen');
     let currentIndex = 0;
 
-    const transitionActive = typeof BSP.isTransitionModeActive !== 'undefined' ? BSP.isTransitionModeActive() : false;
+    const transitionActive = true; // Always active default for test phase
 
     function showNext() {
        if (currentIndex >= unmatched.length) {
