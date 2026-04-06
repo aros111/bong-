@@ -512,8 +512,10 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
        else { sumOut += Math.abs(b); countOut++; }
     });
 
-    const saldoNeu = parsedData.endsaldo !== null && parsedData.endsaldo !== undefined ? `${parsedData.endsaldo.toFixed(2)} â‚¬` : '?';
-    const saldoAlt = parsedData.anfangssaldo !== null && parsedData.anfangssaldo !== undefined ? `${parsedData.anfangssaldo.toFixed(2)} â‚¬` : '?';
+        const eSaldo = parseFloat(parsedData.endsaldo);
+    const aSaldo = parseFloat(parsedData.anfangssaldo);
+    const saldoNeu = !isNaN(eSaldo) ? eSaldo.toFixed(2) + ' �' : '?';
+    const saldoAlt = !isNaN(aSaldo) ? aSaldo.toFixed(2) + ' �' : '?';
     const zVon = parsedData.zeitraum_von || '?';
     const zBis = parsedData.zeitraum_bis || '?';
 
@@ -770,6 +772,8 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
          gesichert++;
        }
        BSP.emit('konto:imported');
+       BSP.emit('beleg:changed');
+       if (typeof SteuerModule !== 'undefined') SteuerModule.render();
        BSP.closeSheet();
        BSP.toast(`${gesichert} Transaktionen gesichert! Fehlende Belege markiert.`, 'ok');
        if (typeof KontoUebersicht !== 'undefined') KontoUebersicht.renderList(_currentBankId);
@@ -783,6 +787,8 @@ Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlend
   return { startScan, handleUpload, closeScan, capturePage, resumeCam, processAllPages };
 
 })();
+
+
 
 
 
