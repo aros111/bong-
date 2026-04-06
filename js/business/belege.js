@@ -78,12 +78,17 @@ const BelegeModule = (() => {
     const b = await BSP.dbGet('belege', id);
     if (!b) return;
 
+    // Bei AR: Rechnungssteller (Händler) + Rechnungsempfänger anzeigen
+    const isAR = b.type === 'ar';
+    const nameLabel = isAR ? 'Rechnungssteller' : (b.type === 'er' ? 'Händler' : 'Händler');
+    const nameValue = BSP.eh(b.shop || '—');
+
     const html = `
       <div class="sh"></div>
       <div class="mod-header" style="text-align:center">
-        <div style="font-size:40px;margin-bottom:10px">${b.type==='priv'?'🏠':'💼'}</div>
-        <h2 class="mod-title">${BSP.eh(b.shop)}</h2>
-        <p class="mod-sub">${BSP.fd(b.date)} · ${b.cat || 'Allgemein'}</p>
+        <div style="font-size:40px;margin-bottom:10px">${b.type==='ar' ? '📄' : b.type==='er' ? '💼' : '🏠'}</div>
+        <h2 class="mod-title">${BSP.eh(b.type==='ar' ? (b.empfaenger||b.shop||'—') : (b.shop||'—'))}</h2>
+        <p class="mod-sub">${BSP.fd(b.date)} · ${b.belegNr||b.cat || 'Allgemein'}</p>
       </div>
 
       <div class="card" style="text-align:center">
@@ -92,6 +97,24 @@ const BelegeModule = (() => {
           Netto: ${BSP.fm(b.net)} € · MwSt (${b.mwstRate}%): ${BSP.fm(b.mwst)} €
         </div>
       </div>
+
+      ${isAR ? `
+      <div class="card card-sm">
+        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--br)">
+          <span style="font-size:11px;color:var(--txt3)">Rechnungssteller</span>
+          <span style="font-size:12px;color:var(--txt)">${BSP.eh(b.shop||'—')}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0">
+          <span style="font-size:11px;color:var(--gold)">Rechnungsempfänger</span>
+          <span style="font-size:12px;color:var(--txt);font-weight:500">${BSP.eh(b.empfaenger||'—')}</span>
+        </div>
+      </div>` : b.type !== 'priv' ? `
+      <div class="card card-sm">
+        <div style="display:flex;justify-content:space-between;padding:4px 0">
+          <span style="font-size:11px;color:var(--txt3)">${nameLabel}</span>
+          <span style="font-size:12px;color:var(--txt)">${nameValue}</span>
+        </div>
+      </div>` : ''}
 
       ${b.image ? `<div class="card" style="padding:4px;overflow:hidden"><img src="${b.image}" style="width:100%;border-radius:var(--r12);display:block"></div>` : ''}
 

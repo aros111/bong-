@@ -1,73 +1,71 @@
 // ══════════════════════════════════════════════════════════════
-// MODUL: EXPORT (DATEV SKR03 EDITION)
-// Steuerberater-ZIP: buchungen.csv, zuordnung.xml, Belege, Checklist
+// MODUL: EXPORT (DATEV SKR03 Q1 EDITION)
+// Aufgaben 3 + 6: Monatsfilter + Vollständigkeits-Ampel + Q1-ZIP
 // ══════════════════════════════════════════════════════════════
 'use strict';
 
 const ExportModule = (() => {
 
 const JSZIP_CDN = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
-let _jszipLoaded = false;
+
+// Aktiver Zeitraum-Filter
+let _filter = 'q1'; // 'jan'|'feb'|'mär'|'q1'|'year'
+let _kontoData = [];
+let _matchResult = [];
+let _validationBlocker = false;
 
 const VIEW_HTML = `
 <div id="v-export" class="view">
   <div class="mod-header">
     <div class="mod-title">Export</div>
-    <div class="mod-sub">DATEV ZIP · Konten-Abgleich · Checkliste</div>
+    <div class="mod-sub">DATEV ZIP · Q1 Steuererklärung · Checkliste</div>
+  </div>
+
+  <!-- Zeitraum-Filter (Aufgabe 3) -->
+  <div style="background:var(--bg2);border:1px solid var(--br);border-radius:var(--r12);padding:12px;margin-bottom:12px">
+    <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Zeitraum wählen</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap" id="exp-period-btns">
+      <button class="btn btn-gold btn-sm" id="exp-p-jan" onclick="ExportModule.setPeriod('jan')">Januar</button>
+      <button class="btn btn-g btn-sm" id="exp-p-feb" onclick="ExportModule.setPeriod('feb')">Februar</button>
+      <button class="btn btn-g btn-sm" id="exp-p-mar" onclick="ExportModule.setPeriod('mar')">März</button>
+      <button class="btn btn-g btn-sm" id="exp-p-q1" onclick="ExportModule.setPeriod('q1')" style="border-color:var(--accent)">Q1 gesamt ✓</button>
+    </div>
+  </div>
+
+  <!-- Vollständigkeits-Ampel (Aufgabe 3) -->
+  <div id="exp-ampel" style="background:var(--bg2);border:1px solid var(--br);border-radius:var(--r12);padding:16px;margin-bottom:12px">
+    <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Vollständigkeits-Prüfung</div>
+    <div id="exp-ampel-body"><div style="color:var(--txt3);font-size:12px">Wird geladen …</div></div>
   </div>
 
   <!-- Export-Aktionen -->
-  <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
-    <div class="stitle">DATEV Steuerberater-ZIP</div>
+  <div style="background:var(--bg2);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
+    <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">DATEV Steuerberater-ZIP</div>
     <div style="font-size:12px;font-weight:300;color:var(--txt3);margin-bottom:12px;line-height:1.6">
-      Enthält: buchungen.csv (SKR03 gemappt, Bewirtung 70/30 gesplittet), zuordnung.xml, Gestempelte Belegbilder.
+      Enthält: ustva_q1.csv, buchungen.csv (SKR03), kontoauszuege.csv, belege/, zuordnung.xml, README.txt
     </div>
     <button class="btn btn-gold" style="width:100%;justify-content:center" id="exp-zip-btn" onclick="ExportModule.validateAndExport()">
-      📦 Prüfung starten & ZIP erstellen
+      📦 Prüfung starten &amp; ZIP erstellen
     </button>
     <div id="exp-zip-log" style="font-size:11px;color:var(--txt3);margin-top:8px;text-align:center;display:none"></div>
   </div>
 
-  <!-- Vollständigkeitsprüfung UI -->
-  <div id="exp-validation" style="display:none;background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
-    <div class="stitle">Vollständigkeits-Check</div>
+  <!-- Vollständigkeitsprüfung (erweitert) -->
+  <div id="exp-validation" style="display:none;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
+    <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Vollständigkeits-Check</div>
     <div id="exp-val-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px"></div>
     <button class="btn btn-gold" style="width:100%;justify-content:center" id="exp-continue-btn" onclick="ExportModule._runZIP()">
       🚀 Export fortsetzen
     </button>
   </div>
 
-  <!-- Kontoabgleich -->
-  <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
-    <div class="stitle">Kontoauszug-Abgleich (Vor Export)</div>
-    <div style="font-size:12px;font-weight:300;color:var(--txt3);margin-bottom:10px;line-height:1.6">
-      Bank-CSV laden um offene Posten (AR/ER) zu matchen. Wichtig für Vollständigkeit!
-    </div>
-    <label class="btn btn-g" style="cursor:pointer;width:100%;justify-content:center">
-      📄 Bank-CSV laden
-      <input type="file" accept=".csv,.txt" style="display:none" onchange="ExportModule.loadKonto(this)">
-    </label>
-
-    <div id="exp-konto-result" style="display:none;margin-top:12px">
-      <div id="exp-konto-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px"></div>
-      <div id="exp-konto-offene" style="display:flex;flex-direction:column;gap:4px"></div>
-      <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:10px" onclick="ExportModule.exportKontoCSV()">
-        ⬇️ Abgelehnte Buchungen laden
-      </button>
-    </div>
-  </div>
-
   <!-- Statistik -->
-  <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px" id="exp-stats">
-    <div class="stitle">Datenbestand</div>
+  <div style="background:var(--bg2);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px" id="exp-stats">
+    <div style="font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Datenbestand</div>
     <div id="exp-stats-body"></div>
   </div>
 </div>
 `;
-
-let _kontoData = [];
-let _matchResult = [];
-let _validationBlocker = false;
 
 // ── Init ─────────────────────────────────────────────────────
 function init() {
@@ -78,9 +76,123 @@ function init() {
     container.appendChild(tmp.firstElementChild);
   }
 
-  BSP.on('core:ready', async () => { await _renderStats(); });
-  BSP.on('view:changed', ({ name }) => { if (name === 'export') _renderStats(); });
-  BSP.on('beleg:saved', () => { _renderStats(); });
+  BSP.on('core:ready', async () => { await _renderStats(); await _renderAmpel(); });
+  BSP.on('view:changed', ({ name }) => { if (name === 'export') { _renderStats(); _renderAmpel(); _highlightPeriodBtn(); } });
+  BSP.on('beleg:saved', () => { _renderStats(); _renderAmpel(); });
+  BSP.on('konto:imported', () => { _renderAmpel(); });
+}
+
+// ── Zeitraum ─────────────────────────────────────────────────
+function setPeriod(p) {
+  _filter = p;
+  _highlightPeriodBtn();
+  _renderAmpel();
+  _renderStats();
+}
+
+// Öffentlich aufgerufen von MwSt-Sheet-Button und Dashboard
+function openQ1Dialog() {
+  _filter = 'q1';
+  _highlightPeriodBtn();
+  _renderAmpel();
+  document.getElementById('exp-zip-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function _highlightPeriodBtn() {
+  ['jan','feb','mar','q1'].forEach(p => {
+    const b = document.getElementById('exp-p-' + p);
+    if (!b) return;
+    if (p === _filter) {
+      b.className = 'btn btn-gold btn-sm';
+    } else {
+      b.className = 'btn btn-g btn-sm';
+    }
+  });
+}
+
+function _getPeriodRange() {
+  const year = new Date().getFullYear();
+  // Immer 2026 für Q1
+  const y = 2026;
+  if (_filter === 'jan') return { start: `${y}-01-01`, end: `${y}-01-31` };
+  if (_filter === 'feb') return { start: `${y}-02-01`, end: `${y}-02-28` };
+  if (_filter === 'mar') return { start: `${y}-03-01`, end: `${y}-03-31` };
+  if (_filter === 'q1')  return { start: `${y}-01-01`, end: `${y}-03-31` };
+  return { start: `${y}-01-01`, end: `${year}-12-31` }; // 'year'
+}
+
+function _filterBelege(belege) {
+  const { start, end } = _getPeriodRange();
+  return belege.filter(b => {
+    if (!b.date) return false;
+    return b.date >= start && b.date <= end;
+  });
+}
+
+// ── Vollständigkeits-Ampel (Aufgabe 3) ────────────────────────
+async function _renderAmpel() {
+  const el = document.getElementById('exp-ampel-body');
+  if (!el) return;
+
+  const allBelege = await BSP.getBelege();
+  const allKonto = (await BSP.dbGetAll('konto')) || [];
+
+  const months = [
+    { name: 'Januar', start: '2026-01-01', end: '2026-01-31', m: 0 },
+    { name: 'Februar', start: '2026-02-01', end: '2026-02-28', m: 1 },
+    { name: 'März', start: '2026-03-01', end: '2026-03-31', m: 2 },
+  ];
+
+  let globalStatus = 'grn'; // grn | orn | red
+  let html = '';
+
+  for (const mo of months) {
+    const mb = allBelege.filter(b => b.date >= mo.start && b.date <= mo.end);
+    const mk = allKonto.filter(k => k.datum >= mo.start && k.datum <= mo.end);
+    const geldeingaenge = mk.filter(k => k.betrag > 0);
+    const offeneGE = geldeingaenge.filter(k => k.status !== 'abgeglichen');
+    const hasKonto = mk.length > 0;
+    const hasBelege = mb.length > 0;
+
+    let icon, color, status;
+    if (!hasBelege) {
+      icon = '❌'; color = 'var(--red)'; status = 'red';
+      if (globalStatus !== 'red') globalStatus = 'red';
+    } else if (!hasKonto || offeneGE.length > 0) {
+      icon = '⚠️'; color = 'var(--orn)'; status = 'orn';
+      if (globalStatus === 'grn') globalStatus = 'orn';
+    } else {
+      icon = '✓'; color = 'var(--grn)'; status = 'grn';
+    }
+
+    const details = [];
+    details.push(`${mb.length} Beleg${mb.length !== 1 ? 'e' : ''}`);
+    details.push(hasKonto ? `${mk.length} Kontobuchung${mk.length !== 1 ? 'en' : ''} ✓` : 'kein Kontoauszug ⚠️');
+    if (offeneGE.length > 0) details.push(`${offeneGE.length} offene Geldeingänge`);
+
+    html += `
+      <div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--br)">
+        <div style="font-size:16px;width:24px;text-align:center">${icon}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:${color};font-weight:500">${mo.name}</div>
+          <div style="font-size:11px;color:var(--txt3)">${details.join(' · ')}</div>
+        </div>
+      </div>`;
+  }
+
+  // Gesamtstatus-Box
+  const statusMap = {
+    grn: { bg: 'rgba(58,175,112,.08)', border: 'rgba(58,175,112,.3)', color: 'var(--grn)', text: 'Q1 vollständig – Export bereit', icon: '✓' },
+    orn: { bg: 'rgba(192,112,48,.07)', border: 'rgba(192,112,48,.3)', color: 'var(--orn)', text: 'Lücken vorhanden – Export mit Hinweis möglich', icon: '⚠️' },
+    red: { bg: 'rgba(192,64,64,.07)',  border: 'rgba(192,64,64,.3)',  color: 'var(--red)', text: 'Kritisch: Fehlende Daten – Export nur nach Bestätigung', icon: '❌' },
+  };
+  const st = statusMap[globalStatus];
+  const sumHtml = `<div style="background:${st.bg};border:1px solid ${st.border};border-radius:var(--r8);padding:12px;margin-top:4px;display:flex;align-items:center;gap:10px">
+    <div style="font-size:20px">${st.icon}</div>
+    <div style="font-size:12px;color:${st.color};font-weight:500">${st.text}</div>
+  </div>`;
+
+  el.innerHTML = html + sumHtml;
 }
 
 async function _renderStats() {
@@ -88,12 +200,11 @@ async function _renderStats() {
   if (!el) return;
   try {
     const belege = await BSP.getBelege();
-    const year = new Date().getFullYear();
-    const yb = belege.filter(b => b.date && new Date(b.date + 'T00:00:00').getFullYear() === year);
+    const fb = _filterBelege(belege);
     el.innerHTML = `
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br)"><span style="font-size:12px;color:var(--txt2)">Eingangsbelege (ER)</span><span style="font-size:12px;color:var(--blu)">${yb.filter(b=>b.type==='er').length}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br)"><span style="font-size:12px;color:var(--txt2)">Ausgangsrechnungen (AR)</span><span style="font-size:12px;color:var(--ylw)">${yb.filter(b=>b.type==='ar').length}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="font-size:12px;color:var(--txt2)">Reverse Charge</span><span style="font-size:12px;color:var(--orn)">${yb.filter(b=>b.isReverseCharge).length}</span></div>`;
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br)"><span style="font-size:12px;color:var(--txt2)">Eingangsbelege (ER)</span><span style="font-size:12px;color:var(--blu)">${fb.filter(b=>b.type==='er').length}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--br)"><span style="font-size:12px;color:var(--txt2)">Ausgangsrechnungen (AR)</span><span style="font-size:12px;color:var(--ylw)">${fb.filter(b=>b.type==='ar').length}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0"><span style="font-size:12px;color:var(--txt2)">Reverse Charge</span><span style="font-size:12px;color:var(--orn)">${fb.filter(b=>b.isReverseCharge).length}</span></div>`;
   } catch(e) { el.textContent = 'Fehler beim Laden'; }
 }
 
@@ -115,9 +226,8 @@ function _log(msg) {
 
 function _esc(v) {
   const s = String(v == null ? '' : v);
-  return s.includes(';') || s.includes('"') || s.includes('\\n')
-    ? `"${s.replace(/"/g, '""')}"`
-    : s;
+  return s.includes(';') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"` : s;
 }
 function _headerRow(...cols) { return cols.map(_esc).join(';'); }
 
@@ -126,18 +236,15 @@ function _datevRow(b, skr03, is70 = false, is30 = false) {
   let netto = Number(b.net || 0);
   let brutto = Number(b.brutto || 0);
   let mwst = Number(b.mwst || 0);
-  let text = b.shop || 'Unbekannt';
-  let kInfo = skr03[b.cat] || { konto: '' };
+  let text = b.type === 'ar'
+    ? (b.empfaenger || b.shop || 'Unbekannt') + ' (AR)'
+    : (b.shop || 'Unbekannt');
+  if (is70) { netto*=0.7; brutto*=0.7; mwst*=0.7; text = '70% absetzbar | ' + text; }
+  if (is30) { netto*=0.3; brutto*=0.3; mwst*=0.3; text = '30% privat | ' + text; }
 
-  if (is70) {
-    netto*=0.7; brutto*=0.7; mwst*=0.7;
-    text = '70% absetzbar | ' + text;
-    kInfo = skr03['Bewirtung 70% absetzbar'] || { konto: 4650 };
-  } else if (is30) {
-    netto*=0.3; brutto*=0.3; mwst*=0.3;
-    text = '30% privat | ' + text;
-    kInfo = skr03['Bewirtung 30% nicht absetzbar'] || { konto: 4654 };
-  }
+  let kInfo = skr03[b.cat] || { konto: '' };
+  if (is70) kInfo = skr03['Bewirtung 70% absetzbar'] || { konto: 4650 };
+  if (is30) kInfo = skr03['Bewirtung 30% nicht absetzbar'] || { konto: 4654 };
 
   let sw = '';
   if (!kInfo.automatik) {
@@ -149,7 +256,7 @@ function _datevRow(b, skr03, is70 = false, is30 = false) {
 
   return [
     b.belegNr || '',
-    b.date ? b.date.split('-').reverse().join('') : '', // DDMMYYYY für DATEV
+    b.date ? b.date.split('-').reverse().join('') : '',
     text,
     netto.toFixed(2).replace('.',','),
     b.mwstRate || '',
@@ -158,7 +265,7 @@ function _datevRow(b, skr03, is70 = false, is30 = false) {
     kInfo.konto || '',
     sw,
     b.cat || '',
-    b.klartext || '',
+    b.belegNrExtern || '',
     b.originalWaehrung || '',
     b.originalBrutto ? Number(b.originalBrutto).toFixed(2).replace('.',',') : '',
     b.wechselkurs ? Number(b.wechselkurs).toFixed(4).replace('.',',') : ''
@@ -176,55 +283,101 @@ async function validateAndExport() {
     const contBtn = document.getElementById('exp-continue-btn');
     valView.style.display = 'block';
     valList.innerHTML = '<div style="color:var(--txt3)">Prüfe Daten...</div>';
-    
-    // Check elements
-    const year = new Date().getFullYear();
+
     const belege = await BSP.getBelege();
-    const yb = belege.filter(b => b.date && new Date(b.date + 'T00:00:00').getFullYear() === year);
-    
-    let missingSKR03 = 0;
-    let missingRC = 0;
-    
-    yb.forEach(b => {
+    const fb = _filterBelege(belege);
+    const allKonto = (await BSP.dbGetAll('konto')) || [];
+    const { start, end } = _getPeriodRange();
+    const fk = allKonto.filter(k => k.datum >= start && k.datum <= end);
+
+    // Aufgabe 6: pending_review prüfen
+    const pendingAll = await BSP.prGetAll();
+    const pendingOpen = pendingAll.filter(p => p.status === 'offen' || p.status === 'später_klären');
+    const pendingStale = pendingOpen.filter(p => p.ts && p.ts < Date.now() - 14 * 864e5);
+    const pendingCount = pendingOpen.length;
+
+    let missingSKR03 = 0, missingRC = 0;
+    fb.forEach(b => {
       const isBewirtung = (b.cat || '').includes('Bewirtung');
       if (!isBewirtung && (!b.cat || !BSP.DATEV?.SKR03[b.cat])) missingSKR03++;
       if (b.isReverseCharge && !b.cat?.includes('Reverse')) missingRC++;
     });
 
-    const hasBank = _kontoData.length > 0;
-    const unmatchedAR = _matchResult.filter(r => r.betrag > 0 && r.status === 'unmatched').length;
+    const offeneGE = fk.filter(k => k.betrag > 0 && k.status !== 'abgeglichen').length;
+    const hasKonto = fk.length > 0;
+    const missingAR = fb.filter(b => b.type === 'ar' && !b.empfaenger).length;
 
     let html = '';
     _validationBlocker = false;
+    let _validationOrange = false;
 
-    const addLi = (passed, text, sub) => {
-      const c = passed ? 'var(--grn)' : 'var(--orn)';
-      const i = passed ? '✓' : '⚠️';
-      html += `<div style="background:var(--s2);border:1px solid ${c}40;border-left:3px solid ${c};padding:10px;border-radius:var(--r8)">
+    const addLi = (status, text, sub) => {
+      const c = status === 'ok' ? 'var(--grn)' : status === 'warn' ? 'var(--orn)' : 'var(--red)';
+      const i = status === 'ok' ? '✓' : status === 'warn' ? '⚠️' : '❌';
+      html += `<div style="background:var(--bg3);border:1px solid ${c}40;border-left:3px solid ${c};padding:10px;border-radius:var(--r8)">
           <div style="font-size:13px;color:var(--txt)">${i} ${text}</div>
           <div style="font-size:11px;color:var(--txt3);margin-top:2px">${sub}</div>
         </div>`;
     };
 
-    addLi(missingSKR03 === 0, 'SKR03 Kategorien', missingSKR03 === 0 ? 'Alle Belege sind zugewiesen' : `${missingSKR03} Belege ohne passendes Gegenkonto!`);
-    if(missingSKR03 > 0) _validationBlocker = true;
+    addLi(missingSKR03 === 0 ? 'ok' : 'err', 'SKR03 Kategorien',
+      missingSKR03 === 0 ? 'Alle Belege sind zugewiesen' : `${missingSKR03} Belege ohne passendes Gegenkonto!`);
+    if (missingSKR03 > 0) _validationBlocker = true;
 
-    addLi(missingRC === 0, 'Reverse-Charge', missingRC === 0 ? 'Keine RC-Logikbrüche' : `${missingRC} RC-Belege haben fragwürdige Kategorien.`);
-    
-    if (!hasBank) {
-      addLi(false, 'Kontoauszug fehlt', 'Es wurde kein CSV-Kontoauszug geladen. AR-Geldeingänge nicht abgleichbar.');
+    addLi(missingRC === 0 ? 'ok' : 'warn', 'Reverse-Charge',
+      missingRC === 0 ? 'Keine RC-Logikbrüche' : `${missingRC} RC-Belege mit fragwürdigen Kategorien.`);
+
+    addLi(!hasKonto ? 'warn' : offeneGE === 0 ? 'ok' : 'warn',
+      'Kontoauszüge & Geldeingänge',
+      !hasKonto ? 'Kein Kontoauszug importiert – AR-Abgleich nicht möglich ⚠️'
+        : offeneGE === 0 ? 'Alle Geldeingänge abgeglichen ✓'
+        : `${offeneGE} Geldeingang${offeneGE!==1?'e':''} ohne passende AR-Rechnung ⚠️`);
+
+    addLi(missingAR === 0 ? 'ok' : 'err', 'AR-Pflichtfelder',
+      missingAR === 0 ? 'Alle AR-Belege haben Rechnungsempfänger'
+        : `${missingAR} AR-Beleg${missingAR!==1?'e':''} ohne Rechnungsempfänger!`);
+    if (missingAR > 0) _validationBlocker = true;
+
+    // pending_review Check (Aufgabe 6)
+    if (pendingCount === 0) {
+      addLi('ok', 'Ungeklärte Buchungen', 'Alle Buchungen sind geklärt ✓');
     } else {
-      addLi(unmatchedAR === 0, 'Geldeingänge (AR)', unmatchedAR === 0 ? 'Alle Zahlungen gematcht' : `${unmatchedAR} ungeklärte Geldeingänge im Kontoauszug!`);
+      const staleHint = pendingStale.length > 0 ? ` (${pendingStale.length} älter als 14 Tage!)` : '';
+      addLi('warn', `Ungeklärte Buchungen: ${pendingCount}${staleHint}`,
+        'Werden am Ende der CSV für die Steuerberaterin markiert. Bestätigung erforderlich.');
+      _validationOrange = true;
     }
 
     valList.innerHTML = html;
 
+    // Bestätigungs-Checkbox wenn pending vorhanden
+    if (_validationOrange && !_validationBlocker) {
+      const confirmRow = document.createElement('div');
+      confirmRow.style.cssText = 'background:rgba(192,112,48,.06);border:1px solid rgba(192,112,48,.3);border-radius:var(--r8);padding:12px;margin-top:8px;display:flex;align-items:flex-start;gap:10px';
+      confirmRow.innerHTML = `
+        <input type="checkbox" id="pending-confirm-cb" style="width:18px;height:18px;accent-color:var(--orn);flex-shrink:0;margin-top:2px">
+        <label for="pending-confirm-cb" style="font-size:12px;color:var(--txt);line-height:1.5;cursor:pointer">
+          Ich bestätige, dass <strong>${pendingCount} Buchung${pendingCount!==1?'en':''}</strong> noch ungeklärt sind und trotzdem exportiert werden sollen. Die Steuerberaterin wird informiert.
+        </label>`;
+      valList.appendChild(confirmRow);
+    }
+
     if (_validationBlocker) {
-      contBtn.className = 'btn btn-red';
+      contBtn.style.cssText = 'width:100%;padding:14px;border:none;border-radius:var(--r12);background:var(--red);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center';
       contBtn.textContent = '💀 Fehlerhaft Exportieren (Nicht Empfohlen)';
+      contBtn.onclick = () => _runZIP();
+    } else if (_validationOrange) {
+      contBtn.style.cssText = 'width:100%;padding:14px;border:none;border-radius:var(--r12);background:var(--orn);color:#fff;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center';
+      contBtn.textContent = '⚠️ Export mit offenen Buchungen';
+      contBtn.onclick = () => {
+        const cb = document.getElementById('pending-confirm-cb');
+        if (cb && !cb.checked) { BSP.toast('Bitte erst bestätigen', 'wr'); cb.style.outline = '2px solid var(--orn)'; return; }
+        _runZIP();
+      };
     } else {
-      contBtn.className = 'btn btn-grn';
-      contBtn.textContent = '🚀 DATEV-Export Starten';
+      contBtn.style.cssText = 'width:100%;padding:14px;border:none;border-radius:var(--r12);background:var(--grn);color:#fff;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center';
+      contBtn.textContent = '📤 DATEV Q1-Export Starten';
+      contBtn.onclick = () => _runZIP();
     }
 
   } catch(e) {
@@ -234,27 +387,58 @@ async function validateAndExport() {
   }
 }
 
-// ── Export Runner (CSV + XML + ZIP + Stempel) ─────────────────
+
+// ── Export Runner – Q1 ZIP (Aufgabe 6) ─────────────────────────
 async function _runZIP() {
   const contBtn = document.getElementById('exp-continue-btn');
   if (contBtn) contBtn.disabled = true;
 
   try {
-    _log('📦 JSZip und DATEV-Mapper werden gestartet …');
+    _log('📦 JSZip wird gestartet …');
     await _loadJSZip();
     const zip = new JSZip();
-    const year = new Date().getFullYear();
-    const s = BSP.state.settings || {};
     const SKR03 = BSP.DATEV?.SKR03 || {};
+    const s = BSP.state.settings || {};
+    const { start, end } = _getPeriodRange();
+    const periodLabel = _filter === 'q1' ? 'Q1' : _filter === 'jan' ? 'Jan' : _filter === 'feb' ? 'Feb' : 'Mar';
+    const year = 2026;
 
     const allBelege = await BSP.getBelege();
-    const yb = allBelege.filter(b => b.date && new Date(b.date + 'T00:00:00').getFullYear() === year);
+    const fb = _filterBelege(allBelege);
+    const allKonto = (await BSP.dbGetAll('konto')) || [];
+    const fk = allKonto.filter(k => k.datum >= start && k.datum <= end);
 
-    _log('📊 DATEV buchungen.csv wird generiert …');
-    const csvHeader = _headerRow('Belegnummer','Datum','Buchungstext','Umsatz (ohne Soll/Haben-Kz)','MwSt-Satz','MwSt','Brutto','Konto','BU-Schlüssel','Kategorie','Klartext (KI)','Währung Orig','Betrag Orig','Wechselkurs (EZB)');
-    
+    // ── 1. UStVA-Zusammenfassung (ustva_q1_2026.csv) ─────────
+    _log('📊 ustva_q1_2026.csv wird generiert …');
+    const erBelege = fb.filter(b => b.type === 'er' && !b.isReverseCharge);
+    const arBelege = fb.filter(b => b.type === 'ar' && !b.isReverseCharge);
+    const rcBelege = fb.filter(b => b.isReverseCharge);
+
+    const arNetto  = arBelege.reduce((s,b) => s+(b.net||0), 0);
+    const arMwst   = arBelege.reduce((s,b) => s+(b.mwst||0), 0);
+    const erNetto  = erBelege.reduce((s,b) => s+(b.net||0), 0);
+    const erMwst   = erBelege.reduce((s,b) => s+(b.mwst||0), 0);
+    const rcNetto  = rcBelege.reduce((s,b) => s+(b.net||0), 0);
+    const rcMwst   = rcBelege.reduce((s,b) => s+(b.mwst||0), 0);
+    const zahllast = arMwst - erMwst;
+
+    const ustva = [
+      _headerRow('Position', 'Betrag (€)', 'Hinweis'),
+      [_esc('Gesamteinnahmen Netto (AR)'), _esc(arNetto.toFixed(2).replace('.',',')), ''].join(';'),
+      [_esc('AR-MwSt eingenommen'), _esc(arMwst.toFixed(2).replace('.',',')), 'UStVA Kennzahl 181 / Zeile 26'].join(';'),
+      [_esc('Gesamtausgaben Netto (ER)'), _esc(erNetto.toFixed(2).replace('.',',')), ''].join(';'),
+      [_esc('ER-Vorsteuer abziehbar'), _esc(erMwst.toFixed(2).replace('.',',')), 'UStVA Kennzahl 66 / Zeile 67'].join(';'),
+      [_esc('Reverse-Charge-Netto'), _esc(rcNetto.toFixed(2).replace('.',',')), 'UStVA Zeile 52 – separat eintragen!'].join(';'),
+      [_esc('Reverse-Charge-Steuer (selbst)'), _esc(rcMwst.toFixed(2).replace('.',',')), 'UStVA Zeile 67 mit SK 94 oder 19'].join(';'),
+      [_esc(zahllast >= 0 ? 'ZAHLLAST' : 'ERSTATTUNG'), _esc(Math.abs(zahllast).toFixed(2).replace('.',',')), zahllast >= 0 ? 'An Finanzamt zu zahlen' : 'Vom Finanzamt erstatten lassen'].join(';'),
+    ].join('\r\n');
+    zip.file(`ustva_${periodLabel.toLowerCase()}_${year}.csv`, '\uFEFF' + ustva);
+
+    // ── 2. Buchungen DATEV (buchungen_q1_2026.csv) ───────────
+    _log('📊 buchungen_q1_2026.csv wird generiert …');
+    const csvHeader = _headerRow('Belegnummer','Datum','Buchungstext','Umsatz (Netto)','MwSt-Satz','MwSt','Brutto','SKR03-Konto','BU-Schlüssel','Kategorie','Externe Belegnr.','Währung Orig','Betrag Orig','Wechselkurs (EZB)');
     const csvRows = [];
-    yb.forEach(b => {
+    fb.forEach(b => {
       if ((b.cat||'').includes('Bewirtung')) {
         csvRows.push(_datevRow(b, SKR03, true, false));
         csvRows.push(_datevRow(b, SKR03, false, true));
@@ -263,105 +447,149 @@ async function _runZIP() {
       }
     });
 
-    const csvOutput = '\uFEFF' + [csvHeader, ...csvRows].join('\r\n');
-    zip.file('buchungen.csv', csvOutput);
-
-    // ── KONTO DATEN LADEN ──
-    const allKonto = (await BSP.dbGetAll('konto')) || [];
-    
-    // 1. Konto-Buchungen (Alle Geschäftskonten)
-    const bizKonto = allKonto.filter(k => k.tags && k.tags.kontoTyp === 'Business');
-    if (bizKonto.length > 0) {
-       _log('📊 konto-buchungen.csv wird generiert …');
-       const kHeader = _headerRow('Datum', 'Empfänger/Auftraggeber', 'Betrag', 'Typ', 'Zweck', 'Status');
-       const kRows = bizKonto.map(k => {
-          return [BSP.fd(k.datum), k.empfaenger||'', BSP.fm(k.betrag), k.typ||'', k.zweck||'', k.status||''].map(_esc).join(';');
-       });
-       zip.file('konto-buchungen.csv', '\uFEFF' + [kHeader, ...kRows].join('\r\n'));
+    // Aufgabe 6: pending_review am Ende der CSV einfügen
+    const pendingAll2 = await BSP.prGetAll();
+    const pendingOpen2 = pendingAll2.filter(p => p.status === 'offen' || p.status === 'später_klären');
+    if (pendingOpen2.length > 0) {
+      csvRows.push('');
+      csvRows.push(_esc('=== MANUELL ZU PRÜFEN: ' + pendingOpen2.length + ' ungeklärte Buchungen ==='));
+      csvRows.push(_headerRow('Buchungsreferenz','Datum','Auftraggeber/Empfänger','Betrag','Status','Hinweis'));
+      pendingOpen2.forEach(p => {
+        csvRows.push([
+          p.buchungsId || '',
+          p.datum || '',
+          p.auftraggeber || '',
+          Number(p.betrag || 0).toFixed(2).replace('.',','),
+          p.status || '',
+          'MANUELL ZU PRÜFEN – vom Steuerberater klären'
+        ].map(_esc).join(';'));
+      });
     }
 
-    // 2. Geldeingänge (Eigene Tabelle)
-    const geldeingaenge = allKonto.filter(k => k.betrag > 0 && 
-       // Entweder auf Geschäftskonto ODER auf Privatkonto als Business getaggt
-       (k.tags?.kontoTyp === 'Business' || (k.tags?.kontoTyp === 'Privat' && k.tags?.ausgabenTyp === 'Business'))
-    );
-    if (geldeingaenge.length > 0) {
-       _log('📊 geldeingaenge.csv wird generiert …');
-       const gHeader = _headerRow('Datum', 'Auftraggeber', 'Betrag', 'Zweck', 'Konto-Typ', 'Verknüpfter Beleg', 'Korrektur-Hinweis');
-       const gRows = geldeingaenge.map(k => {
-          let warn = '';
-          if (k.tags?.kontoTyp === 'Privat' && k.tags?.ausgabenTyp === 'Business') warn = 'Geschäftseinnahme auf Privatkonto – Korrekturbuchung erforderlich';
-          return [BSP.fd(k.datum), k.empfaenger||'', BSP.fm(k.betrag), k.zweck||'', k.tags?.kontoTyp||'', k.status==='abgeglichen'?'Ja':'Nein', warn].map(_esc).join(';');
-       });
-       zip.file('geldeingaenge.csv', '\uFEFF' + [gHeader, ...gRows].join('\r\n'));
+    zip.file(`buchungen_${periodLabel.toLowerCase()}_${year}.csv`, '\uFEFF' + [csvHeader, ...csvRows].join('\r\n'));
+
+    // ── 3. Kontoauszüge (kontoauszuege_q1_2026.csv) ─────────
+    _log('📊 kontoauszuege_q1_2026.csv wird generiert …');
+    if (fk.length > 0) {
+      const kHeader = _headerRow('Datum','Auftraggeber/Empfänger','Betrag (€)','Buchungstyp','Verwendungszweck','Konto-ID','Status','Abgeglichen mit Beleg','Hinweis');
+      const kRows = fk.map(k => {
+        let hinweis = '';
+        if (k.betrag > 0 && k.status !== 'abgeglichen') hinweis = '⚠️ Mögliche fehlende Ausgangsrechnung';
+        if (k.isDuplicateAlert) hinweis = '⚠️ Mögliche Dopplung';
+        return [
+          k.datum||'',
+          k.auftraggeber||k.empfaenger||'',
+          Number(k.betrag||0).toFixed(2).replace('.',','),
+          k.buchungstyp||k.typ||'',
+          k.zweck||'',
+          k.kontoId||k.iban||'',
+          k.status||'offen',
+          k.belegNr||'',
+          hinweis
+        ].map(_esc).join(';');
+      });
+      zip.file(`kontoauszuege_${periodLabel.toLowerCase()}_${year}.csv`, '\uFEFF' + [kHeader, ...kRows].join('\r\n'));
     }
 
-    // 3. Konto-Korrekturen (Mismatch)
-    const mismatches = allKonto.filter(k => k.tags && k.tags.mismatch);
-    if (mismatches.length > 0) {
-       _log('📊 konto-korrekturen.csv wird generiert …');
-       const mHeader = _headerRow('Datum', 'Empfänger', 'Betrag', 'Zweck', 'Gezahlt von Konto', 'Tatsächliche Ausgabe', 'Hinweis an Steuerberater');
-       const mRows = mismatches.map(k => {
-          let hint = 'Privat auf Business-Konto gezahlt (Sollte gegen Privatentnahme gebucht werden)';
-          if (k.tags.kontoTyp === 'Privat') hint = 'Business auf Privat-Konto gezahlt (Sollte als Privateinlage gebucht werden)';
-          return [BSP.fd(k.datum), k.empfaenger||'', BSP.fm(k.betrag), k.zweck||'', k.tags.kontoTyp, k.tags.ausgabenTyp, hint].map(_esc).join(';');
-       });
-       zip.file('konto-korrekturen.csv', '\uFEFF' + [mHeader, ...mRows].join('\r\n'));
-    }
-
-
-    _log('🔗 zuordnung.xml wird strukturiert …');
-    // DATEV XML Wrapper
-    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<Belege>\n`;
+    // ── 4. Belege-Ordner + zuordnung.xml ─────────────────────
+    _log('🖼️ Belege werden bestempelt …');
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<Belege>\n';
     const stempelPromises = [];
     const belegFolder = zip.folder('belege');
-    
-    let count = 0;
-    for (const b of yb) {
-      if (!b.image || !b.belegNr) continue;
-      
-      const fileName = `${b.belegNr}_S1.jpg`.replace(/[/\\:*?"<>|]/g, '_');
-      xml += `  <Beleg>\n    <Belegnummer>${b.belegNr}</Belegnummer>\n    <Dateiname>${fileName}</Dateiname>\n  </Beleg>\n`;
-      
-      // Bildkompression / Stempel asynchron sammeln
-      const p = _stampImage(b.image, b).then(stamped => {
-        const data = stamped.replace(/^data:[^;]+;base64,/, '');
-        belegFolder.file(fileName, data, { base64: true });
-        count++;
-      }).catch(()=>{});
-      stempelPromises.push(p);
+
+    for (const b of fb) {
+      if (!b.belegNr) continue;
+      const allImages = (b.images && b.images.length > 0) ? b.images : (b.image ? [b.image] : []);
+      if (!allImages.length) continue;
+
+      const sanitizedNr = b.belegNr.replace(/[/\\:*?"<>|]/g, '_');
+      let xmlBeleg = `  <Beleg>\n    <Belegnummer>${b.belegNr}</Belegnummer>\n`;
+      allImages.forEach((_, idx) => {
+        const suffix = allImages.length > 1 ? '_S' + (idx + 1) : '';
+        xmlBeleg += `    <Dateiname>${sanitizedNr}${suffix}.jpg</Dateiname>\n`;
+      });
+      xmlBeleg += '  </Beleg>\n';
+      xml += xmlBeleg;
+
+      allImages.forEach((imgSrc, idx) => {
+        const suffix = allImages.length > 1 ? '_S' + (idx + 1) : '';
+        const fileName = sanitizedNr + suffix + '.jpg';
+        const p = _stampImage(imgSrc, b).then(stamped => {
+          const data = stamped.replace(/^data:[^;]+;base64,/, '');
+          belegFolder.file(fileName, data, { base64: true });
+        }).catch(() => {});
+        stempelPromises.push(p);
+      });
     }
-    xml += `</Belege>`;
+    xml += '</Belege>';
     zip.file('zuordnung.xml', xml);
 
-    _log('🖼️ Belege werden bestempelt (' + stempelPromises.length + ' Docs) …');
     await Promise.all(stempelPromises);
 
-    // README
+    // ── 5. README.txt ─────────────────────────────────────────
     const name = [s.vorname, s.nachname].filter(Boolean).join(' ') || 'Mandant';
-    const readme = `DATEV EXPORTPAKET - BELEGSCAN PRO
-Mandant: ${name}
-Zeitraum: ${year}
+    const firmName = s.firmenname || name;
+    const readme = `DATEV EXPORTPAKET – BELEGSCAN PRO
+Mandant: ${firmName}
+Zeitraum: ${periodLabel} ${year}
+Erstellt: ${new Date().toLocaleDateString('de-DE')}
 
-INHALT:
-• buchungen.csv: DATEV-konforme Importdatei mit automatischem Konto-Mapping (SKR03). Bewirtungsbelege wurden mathematisch 70/30 gesplittet (selbe Belegnummer). Automatik-Konten (3010, 3030) enthalten planmäßig keinen BU-Schlüssel. Fremdwährungen wurden via EZB-API in Euro umgerechnet (Kurswert aus Buchungsdatum).
-• zuordnung.xml: Verknüpft die Rechnungen in 'buchungen.csv' mit den Dateien im Ordner.
-• belege/: Gestempelte Foto-Scans der Belege.`;
+═══════════════════════════════════════════════
+INHALT
+═══════════════════════════════════════════════
+
+ustva_${periodLabel.toLowerCase()}_${year}.csv
+  Umsatzsteuer-Voranmeldungs-Zusammenfassung.
+  Enthält: Gesamteinnahmen, AR-MwSt, Gesamtausgaben, ER-Vorsteuer,
+  Zahllast/Erstattung, Reverse-Charge-Beträge.
+
+buchungen_${periodLabel.toLowerCase()}_${year}.csv
+  Alle Buchungen im DATEV-Format mit SKR03-Kontonummern.
+  ER und AR in einer Datei. Bewirtungsbelege wurden 70/30 gesplittet.
+  Automatik-Konten (3010, 3030) enthalten planmäßig keinen BU-Schlüssel.
+  Fremdwährungen via EZB-API in Euro umgerechnet (Buchungsdatum).
+
+kontoauszuege_${periodLabel.toLowerCase()}_${year}.csv
+  Alle importierten Kontobuchungen. Offene Geldeingänge ohne
+  passende Ausgangsrechnung sind mit Hinweis ⚠️ markiert.
+
+belege/
+  Gestempelte Foto-Scans. Dateiname = Belegnummer (DATEV-Pflicht).
+  Max 100KB pro Bild.
+
+zuordnung.xml
+  Verknüpft jede Datei in belege/ mit der Buchungsnummer.
+
+═══════════════════════════════════════════════
+HINWEISE FÜR DIE STEUERBERATERIN
+═══════════════════════════════════════════════
+
+Automatik-Konten:
+• Kto 3010 = Erlöse 19% MwSt
+• Kto 3030 = Erlöse 7% MwSt
+Diese Konten erhalten keinen BU-Schlüssel – das ist korrekt.
+
+Reverse Charge (§13b UStG):
+• Steuerschlüssel 94 = § 13b innergemeinschaftliche Leistungen
+• Steuerschlüssel 19 = sonstige § 13b Fälle
+Reverse-Charge-Beträge separat in UStVA Zeile 52 und 67 eintragen.
+
+Bei Fragen: Die originalen Scan-Bilder liegen in belege/.
+`;
     zip.file('README.txt', readme);
 
-    _log(`📦 ZIP wird gepackt ...` );
+    // ── ZIP packen & herunterladen ─────────────────────────────
+    _log('📦 ZIP wird gepackt …');
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `DATEV-Export-${year}-${new Date().toISOString().split('T')[0]}.zip`;
+    a.download = `DATEV-Export-${periodLabel}-${year}-${new Date().toISOString().split('T')[0]}.zip`;
     a.click();
     URL.revokeObjectURL(url);
 
-    _log(`✓ DATEV-ZIP erstellt (${yb.length} Belege)`);
+    _log(`✓ ZIP erstellt – ${fb.length} Belege, ${fk.length} Kontobuchungen`);
     BSP.toast('Export komplett ✓', 'ok');
-
-    // UI Reset
     document.getElementById('exp-validation').style.display = 'none';
 
   } catch(e) {
@@ -372,9 +600,8 @@ INHALT:
   }
 }
 
-// ── Firmenstempel Canvas (nur Business ER) ────────────────────
+// ── Firmenstempel Canvas ──────────────────────────────────────
 async function _stampImage(b64, beleg) {
-  if (beleg.type !== 'er') return b64; // Stempel nur für Eingangsrechnungen
   return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
@@ -384,124 +611,48 @@ async function _stampImage(b64, beleg) {
       ctx.drawImage(img, 0, 0);
 
       const s = BSP.state.settings || {};
-      const fsize = Math.max(14, Math.min(24, c.width / 35));
-      const pad = 12;
+      const fsize = Math.max(12, Math.min(20, c.width / 40));
+      const pad = 10;
 
-      ctx.font = `300 ${fsize}px Inter, sans-serif`;
       const lines = [
-        "GEPRÜFT UND GEBUCHT",
-        `Konto: ${(BSP.DATEV?.SKR03[beleg.cat] || {}).konto || 'Unbekannt'}`,
-        `Belegnr: ${beleg.belegNr || '—'}`,
+        'GEPRÜFT UND GEBUCHT',
+        `Nr: ${beleg.belegNr || '—'}`,
+        `${beleg.type?.toUpperCase()||''} · Kto: ${(BSP.DATEV?.SKR03[beleg.cat]||{}).konto||'?'}`,
         `Datum: ${new Date().toLocaleDateString('de-DE')}`
       ];
+      ctx.font = `300 ${fsize}px Inter, sans-serif`;
       const lineH = fsize * 1.4;
       const boxH = lines.length * lineH + pad * 2;
       const boxW = lines.reduce((m, l) => Math.max(m, ctx.measureText(l).width), 0) + pad * 2.5;
       const x = c.width - boxW - 8;
       const y = c.height - boxH - 8;
 
-      // Kasten
       ctx.fillStyle = 'rgba(0,40,15,.75)';
       ctx.beginPath();
-      ctx.roundRect(x, y, boxW, boxH, 6);
+      if (ctx.roundRect) ctx.roundRect(x, y, boxW, boxH, 6);
+      else ctx.rect(x, y, boxW, boxH);
       ctx.fill();
       ctx.strokeStyle = '#44cc66';
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Text
       ctx.fillStyle = '#44cc66';
       lines.forEach((line, i) => {
-        ctx.font = i === 0 ? `500 ${fsize}px Inter, sans-serif` : `300 ${fsize*0.9}px Inter, sans-serif`;
+        ctx.font = i === 0 ? `600 ${fsize}px Inter, sans-serif` : `300 ${fsize*0.9}px Inter, sans-serif`;
         ctx.fillText(line, x + pad, y + pad + fsize + i * lineH);
       });
 
-      resolve(c.toDataURL('image/jpeg', 0.85));
+      // Bild komprimieren auf max ~100KB
+      let quality = 0.82;
+      let result = c.toDataURL('image/jpeg', quality);
+      while (result.length > 140000 && quality > 0.3) { quality -= 0.1; result = c.toDataURL('image/jpeg', quality); }
+      resolve(result);
     };
     img.onerror = () => resolve(b64);
     img.src = b64;
   });
 }
 
-// ── Kontoabgleich Legacy ───────────────────────────────────────
-async function loadKonto(input) {
-  const f = input.files[0];
-  if (!f) return;
-  const text = await f.text();
-  _kontoData = _parseKontoCSV(text);
-  if (!_kontoData.length) { BSP.toast('Keine Einträge gefunden – bitte Format prüfen', 'wr'); return; }
-  await _abgleichen();
-}
-
-function _parseKontoCSV(text) {
-  const lines = text.split(/\\r?\\n/).filter(l => l.trim());
-  const entries = [];
-  for (const line of lines) {
-    const sep = line.includes(';') ? ';' : ',';
-    const parts = line.split(sep).map(p => p.replace(/^"|"$/g, '').trim());
-    if (parts.length < 3) continue;
-    let dateStr = parts[0];
-    let isoDate = null;
-    if (/\\d{2}\\.\\d{2}\\.\\d{4}/.test(dateStr)) {
-      const [d, m, y] = dateStr.split('.');
-      isoDate = `${y}-${m}-${d}`;
-    } else if (/\\d{4}-\\d{2}-\\d{2}/.test(dateStr)) {
-      isoDate = dateStr;
-    }
-    if (!isoDate) continue;
-    let betrag = null;
-    for (let i = parts.length - 1; i >= 1; i--) {
-      const raw = parts[i].replace(/\\./g, '').replace(',', '.').replace(/[^\\d.\\-]/g, '');
-      const n = parseFloat(raw);
-      if (!isNaN(n)) { betrag = n; break; }
-    }
-    if (betrag === null) continue;
-    entries.push({ date: isoDate, empfaenger: parts[1] || parts[2] || '', betrag, rawLine: line });
-  }
-  return entries;
-}
-
-async function _abgleichen() {
-  const belege = await BSP.getBelege();
-  _matchResult = [];
-  for (const konto of _kontoData) {
-    const match = belege.find(b => {
-      if (!b.date || !b.brutto) return false;
-      const daysDiff = Math.abs((new Date(b.date+'T00:00:00') - new Date(konto.date+'T00:00:00')) / 864e5);
-      return daysDiff <= 1 && Math.abs(Math.abs(konto.betrag) - Math.abs(b.brutto)) < 0.05;
-    });
-    _matchResult.push({ ...konto, status: match ? 'matched' : 'unmatched', belegNr: match?.belegNr, shop: match?.shop });
-  }
-  _renderAbgleich();
-}
-
-function _renderAbgleich() {
-  const container = document.getElementById('exp-konto-result');
-  if (container) container.style.display = 'block';
-  const matched = _matchResult.filter(r => r.status === 'matched').length;
-  const unmatched = _matchResult.filter(r => r.status === 'unmatched').length;
-  const stats = document.getElementById('exp-konto-stats');
-  if (stats) {
-    const sc = (lbl, val, col) => `<div style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:10px;text-align:center"><div style="font-size:9px;color:var(--txt3);text-transform:uppercase;margin-bottom:4px">${lbl}</div><div style="font-size:18px;color:${col}">${val}</div></div>`;
-    stats.innerHTML = sc('Gesamt', _matchResult.length, 'var(--txt)') + sc('Gematcht', matched, 'var(--grn)') + sc('Offen', unmatched, 'var(--red)');
-  }
-  const offene = document.getElementById('exp-konto-offene');
-  if (offene) {
-    const umItems = _matchResult.filter(r => r.status === 'unmatched');
-    if (!umItems.length) offene.innerHTML = '<div style="color:var(--grn);text-align:center">✓ Alle gematcht</div>';
-    else offene.innerHTML = umItems.map(r => `<div style="background:rgba(192,64,64,.06);padding:10px;font-size:12px;border-radius:8px"><div style="display:flex;justify-content:space-between"><span style="color:var(--txt2)">${BSP.eh(r.empfaenger)}</span><span style="color:var(--red)">${BSP.fm(Math.abs(r.betrag))} €</span></div><div style="font-size:10px;color:var(--txt3)">${r.date}</div></div>`).join('');
-  }
-}
-
-function exportKontoCSV() {
-  if (!_matchResult.length) return;
-  const csv = '\\uFEFF' + _headerRow('Datum','Empfaenger','Betrag','Status','BelegNr') + '\\r\\n' + _matchResult.map(r => [r.date, r.empfaenger, String(r.betrag).replace('.',','), r.status, r.belegNr||''].map(_esc).join(';')).join('\\r\\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `kontoabgleich-${new Date().toISOString().split('T')[0]}.csv`;
-  a.click();
-}
-
-return { init, validateAndExport, _runZIP, loadKonto, exportKontoCSV };
+return { init, setPeriod, openQ1Dialog, validateAndExport, _runZIP };
 
 })();

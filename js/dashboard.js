@@ -59,21 +59,37 @@ const DashboardModule = (() => {
       const inVal = document.getElementById('qs-einnahmen');
       const outVal = document.getElementById('qs-ausgaben');
       const saldoVal = document.getElementById('vat-saldo-val');
-      const inBar = document.getElementById('vat-in-bar');
-      const outBar = document.getElementById('vat-out-bar');
-
       if (inVal) inVal.textContent = BSP.fm(arMwst) + ' €';
       if (outVal) outVal.textContent = BSP.fm(erMwst) + ' €';
       if (saldoVal) {
-        saldoVal.textContent = BSP.fm(saldo) + ' €';
-        // Bei Zahllast ist positiv = man muss zahlen (rot/gold), negativ = Guthaben (grün)
-        // Aber der User sagte Gold ist wichtig.
-        saldoVal.style.color = saldo > 0 ? 'var(--gold)' : 'var(--grn)';
+        saldoVal.textContent = BSP.fm(Math.abs(saldo)) + ' €';
+        saldoVal.style.color = saldo > 0 ? 'var(--red)' : 'var(--grn)';
       }
 
-      const max = Math.max(arMwst, erMwst, 1);
-      if (inBar) inBar.style.width = Math.max(5, (arMwst / max) * 100) + '%';
-      if (outBar) outBar.style.width = Math.max(5, (erMwst / max) * 100) + '%';
+      // Aufgabe 5: Export Quick-Action – nur wenn Belege vorhanden
+      const totalBelege = yearBelege.length;
+      let exportBtn = document.getElementById('dash-q1-export-btn');
+      if (totalBelege > 0) {
+        if (!exportBtn) {
+          // Button in vat-summary-line einfügen
+          const summaryLine = document.querySelector('.vat-summary-line');
+          if (summaryLine) {
+            exportBtn = document.createElement('button');
+            exportBtn.id = 'dash-q1-export-btn';
+            exportBtn.textContent = '📤 Export Q1';
+            exportBtn.style.cssText = 'border:none;background:var(--accent);color:#fff;font-size:10px;font-weight:500;padding:5px 10px;border-radius:20px;cursor:pointer;letter-spacing:.3px;flex-shrink:0;margin-left:6px';
+            exportBtn.onclick = () => {
+              BSP.showView('export');
+              if (typeof ExportModule !== 'undefined' && ExportModule.openQ1Dialog) {
+                setTimeout(() => ExportModule.openQ1Dialog(), 150);
+              }
+            };
+            summaryLine.appendChild(exportBtn);
+          }
+        }
+      } else if (exportBtn) {
+        exportBtn.remove();
+      }
     }
 
     // 4. Letzte Einträge

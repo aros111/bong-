@@ -81,10 +81,24 @@ const OVERLAY_HTML = `
   <!-- Ergebnis-Felder (Business ER/AR) -->
   <div id="sc-res-biz" style="display:none;padding:16px; flex:1;">
     <div class="g2 sett-mt">
-      <div class="field"><label>Händler</label><input id="sc-shop" class="sett-inp" type="text" list="sc-shop-list" oninput="ScannerModule.suggestShops(this.value)">
-        <datalist id="sc-shop-list"></datalist></div>
+      <div class="field" id="sc-shop-wrap">
+        <label id="sc-shop-label">Händler</label>
+        <input id="sc-shop" class="sett-inp" type="text" list="sc-shop-list" oninput="ScannerModule.suggestShops(this.value)">
+        <datalist id="sc-shop-list"></datalist>
+      </div>
       <div class="field"><label>Datum</label><input id="sc-date" class="sett-inp" type="date"></div>
     </div>
+      <!-- NICHT bei AR: Rechnungssteller / Rechnungsempfänger -->
+      <div id="sc-ar-steller-wrap" style="display:none">
+        <div class="field" style="background:var(--bg3);border-color:var(--br2)">
+          <label style="color:var(--txt3)">Rechnungssteller (Du)</label>
+          <input id="sc-rechnungssteller" class="sett-inp" type="text" readonly style="opacity:.7;cursor:default" placeholder="Aus Einstellungen">
+        </div>
+      </div>
+      <div class="field sett-mt" id="sc-empf-wrap" style="display:none;background:rgba(200,164,90,.05);border-color:rgba(200,164,90,.2)">
+        <label style="color:var(--gold)">Rechnungsempfänger *</label>
+        <input id="sc-empfaenger" class="sett-inp" type="text" placeholder="Pflichtfeld für Ausgangsrechnungen (AR)">
+      </div>
     <div class="g2 sett-mt">
       <div class="field"><label>Brutto (€)</label><input id="sc-brutto" class="sett-inp" type="text" inputmode="decimal" oninput="ScannerModule.calcMwst()"></div>
       <div class="field"><label>Netto (€)</label><input id="sc-net" class="sett-inp" type="text" inputmode="decimal" readonly style="opacity:.7"></div>
@@ -242,6 +256,27 @@ function setType(t) {
   // Im manuellen Modus auch biz-Felder
   if (resBiz) resBiz.style.display = (isBiz || isManual) ? 'block' : 'none';
   if (resPriv) resPriv.style.display = 'none';
+
+  const empfWrap = document.getElementById('sc-empf-wrap');
+  if (empfWrap) empfWrap.style.display = (t === 'ar') ? 'block' : 'none';
+
+  // Rechnungssteller-Wrap (nur bei AR zeigen)
+  const stellerWrap = document.getElementById('sc-ar-steller-wrap');
+  if (stellerWrap) stellerWrap.style.display = (t === 'ar') ? 'block' : 'none';
+
+  // Händler-Label: bei AR -> 'Rechnungssteller' (Dein Firmennamen wird in sc-rechnungssteller gezeigt)
+  const shopLabel = document.getElementById('sc-shop-label');
+  if (shopLabel) shopLabel.textContent = (t === 'ar') ? '' : 'Händler';
+  const shopWrap = document.getElementById('sc-shop-wrap');
+  if (shopWrap) shopWrap.style.display = (t === 'ar') ? 'none' : 'flex';
+
+  // Auto-Fill Rechnungssteller aus Einstellungen
+  if (t === 'ar') {
+    const s = BSP.state.settings || {};
+    const name = [s.firmenname || s.vorname, s.nachname].filter(Boolean).join(' ') || 'Mein Unternehmen';
+    const stellerEl = document.getElementById('sc-rechnungssteller');
+    if (stellerEl) stellerEl.value = name;
+  }
 
   // Bei manual: Felder direkt zeigen
   if (isManual) {
@@ -529,6 +564,7 @@ function _fillForm(r) {
   const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
 
   set('sc-shop', r.shop);
+  set('sc-empfaenger', r.empfaenger || '');
   set('sc-date', r.date);
   set('sc-brutto', r.brutto != null ? Number(r.brutto).toFixed(2) : '');
   set('sc-net', r.net != null ? Number(r.net).toFixed(2) : '');
@@ -631,15 +667,25 @@ async function save() {
       savedAt: Date.now()
     };
   } else {
-    const shop = get('sc-shop');
+    const shop_er = get('sc-shop');
+    // Bei AR: Rechnungssteller = eigene Firma, Empfänger = Pflichtfeld
+    const s = BSP.state.settings || {};
+    const rechnungssteller = [s.firmenname || s.vorname, s.nachname].filter(Boolean).join(' ') || 'Mein Unternehmen';
+    const shop = _scanMode === 'ar' ? rechnungssteller : shop_er;
+    const empfaenger = get('sc-empfaenger');
     const brutto = parseFloat(get('sc-brutto').replace(',', '.')) || 0;
     const date = get('sc-date');
 
     // Validierung
     let valid = true;
-    if (!shop) { _markError('sc-shop'); valid = false; }
+    if (_scanMode !== 'ar' && !shop_er) { _markError('sc-shop'); valid = false; }
     if (!brutto) { _markError('sc-brutto'); valid = false; }
     if (!date) { _markError('sc-date'); valid = false; }
+    if (_scanMode === 'ar' && !empfaenger) {
+      _markError('sc-empfaenger');
+      BSP.toast('⚠️ Rechnungsempfänger ist Pflichtfeld für Ausgangsrechnungen!', 'wr');
+      valid = false;
+    }
     if (!valid) { BSP.toast('Bitte Pflichtfelder ausfüllen', 'wr'); return; }
 
     const rate = parseFloat(get('sc-rate')) || 19;
@@ -649,6 +695,7 @@ async function save() {
 
     item = {
       type: _scanMode === 'ar' ? 'ar' : 'er',
+      empfaenger: _scanMode === 'ar' ? empfaenger : null,
       belegNr: BSP.nextNr(_scanMode === 'ar' ? 'ar' : 'er'),
       belegNrExtern: get('sc-bleg-ext') || null,
       shop,
@@ -723,7 +770,7 @@ function reset() {
   if (resBiz) { resBiz.style.display = 'none'; }
   const progWrap = document.getElementById('sc-prog-wrap');
   if (progWrap) { progWrap.style.display = 'none'; _setP(0); }
-  ['sc-shop','sc-date','sc-brutto','sc-net','sc-mwst','sc-bleg-ext','sc-p-shop','sc-p-brutto'].forEach(id => {
+  ['sc-shop','sc-empfaenger','sc-date','sc-brutto','sc-net','sc-mwst','sc-bleg-ext','sc-p-shop','sc-p-brutto'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const body = document.getElementById('sc-items-body');

@@ -100,7 +100,7 @@ const ArchivAntwort = (() => {
       2. Sei präzise und professionell.
       3. Gib NUR den fertigen Text zurück, ohne Kommentare oder Einleitungen.`;
 
-      const draft = await BSP.ask({ prompt, model: 'sonnet' });
+      const draft = await BSP.ask({ prompt, model: 'claude-sonnet-4-5' });
       
       resultEl.textContent = draft;
       resultWrap.style.display = 'block';

@@ -25,7 +25,11 @@ const state = {
   erCounter: parseInt(localStorage.getItem('bsp_erc')) || 0,
   arCounter: parseInt(localStorage.getItem('bsp_arc')) || 0,
   rcZ52: 0,
-  rcZ67: 0
+  rcZ67: 0,
+  // Kontext-Tracking (Aufgabe 2 – Feedback-Modul)
+  activePillar: 'business',
+  activeView: 'home',
+  activeSheet: null,
 };
 
 function registerModule(id, module) {
@@ -212,6 +216,8 @@ function showView(name, params = {}) {
   if (view) view.classList.add('on');
   const navItem = document.querySelector(`[data-nav="${name}"]`);
   if (navItem) navItem.classList.add('on');
+  // Kontext-Tracking
+  state.activeView = name;
   emit('view:changed', { name, params });
 }
 
@@ -229,6 +235,102 @@ function closeAllOverlays() {
   if (typeof ArchivScanModule !== 'undefined' && ArchivScanModule.close) ArchivScanModule.close();
   if (typeof SpracheUniversal !== 'undefined' && SpracheUniversal.close) SpracheUniversal.close();
   if (typeof StiftModule !== 'undefined' && StiftModule.close) StiftModule.close();
+}
+
+// ── Sheet (Bottom Modal) ─────────────────────────────────────
+function showSheet(htmlContent) {
+  // Bestehende Sheets entfernen
+  const existingSheet = document.getElementById('bsp-sheet');
+  if (existingSheet) existingSheet.remove();
+  const existingBackdrop = document.getElementById('bsp-sheet-backdrop');
+  if (existingBackdrop) existingBackdrop.remove();
+
+  // Backdrop
+  const backdrop = document.createElement('div');
+  backdrop.id = 'bsp-sheet-backdrop';
+  backdrop.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;opacity:0;transition:opacity .3s ease';
+  backdrop.addEventListener('click', () => closeSheet());
+  document.body.appendChild(backdrop);
+
+  // Sheet-Panel
+  const sheet = document.createElement('div');
+  sheet.id = 'bsp-sheet';
+  sheet.style.cssText = [
+    'position:fixed',
+    'left:0','right:0','bottom:0',
+    'background:var(--bg2,#fff)',
+    'border-radius:20px 20px 0 0',
+    'z-index:501',
+    'max-height:90dvh',
+    'overflow-y:auto',
+    'padding:0 16px',
+    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 16px)',
+    'transform:translateY(100%)',
+    'transition:transform .3s ease',
+    'box-shadow:0 -4px 32px rgba(0,0,0,0.18)'
+  ].join(';');
+
+  // Drag-Handle
+  sheet.innerHTML = '<div style="width:40px;height:4px;background:var(--br,#ddd);border-radius:2px;margin:12px auto 4px;"></div>' + htmlContent;
+  document.body.appendChild(sheet);
+
+  // Animiert einblenden
+  requestAnimationFrame(() => {
+    backdrop.style.opacity = '1';
+    sheet.style.transform = 'translateY(0)';
+  });
+}
+
+function closeSheet() {
+  const sheet = document.getElementById('bsp-sheet');
+  const backdrop = document.getElementById('bsp-sheet-backdrop');
+  if (sheet) {
+    sheet.style.transform = 'translateY(100%)';
+    setTimeout(() => sheet.remove(), 310);
+  }
+  if (backdrop) {
+    backdrop.style.opacity = '0';
+    setTimeout(() => backdrop.remove(), 310);
+  }
+}
+
+// ── Scrim (Lade-Overlay) ─────────────────────────────────────
+function showScrim(text = 'Bitte warten…') {
+  let scrim = document.getElementById('bsp-scrim');
+  if (!scrim) {
+    scrim = document.createElement('div');
+    scrim.id = 'bsp-scrim';
+    scrim.style.cssText = [
+      'position:fixed','inset:0',
+      'background:rgba(0,0,0,0.72)',
+      'z-index:900',
+      'display:flex','flex-direction:column',
+      'align-items:center','justify-content:center',
+      'gap:16px',
+      'pointer-events:all'
+    ].join(';');
+    // Spinner
+    scrim.innerHTML = `
+      <div style="width:44px;height:44px;border:3px solid rgba(255,255,255,0.2);border-top-color:#fff;border-radius:50%;animation:bsp-spin .9s linear infinite"></div>
+      <div id="bsp-scrim-text" style="color:#fff;font-size:14px;font-weight:300;letter-spacing:.3px;text-align:center;padding:0 32px;line-height:1.5"></div>
+    `;
+    // Keyframe einmalig einfügen
+    if (!document.getElementById('bsp-scrim-css')) {
+      const st = document.createElement('style');
+      st.id = 'bsp-scrim-css';
+      st.textContent = '@keyframes bsp-spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(st);
+    }
+    document.body.appendChild(scrim);
+  }
+  const textEl = document.getElementById('bsp-scrim-text');
+  if (textEl) textEl.textContent = text;
+  scrim.style.display = 'flex';
+}
+
+function hideScrim() {
+  const scrim = document.getElementById('bsp-scrim');
+  if (scrim) scrim.style.display = 'none';
 }
 
 // ── Hilfsfunktionen ───────────────────────────────────────────
@@ -301,6 +403,103 @@ function geocode(lat, lon) {
 
 function osrmRoute(start, end) { return Promise.resolve({ km: 0 }); }
 
+// ── Kontext-Snapshot (Aufgabe 2 – Feedback-Modul) ────────────
+// Liefert jederzeit den vollständigen App-Zustand für Feedback-Einträge.
+// Der Nutzer muss nichts eingeben – alles wird automatisch erfasst.
+function getAktuellerKontext() {
+  // App-Version aus SW-Cache-Name lesen (via postMessage nicht sync möglich)
+  // → Fallback auf localStorage oder Default
+  const version = localStorage.getItem('bsp_sw_version') || 'v4.2.0';
+  return {
+    saeuler: state.activePillar || 'business',
+    modul: state.activeView || 'home',
+    aktion: state.activeSheet || state.activeView || 'home',
+    version,
+    zeitstempel: new Date().toISOString(),
+  };
+}
+
+// ── Übergangs-Modus (Aufgabe 5) ─────────────────────────────
+// Einzige Wahrheitsquelle. Kein anderes Modul entscheidet das selbst.
+function isTransitionModeActive() {
+  return state.settings.transitionMode === true;
+}
+
+// Transition-Banner oben in der Shell ein-/ausblenden
+function _syncTransitionBanner() {
+  let banner = document.getElementById('bsp-transition-banner');
+  if (isTransitionModeActive()) {
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'bsp-transition-banner';
+      banner.style.cssText = [
+        'position:fixed','top:0','left:0','right:0',
+        'background:rgba(192,112,48,0.92)',
+        'color:#fff','font-size:11px','font-weight:500',
+        'text-align:center','padding:5px 16px',
+        'z-index:9000','letter-spacing:.3px'
+      ].join(';');
+      banner.textContent = '⚠️ Übergangs-Modus aktiv – Konten noch nicht vollständig getrennt';
+      document.body.prepend(banner);
+    }
+  } else if (banner) {
+    banner.remove();
+  }
+}
+
+// ── PendingReview API (Aufgabe 3) ────────────────────────────
+// Alle Zugriffe auf pending_review Store laufen über diese Funktionen.
+async function prAdd(item) {
+  item.ts = Date.now();
+  item.status = item.status || 'offen';
+  const id = await BSP.dbAdd('pending_review', item);
+  emit('pending_review:changed');
+  return id;
+}
+
+async function prGetAll() {
+  return (await BSP.dbGetAll('pending_review')) || [];
+}
+
+async function prUpdate(item) {
+  item.ts = Date.now();
+  await BSP.dbPut('pending_review', item);
+  emit('pending_review:changed');
+}
+
+async function prDelete(id) {
+  await BSP.dbDelete('pending_review', id);
+  emit('pending_review:changed');
+}
+
+// Anzahl offener + später_klären Einträge
+async function prCountOpen() {
+  const all = await prGetAll();
+  return all.filter(p => p.status === 'offen' || p.status === 'später_klären').length;
+}
+
+// Einträge die >14 Tage auf später_klären stehen → Badge wird rot
+async function prCountStale() {
+  const all = await prGetAll();
+  const limit = Date.now() - 14 * 864e5;
+  return all.filter(p => p.status === 'später_klären' && p.ts && p.ts < limit).length;
+}
+
+// Dashboard-Badge mit Anzahl und Farbe (orange / rot)
+async function updatePendingBadge() {
+  const count = await prCountOpen();
+  const stale = await prCountStale();
+  const badgeEl = document.getElementById('pending-review-badge');
+  if (!badgeEl) return;
+  if (count === 0) {
+    badgeEl.style.display = 'none';
+  } else {
+    badgeEl.style.display = 'flex';
+    badgeEl.textContent = count;
+    badgeEl.style.background = stale > 0 ? 'var(--red)' : 'var(--orn)';
+  }
+}
+
 // ── Öffentliche API ──────────────────────────────────────────
 return {
   state,
@@ -313,7 +512,15 @@ return {
   getTimeSaved, getCostComparison, getNextDeadline,
   gps, geocode, osrmRoute,
   init, safeInit, closeAllOverlays,
-  _updateMwstSaldo
+  showSheet, closeSheet,
+  showScrim, hideScrim,
+  _updateMwstSaldo,
+  // Aufgabe 5 – Transition Mode
+  isTransitionModeActive, _syncTransitionBanner,
+  // Aufgabe 3 – PendingReview
+  prAdd, prGetAll, prUpdate, prDelete, prCountOpen, prCountStale, updatePendingBadge,
+  // Aufgabe 2 – Kontext-Tracking (Feedback)
+  getAktuellerKontext,
 };
 
 })();
@@ -326,3 +533,9 @@ const eh = BSP.eh.bind(BSP);
 
 // Global Export
 window.BSP = BSP;
+
+// Transition-Banner direkt nach core:ready synchronisieren
+BSP.on('core:ready', () => BSP._syncTransitionBanner());
+BSP.on('settings:saved', () => BSP._syncTransitionBanner());
+BSP.on('pending_review:changed', () => BSP.updatePendingBadge());
+

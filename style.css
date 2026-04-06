@@ -343,13 +343,13 @@ body::after {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 8px calc(16px + var(--sr)) calc(80px + var(--sb)) calc(16px + var(--sl));
+  padding: 8px calc(16px + var(--sr)) calc(120px + var(--sb)) calc(16px + var(--sl));
 }
 
 /* Views */
 .view {
   display: none;
-  padding: 16px;
+  padding: 16px 16px 140px 16px;
   animation: fi .18s ease;
 }
 .view.on { display: block; }
@@ -1089,3 +1089,49 @@ body::after {
 .mwst-zahllast .mwst-saldo-val { color: var(--red); }
 .mwst-erstattung { background: rgba(58,175,112,.06); border-color: rgba(58,175,112,.2); }
 .mwst-erstattung .mwst-saldo-val { color: var(--grn); }
+
+/* ══════════════════════════════════════════════════════════════
+   AUFGABE 1 – SCROLL-FIX (containerunabhängig)
+   Gelöst durch: Platzhalter-Element am Ende jedes generierten HTML.
+   .scroll-spacer wird direkt ins generierte HTML eingefügt – nicht
+   als CSS auf dem Container, weil inner-scroll-Container das ignorieren.
+   ══════════════════════════════════════════════════════════════ */
+.scroll-spacer {
+  height: 120px;
+  flex-shrink: 0;
+  pointer-events: none;
+  display: block;
+  width: 100%;
+}
+
+/* Fallback: view::after für statische HTML-Inhalte */
+.view { position: relative; }
+.view::after {
+  content: '';
+  display: block;
+  height: 120px;
+  width: 100%;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PENDING-REVIEW BADGE (Aufgabe 3)
+   ══════════════════════════════════════════════════════════════ */
+#pending-review-badge {
+  display: none;
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 100px;
+  background: var(--orn);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  pointer-events: none;
+}
+

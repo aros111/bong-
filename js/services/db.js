@@ -7,7 +7,7 @@
 
   BSP.initDB = function() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('bsp_v3', 1);
+      const req = indexedDB.open('bsp_v3', 3);
 
       req.onupgradeneeded = e => {
         const db = e.target.result;
@@ -75,6 +75,37 @@
 
         if (!db.objectStoreNames.contains('pending_scans')) {
           db.createObjectStore('pending_scans', { keyPath: 'id', autoIncrement: true });
+        }
+
+        // Blob-Store für Bilddaten (BSP.storage.saveBlob/getBlob)
+        if (!db.objectStoreNames.contains('blobs')) {
+          const blobStore = db.createObjectStore('blobs', { keyPath: 'id' });
+          blobStore.createIndex('savedAt', 'savedAt');
+        }
+
+        // Drive-Sync-Queue
+        if (!db.objectStoreNames.contains('drive_sync')) {
+          db.createObjectStore('drive_sync', { keyPath: 'id', autoIncrement: true });
+        }
+
+        // ═══ Version 2: pending_review Store (Aufgabe 3 – Kern-Kreislauf) ═══
+        // Speichert ungeklärte Buchungen für die interaktive Durcharbeitung.
+        // Status: 'offen' | 'später_klären' | 'abgeschlossen'
+        if (!db.objectStoreNames.contains('pending_review')) {
+          const pr = db.createObjectStore('pending_review', { keyPath: 'id', autoIncrement: true });
+          pr.createIndex('status', 'status');
+          pr.createIndex('kontoId', 'kontoId');
+          pr.createIndex('datum', 'datum');
+          pr.createIndex('ts', 'ts'); // Zeitstempel letzter Änderung (für 14-Tage-Rot-Logik)
+        }
+
+        // ═══ Version 3: feedback_eintraege Store ═══
+        if (!db.objectStoreNames.contains('feedback_eintraege')) {
+          const fb = db.createObjectStore('feedback_eintraege', { keyPath: 'id', autoIncrement: true });
+          fb.createIndex('typ', 'typ');          // Bug | Änderungswunsch | Idee | Lob
+          fb.createIndex('status', 'status');    // Offen | In Prompt aufgenommen | Erledigt
+          fb.createIndex('prioritaet', 'prioritaet'); // Hoch | Mittel | Niedrig
+          fb.createIndex('zeitstempel', 'zeitstempel');
         }
       };
 

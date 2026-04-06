@@ -251,7 +251,7 @@ const AboModule = (() => {
     a.splitBiz = parseInt(parts[0], 10);
     a.splitPrivat = parseInt(parts[1], 10);
 
-    await BSP.dbAdd('abos', a);
+    await BSP.dbPut('abos', a);
     
     // UI Refresh (Schließt Modal und öffnet neu um Kuendigen-Button sofort anzuzeigen)
     openDetail(id);
@@ -260,25 +260,14 @@ const AboModule = (() => {
 
   async function deleteAbo(id) {
      if(!confirm('Abo unwiderruflich aus Tracker löschen?')) return;
-     const abos = await BSP.dbGetAll('abos');
-     const filtered = abos.filter(x => x.id !== id);
-     
-     // Es gibt keine Lösch-Funktion in db.js, daher hard-resetten wir den Store wenn wir löschen müssen.
-     // Trick: IDB hat `delete` Methoden, aber BSP kapselt das. Wenn BSP keine delete hat:
-     // Notlösung: Abos alle droppen und neu hinzufügen - oder als gelöscht markieren.
-     // Ich markiere als "deleted" für Safety:
-     const target = abos.find(x => x.id === id);
-     if (target) {
-        target.betrag = 0;
-        target.deleted = true; 
-        // Dies würde im Renderer ausgefiltert werden. 
-        // Wait, I will just ignore it.
-        // Actually best way: wir prüfen ob BSP deleteRecord hat. Offiziell hat es das in BelegScan nicht.
-        alert('Löschen via DB API derzeit gesperrt. Abo wird genullt.');
-        await BSP.dbAdd('abos', target);
+     try {
+       await BSP.dbDelete('abos', id);
+       BSP.closeSheet();
+       BSP.toast('Abo gelöscht', 'ok');
+       renderList();
+     } catch(e) {
+       BSP.toast('Löschen fehlgeschlagen: ' + e.message, 'er');
      }
-     BSP.closeSheet();
-     renderList();
   }
 
   // ── Kündigungs-Gepard ──────────────────────────────────────────
@@ -288,7 +277,7 @@ const AboModule = (() => {
      if (!a) return;
 
      // Prüfe ob VERTRAG im Archiv liegt
-     const docs = (await BSP.dbGetAll('archiv')) || [];
+     const docs = (await BSP.dbGetAll('archiv_dokumente')) || [];
      const matchedDoc = docs.find(d => {
         // Unscharfe Suche nach Vertragsnamen im Dokument
         const dTitle = (d.title || d.fileName || '').toLowerCase();

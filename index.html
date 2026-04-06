@@ -86,19 +86,19 @@
 
         <!-- 4. MwSt Dashboard (Bottom) - Business Only -->
         <div class="vat-dashboard" style="display:none; margin: 0 auto; max-width: 320px; background:transparent; border:none; box-shadow:none; padding: 0;">
-          <div style="display:flex; justify-content:space-between; margin-bottom: 12px; padding: 0 16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding: 0 16px;">
             <div style="text-align:center; flex:1;">
               <div style="font-size:10px; color:var(--txt3); text-transform:uppercase; margin-bottom:4px;">Einnahmen</div>
-              <div id="qs-einnahmen" style="font-size:14px; font-weight:500; color:var(--txt);">0,00 €</div>
+              <div id="qs-einnahmen" style="font-size:16px; font-weight:500; color:var(--txt);">0,00 €</div>
+            </div>
+            <div style="text-align:center; flex:1;">
+              <div style="font-size:10px; color:var(--txt3); text-transform:uppercase; margin-bottom:4px;">MwSt</div>
+              <div id="vat-saldo-val" style="font-size:16px; font-weight:500; font-family:'DM Mono', monospace; color:var(--gold);">0,00 €</div>
             </div>
             <div style="text-align:center; flex:1;">
               <div style="font-size:10px; color:var(--txt3); text-transform:uppercase; margin-bottom:4px;">Ausgaben</div>
-              <div id="qs-ausgaben" style="font-size:14px; font-weight:500; color:var(--txt);">0,00 €</div>
+              <div id="qs-ausgaben" style="font-size:16px; font-weight:500; color:var(--txt);">0,00 €</div>
             </div>
-          </div>
-          <div style="text-align:center;">
-            <div style="font-size:10px; color:var(--txt3); text-transform:uppercase; margin-bottom:4px;">Zahllast geschätzt</div>
-            <div id="vat-saldo-val" style="font-size:24px; font-weight:600; font-family:'DM Mono', monospace; color:var(--gold);">0,00 €</div>
           </div>
         </div>
       </div>
@@ -152,7 +152,6 @@
   <!-- Kamera (Mitte, Groß) -->
   <div style="position:relative">
     <div id="action-bar-ring-box" class="action-bar-ring-box">
-      <div id="deadline-label" class="ab-label">Abgabe in 10d</div>
       <svg class="ab-ring-svg" viewBox="0 0 96 96">
         <circle class="ab-ring-bg" cx="48" cy="48" r="44"/>
         <circle id="deadline-ring-fill" class="ab-ring-fill" cx="48" cy="48" r="44"/>
@@ -181,7 +180,10 @@
 <script src="./core.js"></script>
 <script src="./js/services/db.js"></script>
 <script src="./js/services/ai.js"></script>
+<script src="./js/services/storage-service.js"></script>
 <script src="./js/services/datev.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="./js/feedback.js"></script>
 <script src="./js/onboarding.js"></script>
 <script src="./js/business/business-shell.js"></script>
 <script src="./js/privat/privat-shell.js"></script>
@@ -195,6 +197,8 @@
 <script src="./js/archiv/archiv-fristen.js"></script>
 <script src="./js/archiv/archiv-reise.js"></script>
 <script src="./js/archiv/archiv-tagebuch.js"></script>
+<script src="./js/archiv/archiv-kontext.js"></script>
+<script src="./js/archiv/archiv-antwort.js"></script>
 <script src="./js/leben/leben-shell.js"></script>
 <script src="./js/leben/leben-core.js"></script>
 <script src="./js/leben/leben-home.js"></script>
@@ -214,6 +218,7 @@
 <script src="./js/business/fahrt.js"></script>
 <script src="./js/business/verpflegung.js"></script>
 <script src="./js/business/export.js"></script>
+<script src="./js/business/review-workflow.js"></script>
 <script src="./js/business/konto.js"></script>
 <script src="./js/business/abo.js"></script>
 
@@ -234,6 +239,7 @@ async function _initPillarModules(p) {
     await BSP.safeInit('FahrtModule', typeof FahrtModule !== 'undefined' ? FahrtModule : null);
     await BSP.safeInit('VerpflegungModule', typeof VerpflegungModule !== 'undefined' ? VerpflegungModule : null);
     await BSP.safeInit('ExportModule', typeof ExportModule !== 'undefined' ? ExportModule : null);
+    await BSP.safeInit('ReviewWorkflowModule', typeof ReviewWorkflowModule !== 'undefined' ? ReviewWorkflowModule : null);
     await BSP.safeInit('KontoModule', typeof KontoModule !== 'undefined' ? KontoModule : null);
     await BSP.safeInit('AboModule', typeof AboModule !== 'undefined' ? AboModule : null);
     await BSP.safeInit('EinstellungenModule', typeof EinstellungenModule !== 'undefined' ? EinstellungenModule : null);
@@ -264,6 +270,8 @@ async function _setPillar(p) {
   if (typeof BSP !== 'undefined' && BSP.closeAllOverlays) BSP.closeAllOverlays();
   _currentPillar = p;
   localStorage.setItem('bsp_pillar', p);
+  // Kontext-Tracking für Feedback-Modul
+  if (typeof BSP !== 'undefined' && BSP.state) BSP.state.activePillar = p;
   
   // 1. Theme & Header Cleanup
   document.body.className = 'p-' + p;
@@ -333,14 +341,28 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const startPillar = localStorage.getItem('bsp_pillar') || 'business';
     console.log('[BOOT] Loading pillar:', startPillar);
+    await BSP.safeInit('FeedbackModule', typeof FeedbackModule !== 'undefined' ? FeedbackModule : null);
     await _setPillar(startPillar);
     console.log('[BOOT] Pillar loaded OK');
 
-    /*
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(e => console.warn('SW:', e));
+      // Empfange Nachrichten vom Service Worker
+      navigator.serviceWorker.addEventListener('message', async (event) => {
+        if (!event.data) return;
+        // Drive Backup (Background Sync)
+        if (event.data.type === 'bsp:drive-sync') {
+          console.log('[BSP] SW Sync-Event empfangen → Drive Backup wird ausgeführt');
+          if (typeof EinstellungenModule !== 'undefined' && EinstellungenModule.backupDrive) {
+            await EinstellungenModule.backupDrive();
+          }
+        }
+        // App-Version cachen (für BSP.getAktuellerKontext)
+        if (event.data.type === 'bsp:version' && event.data.version) {
+          localStorage.setItem('bsp_sw_version', event.data.version);
+        }
+      });
     }
-    */
     console.log('--- [BOOT-V3] FINISHED ---');
   } catch(e) {
     console.error('[BOOT-CRASH]', e);

@@ -7,6 +7,9 @@
 
 const KontoModule = (() => {
 
+  // _pages speichert NUR Blob-Referenzen + Object-URLs.
+  // KEIN Base64 im Array – verhindert Memory-Leaks bei 15-20 Seiten auf älteren iPhones.
+  // Format: { blob: Blob, thumbUrl: string, objectUrl: string }
   let _pages = [];
   let _stream = null;
   let _videoEl = null;
@@ -23,8 +26,12 @@ const KontoModule = (() => {
     <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <div class="stitle" style="margin:0">Transaktionen</div>
-        <button class="btn btn-gold btn-sm" onclick="KontoModule.startScan()">+ Auszug Scannen</button>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-gold btn-sm" onclick="document.getElementById('ko-upload-inp').click()">📥 Upload</button>
+          <button class="btn btn-g btn-sm" onclick="KontoModule.startScan()">📷 Scan</button>
+        </div>
       </div>
+      <input type="file" multiple accept="image/*" id="ko-upload-inp" hidden onchange="KontoModule.handleUpload(this)">
 
       <!-- Live Statistik / Saldo -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
@@ -108,8 +115,40 @@ const KontoModule = (() => {
       await _videoEl.play();
     } catch(e) {
       document.getElementById('ko-scan-overlay').style.display = 'none';
-      BSP.toast('Kamera-Zugriff verweigert', 'er');
+      BSP.toast('Kamera-Fehler: ' + e.message, 'er');
     }
+  }
+
+  async function handleUpload(inp) {
+    if (!inp.files || !inp.files.length) return;
+    // Vorherige Seiten freigeben
+    _revokeAllPages();
+    BSP.showScrim('Lade Bilder (' + inp.files.length + ')...');
+    
+    for (let f of inp.files) {
+      await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          // Komprimiertes Bild als Blob speichern – KEIN Base64 im Array!
+          const compB64 = await BSP.compressImage(e.target.result, 1600, 400);
+          const mainBlob = BSP.b64toBlob(compB64);
+          const objectUrl = URL.createObjectURL(mainBlob);
+
+          // Thumbnail separat (klein, für Vorschau)
+          const thumbB64 = await BSP.compressImage(compB64, 400, 60);
+          const thumbBlob = BSP.b64toBlob(thumbB64);
+          const thumbUrl = URL.createObjectURL(thumbBlob);
+
+          // Nur Blob + URLs in Array, kein Base64-String
+          _pages.push({ blob: mainBlob, objectUrl, thumbUrl });
+          resolve();
+        };
+        reader.readAsDataURL(f);
+      });
+    }
+    inp.value = '';
+    BSP.hideScrim();
+    await processAllPages();
   }
 
   function closeScan() {
@@ -129,21 +168,54 @@ const KontoModule = (() => {
     btnBox.appendChild(flash);
     setTimeout(() => flash.remove(), 150);
 
+    // Canvas aufnehmen
     _canvasEl.width = _videoEl.videoWidth;
     _canvasEl.height = _videoEl.videoHeight;
     const ctx = _canvasEl.getContext('2d');
     ctx.drawImage(_videoEl, 0, 0);
 
-    const b64 = _canvasEl.toDataURL('image/jpeg', 0.85);
-    const compressed = await BSP.compressImage(b64, 1600, 400); 
-    
-    _pages.push(compressed);
+    // Hauptbild: direkt als Blob von Canvas (kein Base64 zwischenspeichern!)
+    const mainBlob = await new Promise(res => _canvasEl.toBlob(res, 'image/jpeg', 0.85));
+    // Temporäre URL für compressImage - MUSS nach Verwendung revoked werden
+    const tempUrl = URL.createObjectURL(mainBlob);
+    const compMainB64 = await BSP.compressImage(tempUrl, 1600, 400);
+    URL.revokeObjectURL(tempUrl); // Sofort freigeben nach Komprimierung
+
+    const compMainBlob = BSP.b64toBlob(compMainB64);
+    const objectUrl = URL.createObjectURL(compMainBlob);
+
+    // Thumbnail (klein)
+    const thumbB64 = await BSP.compressImage(compMainB64, 400, 60);
+    const thumbBlob = BSP.b64toBlob(thumbB64);
+    const thumbUrl = URL.createObjectURL(thumbBlob);
+
+    // Nur Blob + URLs in Array, KEIN Base64-String
+    _pages.push({ blob: compMainBlob, objectUrl, thumbUrl });
 
     document.getElementById('ko-scan-counter').textContent = `Seite ${_pages.length + 1}`;
     document.getElementById('ko-scan-counter').style.background = 'var(--gold)';
     document.getElementById('ko-finish-btn').style.display = 'flex';
 
     BSP.toast(`Seite ${_pages.length} erfasst`, 'ok');
+  }
+
+  // Hilfsfunktion: alle Object-URLs sicher freigeben
+  function _revokeAllPages() {
+    _pages.forEach(p => {
+      if (p.objectUrl) URL.revokeObjectURL(p.objectUrl);
+      if (p.thumbUrl) URL.revokeObjectURL(p.thumbUrl);
+    });
+    _pages = [];
+  }
+
+  // Hilfsfunktion: Blob → Base64 (nur transienter Zweck: API-Call)
+  function _blobToB64(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('Blob lesen fehlgeschlagen'));
+      reader.readAsDataURL(blob);
+    });
   }
 
   async function processAllPages() {
@@ -159,6 +231,7 @@ Lies zwingend auch den Anfangssaldo (alt) und Endsaldo (neu) des Auszugs aus (fa
 GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
 {
   "zeitraum": "YYYY-MM",
+  "kontoId": "DE12... (IBAN falls sichtbar, sonst 'unbekannt')",
   "saldoNeu": 1234.56,
   "saldoAlt": 1000.00,
   "buchungen": [
@@ -167,7 +240,9 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
       "betrag": -50.20,
       "zweck": "PayPal Europe S.a.r.l.....",
       "empfaenger": "PayPal",
+      "auftraggeber": "Eigentümer GmbH",
       "typ": "Lastschrift",
+      "buchungstyp": "Lastschrift",
       "iban": "DE12...",
       "referenz": "REF1234..."
     }
@@ -175,8 +250,14 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
 }`;
 
     try {
-      const b64Array = _pages.slice();
+      // Blobs JETZT ERST in Base64 umwandeln (nur für API-Call, danach sofort freigeben!)
+      const b64Array = await Promise.all(_pages.map(p => _blobToB64(p.blob)));
+      
       const res = await BSP.callClaude({ prompt, images: b64Array, model: 'claude-3-5-sonnet-20241022' });
+      
+      // Nach API-Call: alle URLs und Blobs sofort freigeben – Memory-critical!
+      _revokeAllPages();
+
       let data = JSON.parse(res);
       
       let summe = 0;
@@ -196,6 +277,8 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
       await _presentResults(data, missingGapsError);
 
     } catch(e) {
+      // Auch bei Fehler: Speicher vollständig freigeben
+      _revokeAllPages();
       BSP.hideScrim();
       BSP.toast('Fehler bei der Auswertung: ' + e.message, 'er');
     }
@@ -211,12 +294,18 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
 
   async function _executeAlgorithm(transactions) {
     const alleBelege = await BSP.getBelege();
+    // Nur AR-Belege für Geldeingang-Abgleich
+    const arBelege = alleBelege.filter(b => b.type === 'ar');
     let existingKonto = [];
     if (BSP.dbGetAll) existingKonto = await BSP.dbGetAll('konto') || [];
 
     for (let txn of transactions) {
       txn.tags = { kontoTyp: 'Business', ausgabenTyp: 'Business', mismatch: false };
       txn.status = 'offen';
+      // Pflichtfelder sicherstellen
+      txn.auftraggeber = txn.auftraggeber || txn.empfaenger || '';
+      txn.buchungstyp = txn.buchungstyp || txn.typ || 'Sonstige';
+      txn.kontoId = txn.kontoId || txn.iban || 'unbekannt';
 
       const duplicate = existingKonto.find(e => 
         e.datum === txn.datum && 
@@ -226,72 +315,99 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
 
       if (duplicate) txn.isDuplicateAlert = true;
 
-      const possibleBelege = alleBelege.filter(b => {
-        if (!b.date || !b.brutto) return false;
-        const daysDiff = Math.abs((new Date(b.date+'T00:00:00') - new Date(txn.datum+'T00:00:00')) / 864e5);
-        if (daysDiff > 3) return false;
-        const amtDiff = Math.abs(Math.abs(b.brutto) - Math.abs(txn.betrag));
-        if (amtDiff > 0.50) return false;
-        return true;
-      });
+      // Abgleich: nur positive Buchungen (Geldeingänge) gegen AR-Belege
+      if (txn.betrag > 0) {
+        const possibleAR = arBelege.filter(b => {
+          if (!b.date || !b.brutto) return false;
+          const daysDiff = Math.abs((new Date(b.date+'T00:00:00') - new Date(txn.datum+'T00:00:00')) / 864e5);
+          if (daysDiff > 3) return false;
+          const amtDiff = Math.abs(Math.abs(b.brutto) - Math.abs(txn.betrag));
+          if (amtDiff > 0.50) return false;
+          return true;
+        });
 
-      let bestMatch = null;
-      let scoreMax = 0;
+        let bestARMatch = null;
+        let scoreMax = 0;
 
-      for (let m of possibleBelege) {
-        let sc = 0;
-        const bShop = (m.shop || '').toLowerCase();
-        const tShop = (txn.empfaenger || '').toLowerCase();
-        
-        if (tShop.includes(bShop) || bShop.includes(tShop)) sc += 5;
-        if (tShop.includes('amzn') && bShop.includes('amazon')) sc += 5;
-        if (tShop.includes('pp.') && bShop.includes('paypal')) sc += 5;
-        
-        if (m.brutto === Math.abs(txn.betrag)) sc += 2;
-        if (m.date === txn.datum) sc += 2;
+        for (let m of possibleAR) {
+          let sc = 0;
+          const bEmpf = (m.empfaenger || m.shop || '').toLowerCase();
+          const tShop = (txn.empfaenger || '').toLowerCase();
+          
+          if (tShop.includes(bEmpf.split(' ')[0]) || bEmpf.includes(tShop.split(' ')[0])) sc += 5;
+          if (Math.abs(m.brutto - txn.betrag) < 0.05) sc += 3;
+          if (m.date === txn.datum) sc += 2;
 
-        if (sc > scoreMax) {
-          scoreMax = sc;
-          bestMatch = m;
+          if (sc > scoreMax) { scoreMax = sc; bestARMatch = m; }
+        }
+
+        if (scoreMax >= 3 && bestARMatch) {
+          txn.status = 'abgeglichen';
+          txn.belegId = bestARMatch.id;
+          txn.belegNr = bestARMatch.belegNr;
+        } else {
+          // Geldeingang ohne passende AR-Rechnung → roter Hinweis
+          txn.hasAlert = '⚠️ Mögliche fehlende Ausgangsrechnung';
+        }
+      } else {
+        // Ausgaben: Abgleich gegen ER-Belege (bisherige Logik)
+        const possibleBelege = alleBelege.filter(b => {
+          if (!b.date || !b.brutto) return false;
+          const daysDiff = Math.abs((new Date(b.date+'T00:00:00') - new Date(txn.datum+'T00:00:00')) / 864e5);
+          if (daysDiff > 3) return false;
+          const amtDiff = Math.abs(Math.abs(b.brutto) - Math.abs(txn.betrag));
+          if (amtDiff > 0.50) return false;
+          return true;
+        });
+
+        let bestMatch = null;
+        let scoreMax = 0;
+
+        for (let m of possibleBelege) {
+          let sc = 0;
+          const bShop = (m.shop || '').toLowerCase();
+          const tShop = (txn.empfaenger || '').toLowerCase();
+          
+          if (tShop.includes(bShop) || bShop.includes(tShop)) sc += 5;
+          if (tShop.includes('amzn') && bShop.includes('amazon')) sc += 5;
+          if (tShop.includes('pp.') && bShop.includes('paypal')) sc += 5;
+          
+          if (m.brutto === Math.abs(txn.betrag)) sc += 2;
+          if (m.date === txn.datum) sc += 2;
+
+          if (sc > scoreMax) { scoreMax = sc; bestMatch = m; }
+        }
+
+        if (scoreMax >= 5 && bestMatch) {
+          txn.status = 'abgeglichen';
+          txn.belegId = bestMatch.id;
         }
       }
 
-      if (scoreMax >= 5 && bestMatch) {
-         txn.status = 'abgeglichen';
-         txn.belegId = bestMatch.id;
-      }
-
       if (txn.typ === 'Rücklastschrift') {
-         txn.hasAlert = 'Zahlung fehlgeschlagen';
-      } else if (txn.typ === 'Geldeingang' && txn.status !== 'abgeglichen') {
-         txn.hasAlert = '⚠️ Geldeingang ohne AR-Beleg!';
+        txn.hasAlert = 'Zahlung fehlgeschlagen';
       } else if (txn.typ === 'Bargeldabhebung') {
-         txn.status = 'manuell';
+        txn.status = 'manuell';
       }
 
       txn.id = Date.now() + Math.floor(Math.random()*1000);
       txn.savedAt = Date.now();
     }
     
-    // An Einstellungen übergeben zwecks Übergangs-Zuweisung
-    if (typeof EinstellungenModule !== 'undefined' && EinstellungenModule.startTransitionCheck) {
-       EinstellungenModule.startTransitionCheck(transactions, async (finalTxns) => {
-          for (let txn of finalTxns) {
-             await BSP.dbAdd('konto', txn);
-          }
-          BSP.toast('Transaktionen gesichert', 'ok');
-          BSP.emit('konto:imported');
-          renderList();
-       });
-    } else {
-       // Fallback ohne EinstellungenModule (z.B. Offline Debug Mode)
-       for (let txn of transactions) {
-          await BSP.dbAdd('konto', txn);
-       }
-       BSP.toast('Transaktionen gesichert', 'ok');
-       BSP.emit('konto:imported');
-       renderList();
+    // Speichern
+    for (let txn of transactions) {
+      await BSP.dbAdd('konto', txn);
     }
+
+    // Alle nicht-abgeglichenen Buchungen → pending_review
+    const unmatched = transactions.filter(txn => txn.status !== 'abgeglichen' && txn.status !== 'manuell');
+    if (unmatched.length > 0 && typeof ReviewWorkflowModule !== 'undefined') {
+      await ReviewWorkflowModule.startWithItems(unmatched);
+    }
+
+    BSP.toast('Transaktionen gesichert', 'ok');
+    BSP.emit('konto:imported');
+    renderList();
   }
 
   async function renderList() {
@@ -404,7 +520,7 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
       if (k.tags.kontoTyp === 'Business') k.tags.mismatch = true;
     }
 
-    await BSP.dbAdd('konto', k); 
+    await BSP.dbPut('konto', k);
     BSP.closeSheet();
     BSP.toast(`Status geändert zu ${statusType}`, 'ok');
     renderList();
@@ -420,12 +536,12 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
     
     k.status = 'ignoriert';
     k.ignoreComment = comment.trim();
-    await BSP.dbAdd('konto', k);
+    await BSP.dbPut('konto', k);
     BSP.closeSheet();
     BSP.toast('Buchung ignoriert', 'ok');
     renderList();
   }
 
-  return { init, startScan, closeScan, capturePage, processAllPages, openDetail, setAbschluss, ignore };
+  return { init, startScan, handleUpload, closeScan, capturePage, processAllPages, openDetail, setAbschluss, ignore };
 
 })();

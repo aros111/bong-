@@ -139,14 +139,14 @@ function updatePreview() {
   // Labels dynamisch updaten
   const sel = document.getElementById('verp-dauer');
   if (sel && sel.options.length >= 3) {
-    sel.options[0].text = \`Ganzer Tag (\${rates.voll} €)\`;
-    sel.options[1].text = \`8–24h An/Abreise (\${rates.ab8} €)\`;
-    sel.options[2].text = \`Unter 8 Stunden (0 €)\`;
+    sel.options[0].text = `Ganzer Tag (${rates.voll} €)`;
+    sel.options[1].text = `8–24h An/Abreise (${rates.ab8} €)`;
+    sel.options[2].text = `Unter 8 Stunden (0 €)`;
   }
 
   const prev = document.getElementById('verp-preview');
   if (prev) {
-    prev.textContent = betrag > 0 ? \`Berechnete Pauschale für \${land}: \${betrag} €\` : 'Kein Abzug möglich (< 8h)';
+    prev.textContent = betrag > 0 ? `Berechnete Pauschale für ${land}: ${betrag} €` : 'Kein Abzug möglich (< 8h)';
   }
 }
 
@@ -176,7 +176,7 @@ function _tickTimer() {
   const m = Math.floor((elapsed % 3600) / 60);
   const s = elapsed % 60;
   const el = document.getElementById('verp-timer');
-  if (el) el.textContent = \`\${String(h).padStart(2,'0')}:\${String(m).padStart(2,'0')}:\${String(s).padStart(2,'0')}\`;
+  if (el) el.textContent = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
 function timerStop(saveIt) {
@@ -251,7 +251,7 @@ async function _saveEntry(entry) {
     if (BSP.dbAdd) {
       await BSP.dbAdd('verpflegung', entry);
     }
-    BSP.toast(\`\${entry.pauschale} € Pauschale (\${entry.land}) gespeichert ✓\`, 'ok');
+    BSP.toast(`${entry.pauschale} € Pauschale (${entry.land}) gespeichert ✓`, 'ok');
     await render();
   } catch(e) {
     BSP.toast('Fehler: ' + e.message, 'er');
@@ -285,22 +285,22 @@ async function render() {
     }
 
     const duarLabels = { voll: '24h', ab8: '≥ 8h', unter8: '< 8h' };
-    list.innerHTML = yearEntries.map(e => \`
+    list.innerHTML = yearEntries.map(e => `
       <div class="ri">
         <div class="ri-bar" style="background:var(--orn)"></div>
         <div class="ri-th" style="font-size:20px">✈️</div>
         <div class="ri-inf">
-          <div class="ri-sh">\${BSP.eh(e.ziel || 'Dienstreise')}</div>
+          <div class="ri-sh">${BSP.eh(e.ziel || 'Dienstreise')}</div>
           <div class="ri-me">
-            <span class="badge" style="background:rgba(192,112,48,.12);color:var(--orn)">\${e.land || 'Deutschland'}</span>
-            <span class="badge" style="background:rgba(192,112,48,.12);color:var(--orn)">\${duarLabels[e.dauer] || e.dauer}</span>
-            <span>\${BSP.fd(e.date)}</span>
+            <span class="badge" style="background:rgba(192,112,48,.12);color:var(--orn)">${e.land || 'Deutschland'}</span>
+            <span class="badge" style="background:rgba(192,112,48,.12);color:var(--orn)">${duarLabels[e.dauer] || e.dauer}</span>
+            <span>${BSP.fd(e.date)}</span>
           </div>
         </div>
         <div class="ri-r">
-          <div class="ri-r-amt" style="color:var(--gold)">\${e.pauschale} €</div>
+          <div class="ri-r-amt" style="color:var(--gold)">${e.pauschale} €</div>
         </div>
-      </div>\`).join('');
+      </div>`).join('');
   } catch(e) {
     console.warn('Verpflegung render error:', e);
   }

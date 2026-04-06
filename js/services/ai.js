@@ -189,5 +189,8 @@
     });
   };
 
+  // AI-Objekt an BSP hängen, damit BSP.AI.process() global verfügbar ist
+  BSP.AI = AI;
+
   console.log('[BSP] ai.js injected.');
 })();

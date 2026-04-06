@@ -205,11 +205,64 @@ const VIEW_HTML = `
       <button class="btn btn-g" onclick="EinstellungenModule.exportJSON()" style="justify-content:center">
         ⬇️ Lokaler JSON-Export (Download)
       </button>
-      <button class="btn btn-g" id="s_driveBtn" onclick="EinstellungenModule.backupDrive()" style="justify-content:center">
-        ☁️ In Google Drive speichern
-      </button>
+
+      <!-- Google Drive Backup Section -->
+      <div id="s-drive-section" style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:12px;font-weight:500;color:var(--txt)">☁️ Google Drive Backup</div>
+          <div id="s-drive-status-badge" style="font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(255,166,0,0.15);color:var(--orn);border:1px solid var(--orn)">NICHT VERBUNDEN</div>
+        </div>
+        <div id="s-drive-not-configured" style="font-size:10px;color:var(--txt3);margin-bottom:8px;padding:6px;background:rgba(255,166,0,0.08);border-radius:4px;border-left:2px solid var(--orn);display:none">
+          ⚠️ Google Drive Backup noch nicht konfiguriert. In einstellungen.js muss YOUR_GOOGLE_CLIENT_ID durch eine echte Google Cloud OAuth Client-ID ersetzt werden.
+        </div>
+        <div id="s-drive-last-backup" style="font-size:10px;color:var(--txt3);margin-bottom:8px">Letztes Backup: Noch nie</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-g" id="s-drive-connect-btn" onclick="EinstellungenModule.driveConnect()" style="justify-content:center;display:none">
+            🔑 Mit Google Drive verbinden
+          </button>
+          <button class="btn btn-gold" id="s-drive-backup-btn" onclick="EinstellungenModule.backupDrive()" style="justify-content:center;display:none">
+            ☁️ Jetzt sichern
+          </button>
+          <button class="btn btn-g" id="s-drive-restore-btn" onclick="EinstellungenModule.restoreFromDrive()" style="justify-content:center;display:none">
+            🔄 Aus Google Drive wiederherstellen
+          </button>
+          <button class="btn btn-g" id="s-drive-disconnect-btn" onclick="EinstellungenModule.driveDisconnect()" style="justify-content:center;display:none;color:var(--txt3)">
+            ✕ Verbindung trennen
+          </button>
+        </div>
+      </div>
+
       <button class="btn btn-red" onclick="EinstellungenModule.resetCounters()" style="justify-content:center">
         🔄 Belegnummer-Zähler zurücksetzen
+      </button>
+      <button class="btn btn-red" onclick="EinstellungenModule.cleanupDatabase()" style="justify-content:center;margin-top:4px" id="s_dbCleanupBtn">
+        🗑️ Datenbank bereinigen – gelöschte Einträge dauerhaft entfernen
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ═══ ENTWICKLUNG & FEEDBACK ═══════════════════════════════ -->
+  <div style="background:rgba(42,106,219,.06);border:1px solid rgba(42,106,219,.2);border-radius:var(--r16);padding:16px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:600;color:#2A6ADB;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;gap:6px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2A6ADB" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Entwicklung & Feedback
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:var(--txt)">
+      <span>Autom. Fehler-Feedback blockieren</span>
+      <label class="switch"><input type="checkbox" id="s_disableAutoFeedback"><span class="slider"></span></label>
+    </div>
+    <div id="fb-sett-count" style="font-size:12px;color:var(--txt2);margin-bottom:12px">Lade…</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="if(typeof FeedbackModule!=='undefined')FeedbackModule.openUebersicht()"
+        style="padding:12px;border:1px solid rgba(42,106,219,.3);border-radius:var(--r8);
+        background:transparent;color:#2A6ADB;font-size:12px;cursor:pointer">
+        📋 Alle Einträge
+      </button>
+      <button onclick="if(typeof FeedbackModule!=='undefined')FeedbackModule.openUebersicht()"
+        style="padding:12px;border:none;border-radius:var(--r8);
+        background:#2A6ADB;color:#fff;font-size:12px;cursor:pointer;font-weight:500">
+        ⚡ Prompt generieren
       </button>
     </div>
   </div>
@@ -245,11 +298,39 @@ function init() {
   // Settings laden wenn core bereit
   BSP.on('core:ready', async () => {
     await _loadIntoForm();
+    // Google Drive: Auth-Callback prüfen (falls OAuth-Redirect)
+    await _checkDriveAuthCallback();
+    // Drive UI initialisieren
+    await _updateDriveUI();
+    // iOS-Fallback für Background Sync aktivieren
+    _initVisibilityFallback();
+    // Wöchentliche Backup-Erinnerung
+    await _checkWeeklyReminder();
+    // Ausstehende Sync-Queue verarbeiten (beim App-Start)
+    if (navigator.onLine) await _processDriveSyncQueue();
   });
 
   BSP.on('settings:saved', () => {
     // Shell-Widgets aktualisieren
     _updateShellWidgets();
+  });
+
+  // Drive UI aktualisieren wenn Einstellungen-View geöffnet wird
+  BSP.on('view:changed', async ({ name }) => {
+    if (name === 'einstellungen') {
+      await _updateDriveUI();
+      // Feedback-Counter aktualisieren
+      const countEl = document.getElementById('fb-sett-count');
+      if (countEl && typeof FeedbackModule !== 'undefined') {
+        try {
+          const all = await BSP.dbGetAll('feedback_eintraege');
+          const offen = (all||[]).filter(e => e.status === 'Offen').length;
+          const total = (all||[]).length;
+          countEl.textContent = `${total} gespeicherte Einträge · ${offen} offen`;
+          countEl.style.color = offen > 0 ? '#2A6ADB' : 'var(--txt3)';
+        } catch(e) { countEl.textContent = '–'; }
+      }
+    }
   });
 }
 
@@ -290,6 +371,9 @@ async function _loadIntoForm() {
   const tsw = document.getElementById('s_transitionMode');
   if (tsw) tsw.checked = s.transitionMode === true;
   
+  const dafb = document.getElementById('s_disableAutoFeedback');
+  if (dafb) dafb.checked = s.disableAutoFeedback === true;
+
   _renderMismatchList();
 
   ids.forEach(id => {
@@ -380,6 +464,7 @@ async function save() {
     voranmeldungRhythmus: get('voranmeldungRhythmus') || 'monatlich',
     pin: get('pin') || '0000',
     transitionMode: document.getElementById('s_transitionMode')?.checked || false,
+    disableAutoFeedback: document.getElementById('s_disableAutoFeedback')?.checked || false,
     stempelName: get('stempelName'),
     stempelText: document.getElementById('s_stempelText')?.value || '',
     stempelColor: get('stempelColor') || '#c8a45a',
@@ -442,14 +527,422 @@ async function exportJSON() {
   }
 }
 
-// ── Google Drive Backup ──────────────────────────────────────
+// ── Google Drive Backup – Vollständige Implementierung ──────────
+//
+// ╔══════════════════════════════════════════════════════════════╗
+// ║  KONFIGURATION: Google Cloud OAuth Client-ID               ║
+// ║  Erstelle ein Projekt unter: console.cloud.google.com      ║
+// ║  → APIs & Services → Credentials → Create OAuth Client ID  ║
+// ║  Typ: Web application                                       ║
+// ║  Authorized JS origins: https://DEINE-GITHUB-PAGES-URL     ║
+// ║  Trage die Client-ID unten ein und ersetze YOUR_GOOGLE_CLIENT_ID ║
+// ╚══════════════════════════════════════════════════════════════╝
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';  // ← HIER EINTRAGEN
+const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
+const DRIVE_FOLDER_NAME = 'BelegScan Pro Backup';
+const DRIVE_TOKEN_STORE_KEY = 'drive_token';
+
+// Prüft ob Google Drive korrekt konfiguriert ist (Client-ID eingetragen)
+function _isDriveConfigured() {
+  return GOOGLE_CLIENT_ID !== 'YOUR_GOOGLE_CLIENT_ID' && GOOGLE_CLIENT_ID.length > 10;
+}
+
+// Lädt gespeicherten OAuth-Token aus IndexedDB
+async function _getDriveToken() {
+  try {
+    const entry = await BSP.dbGet('einstellungen', DRIVE_TOKEN_STORE_KEY);
+    if (!entry || !entry.value) return null;
+    const token = entry.value;
+    // Ablauf prüfen (1 Stunde)
+    if (token.expiresAt && Date.now() > token.expiresAt) return null;
+    return token;
+  } catch(e) { return null; }
+}
+
+// Speichert OAuth-Token sicher in IndexedDB
+async function _saveDriveToken(token) {
+  token.expiresAt = Date.now() + 3600 * 1000; // 1 Stunde
+  await BSP.dbPut('einstellungen', { key: DRIVE_TOKEN_STORE_KEY, value: token });
+}
+
+// OAuth2 Implicit Flow (für Web Apps ohne Backend)
+async function driveConnect() {
+  if (!_isDriveConfigured()) {
+    BSP.toast('Google Drive nicht konfiguriert — Client-ID fehlt', 'er');
+    return;
+  }
+  const params = new URLSearchParams({
+    client_id: GOOGLE_CLIENT_ID,
+    redirect_uri: location.origin + location.pathname,
+    response_type: 'token',
+    scope: GOOGLE_SCOPES,
+    prompt: 'select_account'
+  });
+  // Token aus URL-Hash lesen nach OAuth-Redirect
+  window._driveAuthPending = true;
+  window.open('https://accounts.google.com/o/oauth2/auth?' + params.toString(), '_blank', 'width=500,height=600');
+  BSP.toast('Bitte Google Drive Fenster abschließen', 'info');
+}
+
+// Wird beim App-Start geprüft: Hat der OAuth-Redirect einen Token hinterlassen?
+async function _checkDriveAuthCallback() {
+  const hash = location.hash;
+  if (!hash.includes('access_token=')) return;
+  const params = new URLSearchParams(hash.substring(1));
+  const accessToken = params.get('access_token');
+  const tokenType = params.get('token_type') || 'Bearer';
+  if (accessToken) {
+    await _saveDriveToken({ accessToken, tokenType });
+    // Hash aus URL entfernen
+    history.replaceState(null, '', location.pathname);
+    BSP.toast('✓ Google Drive verbunden!', 'ok');
+    await _updateDriveUI();
+    // Direkt erstes Backup anlegen
+    await backupDrive();
+  }
+}
+
+// Google Drive Verbindung trennen
+async function driveDisconnect() {
+  if (!confirm('Google Drive Verbindung wirklich trennen?')) return;
+  await BSP.dbDelete('einstellungen', DRIVE_TOKEN_STORE_KEY);
+  await BSP.dbDelete('einstellungen', 'drive_last_backup');
+  await _updateDriveUI();
+  BSP.toast('Google Drive getrennt', 'ok');
+}
+
+// Drive-Ordner finden oder erstellen
+async function _getOrCreateDriveFolder(token, parentId = 'root') {
+  const searchRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${DRIVE_FOLDER_NAME}'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&fields=files(id,name)`,
+    { headers: { Authorization: `${token.tokenType} ${token.accessToken}` } }
+  );
+  const searchData = await searchRes.json();
+  if (searchData.files && searchData.files.length > 0) return searchData.files[0].id;
+
+  // Ordner anlegen
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: {
+      Authorization: `${token.tokenType} ${token.accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      name: DRIVE_FOLDER_NAME,
+      mimeType: 'application/vnd.google-apps.folder',
+      parents: [parentId]
+    })
+  });
+  const folder = await createRes.json();
+  return folder.id;
+}
+
+// Datei in Google Drive hochladen (Multipart)
+async function _uploadToDrive(token, folderId, fileName, content, mimeType = 'application/json') {
+  const boundary = '-------bsp_boundary_' + Date.now();
+  const metadata = JSON.stringify({ name: fileName, parents: [folderId] });
+
+  let body;
+  if (content instanceof Blob) {
+    // Blob: als ArrayBuffer
+    const arr = await content.arrayBuffer();
+    body = new Blob([
+      `--${boundary}\r\nContent-Type: application/json\r\n\r\n${metadata}\r\n`,
+      `--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n`,
+      arr,
+      `\r\n--${boundary}--`
+    ]);
+  } else {
+    // String/JSON
+    const contentStr = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+    body = `--${boundary}\r\nContent-Type: application/json\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: ${mimeType}\r\n\r\n${contentStr}\r\n--${boundary}--`;
+  }
+
+  const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name', {
+    method: 'POST',
+    headers: {
+      Authorization: `${token.tokenType} ${token.accessToken}`,
+      'Content-Type': `multipart/related; boundary="${boundary}"`
+    },
+    body
+  });
+  if (!res.ok) throw new Error(`Drive Upload Fehler: ${res.status}`);
+  return await res.json();
+}
+
+// ── Hauptfunktion: Komplettes Backup ─────────────────────────────
 async function backupDrive() {
-  BSP.toast('Google Drive Backup – coming soon', 'wr');
-  // TODO: Google Drive OAuth + File Upload
-  // Implementierung in einer späteren Phase:
-  // 1. gapi.auth2 OAuth Flow
-  // 2. JSON-Datei als Multipart-Upload an drive.files.create
-  // 3. Datei in 'BelegScan Pro Backup' Ordner ablegen
+  if (!_isDriveConfigured()) {
+    BSP.toast('Google Drive nicht konfiguriert — bitte Client-ID eintragen', 'wr');
+    return;
+  }
+  const token = await _getDriveToken();
+  if (!token) {
+    BSP.toast('Bitte zuerst Google Drive verbinden', 'wr');
+    await _updateDriveUI();
+    return;
+  }
+
+  const btn = document.getElementById('s-drive-backup-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sicherung...'; }
+
+  try {
+    BSP.showScrim('Google Drive Backup läuft...');
+    const folderId = await _getOrCreateDriveFolder(token);
+
+    // Monatsordner (YYYY-MM)
+    const monthStr = new Date().toISOString().slice(0, 7);
+    const monthFolderId = await _getOrCreateDriveFolder(token, folderId); // vereinfacht: direkt im Hauptordner
+
+    // Backup-Datum Prefix für Dateien
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    // 1. Alle Belege als JSON
+    const belege = await BSP.dbGetAll('belege') || [];
+    await _uploadToDrive(token, folderId, `${dateStr}_belege.json`,
+      belege.map(b => ({ ...b, image: undefined, images: undefined })) // Bilder separat
+    );
+
+    // 2. Kontoauszug-Buchungen
+    const buchungen = await BSP.dbGetAll('konto_buchungen') || [];
+    await _uploadToDrive(token, folderId, `${dateStr}_buchungen.json`, buchungen);
+
+    // 3. Fahrten
+    const fahrten = await BSP.dbGetAll('fahrten') || [];
+    await _uploadToDrive(token, folderId, `${dateStr}_fahrten.json`, fahrten);
+
+    // 4. Einstellungen (ohne sensible Tokens)
+    const einst = await BSP.dbGetAll('einstellungen') || [];
+    const einstSafe = einst.filter(e => e.key !== DRIVE_TOKEN_STORE_KEY);
+    await _uploadToDrive(token, folderId, `${dateStr}_einstellungen.json`, einstSafe);
+
+    // 5. Belegbilder (als Blob, mit Belegnummer als Dateiname)
+    const belegerMitBilder = belege.filter(b => b.belegNr && (b.image || (b.images && b.images.length)));
+    let imgCount = 0;
+    for (const b of belegerMitBilder) {
+      const allImages = (b.images && b.images.length > 0) ? b.images : (b.image ? [b.image] : []);
+      for (let i = 0; i < allImages.length; i++) {
+        try {
+          const imgData = allImages[i];
+          if (!imgData) continue;
+          const sanitizedNr = b.belegNr.replace(/[\/\\:*?"<>|]/g, '_');
+          const suffix = allImages.length > 1 ? `_S${i + 1}` : '';
+          const fileName = `${sanitizedNr}${suffix}.jpg`;
+          const blob = typeof imgData === 'string'
+            ? BSP.b64toBlob(imgData)
+            : imgData;
+          await _uploadToDrive(token, folderId, fileName, blob, 'image/jpeg');
+          imgCount++;
+        } catch(imgErr) {
+          console.warn('[BSP] Bild-Upload fehlgeschlagen:', imgErr);
+        }
+      }
+    }
+
+    // Backup-Zeitstempel speichern
+    const now = Date.now();
+    await BSP.dbPut('einstellungen', { key: 'drive_last_backup', value: now });
+    BSP.state.settings = BSP.state.settings || {};
+    BSP.state.settings.drive_last_backup = now;
+
+    BSP.hideScrim();
+    BSP.toast(`✓ Backup abgeschlossen (${belege.length} Belege, ${imgCount} Bilder)`, 'ok');
+    await _updateDriveUI();
+
+    // Nächsten Background Sync zurücksetzen
+    await _clearDriveSyncQueue();
+
+  } catch(e) {
+    BSP.hideScrim();
+    console.error('[BSP] Drive Backup Fehler:', e);
+    // Bei Token-Abgelauf: neu verbinden
+    if (e.message.includes('401') || e.message.includes('403')) {
+      await BSP.dbDelete('einstellungen', DRIVE_TOKEN_STORE_KEY);
+      BSP.toast('Google Drive Session abgelaufen – bitte neu verbinden', 'wr');
+    } else {
+      BSP.toast('Drive Backup Fehler: ' + e.message, 'er');
+    }
+    // Fehlgeschlagenen Sync in Queue einreihen (wird beim nächsten Online-Event nachgeholt)
+    await _enqueueDriveSync();
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '☁️ Jetzt sichern'; }
+  }
+}
+
+// ── Restore aus Google Drive ─────────────────────────────────────
+async function restoreFromDrive() {
+  if (!_isDriveConfigured()) {
+    BSP.toast('Google Drive nicht konfiguriert', 'er');
+    return;
+  }
+  const token = await _getDriveToken();
+  if (!token) {
+    BSP.toast('Bitte zuerst Google Drive verbinden', 'wr');
+    return;
+  }
+  if (!confirm('Alle lokalen Daten werden durch das Google Drive Backup überschrieben. Fortfahren?')) return;
+
+  BSP.showScrim('Stelle Backup wieder her...');
+  try {
+    // Neueste Backup-Datei suchen
+    const searchRes = await fetch(
+      `https://www.googleapis.com/drive/v3/files?q=name+contains+'belege.json'+and+trashed=false&orderBy=modifiedTime+desc&pageSize=1&fields=files(id,name,modifiedTime)`,
+      { headers: { Authorization: `${token.tokenType} ${token.accessToken}` } }
+    );
+    const searchData = await searchRes.json();
+    if (!searchData.files || !searchData.files.length) {
+      BSP.hideScrim();
+      BSP.toast('Kein Backup in Google Drive gefunden', 'wr');
+      return;
+    }
+
+    const fileId = searchData.files[0].id;
+    const fileRes = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+      { headers: { Authorization: `${token.tokenType} ${token.accessToken}` } }
+    );
+    const belege = await fileRes.json();
+
+    if (!Array.isArray(belege)) throw new Error('Ungültiges Backup-Format');
+
+    // Belege importieren
+    for (const b of belege) {
+      try { await BSP.dbPut('belege', b); } catch(e) {}
+    }
+
+    BSP.hideScrim();
+    BSP.toast(`✓ ${belege.length} Belege wiederhergestellt`, 'ok');
+    BSP.emit('beleg:saved', {});
+  } catch(e) {
+    BSP.hideScrim();
+    BSP.toast('Restore Fehler: ' + e.message, 'er');
+  }
+}
+
+// ── Background Sync Queue (für Offline-Fälle) ────────────────────
+async function _enqueueDriveSync() {
+  try {
+    await BSP.dbAdd('drive_sync', { queuedAt: Date.now(), type: 'full_backup' });
+    // Background Sync API (Chrome/Android)
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.sync.register('bsp-drive-backup');
+      console.log('[BSP] Background Sync bsp-drive-backup registriert');
+    }
+  } catch(e) {
+    console.warn('[BSP] Background Sync nicht verfügbar (iOS?):', e.message);
+  }
+}
+
+async function _clearDriveSyncQueue() {
+  try {
+    const items = await BSP.dbGetAll('drive_sync');
+    for (const item of items) await BSP.dbDelete('drive_sync', item.id);
+  } catch(e) {}
+}
+
+// Prüft ob ausstehende Syncs in der Queue sind und führt sie aus
+async function _processDriveSyncQueue() {
+  try {
+    const queue = await BSP.dbGetAll('drive_sync');
+    if (!queue || !queue.length) return;
+    const token = await _getDriveToken();
+    if (!token) return; // Kein Token → nicht möglich
+    if (!navigator.onLine) return; // Offline → warten
+    console.log('[BSP] Drive Sync Queue: ' + queue.length + ' ausstehende Backups');
+    await backupDrive();
+  } catch(e) {
+    console.warn('[BSP] Drive Sync Queue Fehler:', e);
+  }
+}
+
+// ── iOS-Fallback: Backup bei visibilitychange ────────────────────
+// Wenn App in Vordergrund kommt und letztes Backup > 1 Stunde alt: sichern
+function _initVisibilityFallback() {
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState !== 'visible') return;
+    // Queue-Einträge verarbeiten (iOS-Fallback für ausstehende Syncs)
+    await _processDriveSyncQueue();
+    // Automatisches Backup wenn > 1 Stunde seit letztem Backup
+    const token = await _getDriveToken();
+    if (!token) return;
+    if (!navigator.onLine) return;
+    const lastBackupEntry = await BSP.dbGet('einstellungen', 'drive_last_backup');
+    const lastBackup = lastBackupEntry?.value || 0;
+    const oneHour = 60 * 60 * 1000;
+    if (Date.now() - lastBackup > oneHour) {
+      console.log('[BSP] iOS Fallback: Auto-Backup nach 1h');
+      await backupDrive();
+    }
+  });
+}
+
+// ── Wöchentliche Erinnerung ──────────────────────────────────────
+async function _checkWeeklyReminder() {
+  const lastBackupEntry = await BSP.dbGet('einstellungen', 'drive_last_backup');
+  const lastBackup = lastBackupEntry?.value || 0;
+  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  if (Date.now() - lastBackup > sevenDays) {
+    setTimeout(() => {
+      BSP.toast('⚠️ Letztes Backup älter als 7 Tage – bitte jetzt sichern', 'wr');
+    }, 3000); // 3 Sekunden nach App-Start
+  }
+}
+
+// ── Drive UI aktualisieren ───────────────────────────────────────
+async function _updateDriveUI() {
+  const configured = _isDriveConfigured();
+  const token = await _getDriveToken();
+  const connected = !!token;
+
+  const badge = document.getElementById('s-drive-status-badge');
+  const notConfigured = document.getElementById('s-drive-not-configured');
+  const connectBtn = document.getElementById('s-drive-connect-btn');
+  const backupBtn = document.getElementById('s-drive-backup-btn');
+  const restoreBtn = document.getElementById('s-drive-restore-btn');
+  const disconnectBtn = document.getElementById('s-drive-disconnect-btn');
+  const lastBackupEl = document.getElementById('s-drive-last-backup');
+
+  if (!configured) {
+    if (notConfigured) notConfigured.style.display = 'block';
+    if (badge) { badge.textContent = 'NICHT KONFIGURIERT'; badge.style.color = 'var(--red)'; badge.style.borderColor = 'var(--red)'; badge.style.background = 'rgba(200,64,64,0.1)'; }
+    if (connectBtn) connectBtn.style.display = 'none';
+    if (backupBtn) backupBtn.style.display = 'none';
+    if (restoreBtn) restoreBtn.style.display = 'none';
+    if (disconnectBtn) disconnectBtn.style.display = 'none';
+    return;
+  }
+
+  if (notConfigured) notConfigured.style.display = 'none';
+
+  if (connected) {
+    if (badge) { badge.textContent = '✓ VERBUNDEN'; badge.style.color = 'var(--grn)'; badge.style.borderColor = 'var(--grn)'; badge.style.background = 'rgba(64,200,64,0.1)'; }
+    if (connectBtn) connectBtn.style.display = 'none';
+    if (backupBtn) backupBtn.style.display = 'flex';
+    if (restoreBtn) restoreBtn.style.display = 'flex';
+    if (disconnectBtn) disconnectBtn.style.display = 'flex';
+  } else {
+    if (badge) { badge.textContent = 'NICHT VERBUNDEN'; badge.style.color = 'var(--orn)'; badge.style.borderColor = 'var(--orn)'; badge.style.background = 'rgba(255,166,0,0.1)'; }
+    if (connectBtn) connectBtn.style.display = 'flex';
+    if (backupBtn) backupBtn.style.display = 'none';
+    if (restoreBtn) restoreBtn.style.display = 'none';
+    if (disconnectBtn) disconnectBtn.style.display = 'none';
+  }
+
+  // Letztes Backup anzeigen
+  if (lastBackupEl) {
+    const lastBackupEntry = await BSP.dbGet('einstellungen', 'drive_last_backup');
+    const lastBackup = lastBackupEntry?.value;
+    if (lastBackup) {
+      const diff = Date.now() - lastBackup;
+      const hours = Math.floor(diff / 3600000);
+      const days = Math.floor(diff / 86400000);
+      const timeStr = days > 0 ? `vor ${days} Tag${days > 1 ? 'en' : ''}` : hours > 0 ? `vor ${hours} Std.` : 'gerade eben';
+      lastBackupEl.textContent = `Letztes Backup: ${timeStr}`;
+      lastBackupEl.style.color = days >= 7 ? 'var(--orn)' : 'var(--txt3)';
+    } else {
+      lastBackupEl.textContent = 'Letztes Backup: Noch nie';
+    }
+  }
 }
 
 // ── Zähler zurücksetzen ──────────────────────────────────────
@@ -615,8 +1108,55 @@ function _updateShellWidgets() {
      if(totalEl) totalEl.textContent = 'Gesamt zu korrigieren: ' + BSP.fm(sum) + ' €';
   }
 
+// ── Datenbank bereinigen (Physisches Löschen gelöschter Einträge) ──
+async function _cleanupDeletedEntries() {
+  const STORES = ['belege', 'konto', 'konto_buchungen', 'abos', 'fahrten', 'verpflegung', 'archiv_dokumente', 'archiv_fristen', 'archiv_vertraege'];
+  let totalPurged = 0;
+
+  for (const store of STORES) {
+    try {
+      const items = await BSP.dbGetAll(store);
+      if (!items || !items.length) continue;
+      const toDelete = items.filter(item => item.deleted === true);
+      for (const item of toDelete) {
+        if (item.id !== undefined) {
+          await BSP.dbDelete(store, item.id);
+          totalPurged++;
+        }
+      }
+    } catch(e) {
+      // Store existiert evtl. nicht – ignorieren
+    }
+  }
+
+  return totalPurged;
+}
+
+// ── Öffentliche cleanup-Funktion (aufgerufen vom Button) ──
+async function cleanupDatabase() {
+  const btn = document.getElementById('s_dbCleanupBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Bereinige...'; }
+  try {
+    const count = await _cleanupDeletedEntries();
+    if (count === 0) {
+      BSP.toast('Keine gelöschten Einträge gefunden.', 'info');
+    } else {
+      BSP.toast(count + ' Einträge dauerhaft entfernt ✓', 'ok');
+    }
+  } catch(e) {
+    BSP.toast('Bereinigung fehlgeschlagen: ' + e.message, 'er');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Datenbank bereinigen – gelöschte Einträge dauerhaft entfernen'; }
+  }
+}
+
 // ── Öffentliche API des Moduls ────────────────────────────────
-return { init, save, toggleApiKeyVis, handleLogo, exportJSON, backupDrive, resetCounters, startTransitionCheck, _transNext, _transSelect };
+return {
+  init, save, toggleApiKeyVis, handleLogo, exportJSON,
+  backupDrive, driveConnect, driveDisconnect, restoreFromDrive,
+  resetCounters, cleanupDatabase,
+  startTransitionCheck, _transNext, _transSelect
+};
 
 
 })();
