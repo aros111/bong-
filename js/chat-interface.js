@@ -208,7 +208,7 @@ Melde Fehler immer nutzerfreundlich auf Deutsch.`;
   async function _processDocRouter(fileName, b64) {
      try {
         const prompt = `Analysiere dieses Dokument kurz. Was ist das? Antworte mit exakt einem der folgenden WÃ¶rter:\nkontoauszug, beleg_eingang, beleg_ausgang, brief_finanzamt, brief_sonstiges, privat_ausgabe, unbekannt.`;
-        const resp = await BSP.callClaude({ prompt, imageB64: b64, model: 'claude-3-haiku-20240307', maxTokens: 100 });
+        const resp = await BSP.callClaude({ prompt, imageB64: b64, model: 'claude-haiku-4-5-20251001', maxTokens: 100 });
         const type = (resp && resp.content && resp.content[0].text) ? resp.content[0].text.trim().toLowerCase() : "unbekannt";
         
         if (type.includes("kontoauszug")) {
@@ -237,7 +237,7 @@ Antworte NUR mit purem JSON! Kein Markdown! Format:
   ]
 }`;
       
-      const res = await BSP.callClaude({ prompt, imageB64: b64, model: 'claude-3-5-sonnet-20241022', maxTokens: 10000 });
+      const res = await BSP.callClaude({ prompt, imageB64: b64, model: 'claude-sonnet-4-5', maxTokens: 10000 });
       let rawText = res.content[0].text.trim();
       rawText = rawText.replace(/\\`\\`\\`json/gi, '').replace(/\\`\\`\\`/gi, '').trim();
       if (rawText.indexOf('{') !== -1) {
@@ -285,7 +285,7 @@ Antworte NUR mit purem JSON! Kein Markdown! Format:
   async function _processIntent(text, maybeImageB64) {
     setTyping('KI denkt nach...');
     try {
-      const payload = { prompt: text, system: getSystemContext(), tools: TOOLS, model: 'claude-3-haiku-20240307', maxTokens: 2000 };
+      const payload = { prompt: text, system: getSystemContext(), tools: TOOLS, model: 'claude-haiku-4-5-20251001', maxTokens: 2000 };
       if (maybeImageB64) payload.imageB64 = maybeImageB64;
 
       const resp = await BSP.callClaude(payload);

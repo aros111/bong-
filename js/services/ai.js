@@ -1,4 +1,4 @@
-﻿'use strict';
+'use strict';
 
 (() => {
   const API_URL = 'https://api.anthropic.com/v1/messages';
@@ -11,7 +11,7 @@
   };
 
   const AI = {
-    async process({ prompt, imageB64, images = [], model, maxTokens = 1024 }) {
+    async process({ prompt, imageB64, images = [], model, maxTokens = 1024, tools = null, system = null }) {
       const apiKey = (BSP.state.settings && BSP.state.settings._apiKey) || localStorage.getItem('bsp_apikey') || '';
       if (!apiKey) throw new Error('Bitte zuerst API-Key in den Einstellungen eintragen');
 
@@ -40,6 +40,14 @@
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       try {
+        const payload = {
+          model: usedModel,
+          max_tokens: maxTokens,
+          messages: [{ role: 'user', content }]
+        };
+        if (tools && tools.length > 0) payload.tools = tools;
+        if (system) payload.system = system;
+
         const fetchPromise = fetch(API_URL, {
           method: 'POST',
           headers: {
@@ -50,11 +58,7 @@
             'anthropic-dangerous-direct-browser-access': 'true'
           },
           signal: controller.signal,
-          body: JSON.stringify({
-            model: usedModel,
-            max_tokens: maxTokens,
-            messages: [{ role: 'user', content }]
-          })
+          body: JSON.stringify(payload)
         });
 
         const resp = await fetchPromise;
