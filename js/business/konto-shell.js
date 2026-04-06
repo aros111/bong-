@@ -34,6 +34,12 @@ const KontoShell = (() => {
     BSP.on('view:changed', ({ name }) => { 
       if (name === 'konto') {
         _activeBankId = null; // Zurück in die Übersicht
+        const vKonto = document.getElementById('v-konto');
+        if (vKonto && !vKonto.querySelector('.mod-title')?.textContent.includes('Bankkonten')) {
+           const tmp = document.createElement('div');
+           tmp.innerHTML = VIEW_HTML;
+           vKonto.innerHTML = tmp.firstElementChild.innerHTML;
+        }
         renderBankList(); 
       }
     });
@@ -41,6 +47,12 @@ const KontoShell = (() => {
     // Event hooks für Zurück Navigieren aus der Konto-Detailseite
     BSP.on('konto:back', () => {
       _activeBankId = null;
+      const vKonto = document.getElementById('v-konto');
+      if (vKonto) {
+         const tmp = document.createElement('div');
+         tmp.innerHTML = VIEW_HTML;
+         vKonto.innerHTML = tmp.firstElementChild.innerHTML;
+      }
       renderBankList();
     });
   }

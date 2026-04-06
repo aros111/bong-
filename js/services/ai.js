@@ -36,27 +36,35 @@
       // Dynamische Weiche: Sonnet 3.5 für Bilder, Haiku 3.0 für Text
       const usedModel = model || (allImages.length ? MODEL_SONNET : MODEL_HAIKU);
 
-      const resp = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true'
-        },
-        body: JSON.stringify({
-          model: usedModel,
-          max_tokens: maxTokens,
-          messages: [{ role: 'user', content }]
-        })
-      });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-      if (!resp.ok) {
-        if (resp.status === 401) throw new Error('API Key ungültig oder abgelaufen');
-        throw new Error(`API Fehler ${resp.status}`);
-      }
+      try {
+        const fetchPromise = fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true'
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: usedModel,
+            max_tokens: maxTokens,
+            messages: [{ role: 'user', content }]
+          })
+        });
 
-      const data = await resp.json();
+        const resp = await fetchPromise;
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) {
+          if (resp.status === 401) throw new Error('API Key ungültig oder abgelaufen');
+          throw new Error(`API Fehler ${resp.status}`);
+        }
+
+        const data = await resp.json();
       const text = data.content?.filter(c => c.type === 'text').map(c => c.text).join('') || '';
 
       // Kosten & Stats
@@ -70,6 +78,12 @@
       BSP.emit('api:used', { cost, model: usedModel });
 
       return text;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error('KI-Anfrage Timeout nach 60s. Bitte überprüfen Sie Ihre Internetverbindung oder verkleinern Sie das Bild/PDF.');
+        }
+        throw err;
+      }
     }
   };
 

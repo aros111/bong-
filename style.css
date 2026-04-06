@@ -1135,3 +1135,12 @@ body::after {
   pointer-events: none;
 }
 
+
+details > summary { list-style: none; cursor: pointer; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] summary ~ * { animation: swp .3s ease-in-out; }
+@keyframes swp { 0% {opacity:0;transform:translateY(-5px)} 100% {opacity:1;transform:translateY(0)} }
+details[open] { margin-bottom: 20px; }
+summary { display: flex; align-items: center; justify-content: space-between; font-weight: 500; font-size: 16px; padding: 12px 0; border-bottom: 1px solid var(--br); }
+summary:after { content: '+'; font-size: 20px; font-weight: 300; color: var(--gold); }
+details[open] summary:after { content: '\2212'; } /* Minus character */

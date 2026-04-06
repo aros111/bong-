@@ -53,40 +53,55 @@ const VIEW_HTML = `
     <div id="verp-timer-hint" style="font-size:10px;color:var(--txt3);margin-top:6px">Timer starten wenn die Dienstreise beginnt (Inland)</div>
   </div>
 
-  <!-- Manuelle Eingabe -->
-  <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px">
-    <div class="stitle">Manuell eintragen (2026)</div>
-    <div class="sett-grid">
-      <div class="field"><label>Datum</label><input class="sett-inp" id="verp-date" type="date"></div>
-      
-      <div class="field"><label>Reiseland</label>
-        <select class="sett-inp" id="verp-land" onchange="VerpflegungModule.handleLandSelect()">
-          <option value="Deutschland">Deutschland</option>
-          <option value="Österreich">Österreich</option>
-          <option value="Schweiz Bern/Genf">Schweiz Bern/Genf</option>
-          <option value="USA New York">USA New York</option>
-          <option value="Großbritannien London">Großbritannien London</option>
-          <option value="Frankreich Paris">Frankreich Paris</option>
-          <option value="Andere (Ausland)">Andere (Ausland) ...</option>
-        </select>
-      </div>
-
-      <div class="field" style="grid-column: span 2"><label>Dauer</label>
-        <select class="sett-inp" id="verp-dauer" onchange="VerpflegungModule.updatePreview()">
-          <option value="voll">Ganzer Tag (32 €)</option>
-          <option value="ab8">8–24h An/Abreise (16 €)</option>
-          <option value="unter8">Unter 8 Stunden (0 €)</option>
-        </select>
-      </div>
+  <!-- KI / Nachträglich erfassen -->
+  <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div class="stitle" style="margin:0">Vergangene Reisen</div>
+      <div style="font-size:11px;color:var(--txt3);margin-top:4px">Rückwirkend per Text oder Sprache erfassen</div>
     </div>
-    <div class="field sett-mt"><label>Ziel / Beschreibung</label><input class="sett-inp" id="verp-ziel" type="text" placeholder="z.B. Kundenbesuch Frankfurt"></div>
-    <div style="margin-top:6px;font-size:11px;color:var(--gold)" id="verp-preview"></div>
-    <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:12px" onclick="VerpflegungModule.add()">+ Eintragen</button>
+    <button class="btn btn-gold" onclick="VerpflegungModule.openNachtragSheet()">Nachtragen</button>
   </div>
 
   <!-- Liste -->
   <div class="stitle">Einträge (aktuelles Jahr)</div>
   <div id="verp-list"></div>
+</div>
+
+<!-- OVL: Nachträglich erfassen -->
+<div class="ovl" id="verp-nachtrag-ovl">
+  <div class="sheet">
+    <div class="sh"></div>
+    <div class="mod-header">
+      <div class="mod-title">Nachträglich erfassen</div>
+      <div class="mod-sub">Wann und wo warst du unterwegs?</div>
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <textarea id="verp-nachtrag-txt" style="height:120px;font-family:'DM Mono',monospace;font-size:13px" placeholder="z.B. Ich war Montag bis Mittwoch in München, Hauptstraße 5, von 9 bis 17 Uhr"></textarea>
+    </div>
+    <div style="display:flex; gap:12px; margin-bottom:12px">
+      <button class="btn btn-g" style="flex:1" onclick="document.getElementById('verp-nachtrag-ovl').classList.remove('on')">Abbrechen</button>
+      <button class="btn btn-gold" style="flex:2;justify-content:center" onclick="VerpflegungModule.analysiereNachtrag()">🕵️ KI Analyse</button>
+    </div>
+    <div style="text-align:center">
+      <button class="btn btn-g" style="width:100%;justify-content:center" onclick="SpracheUniversal.startListening('verp-nachtrag-txt')">🎤 Spracheingabe</button>
+    </div>
+  </div>
+</div>
+
+<!-- OVL: Erkannte Reisen bestätigen -->
+<div class="ovl" id="verp-confirm-ovl">
+  <div class="sheet">
+    <div class="sh"></div>
+    <div class="mod-header">
+      <div class="mod-title">Erkannte Reisen</div>
+      <div class="mod-sub">Bitte prüfen und bestätigen</div>
+    </div>
+    <div id="verp-confirm-list" style="max-height:50vh;overflow-y:auto;margin-bottom:16px;display:flex;flex-direction:column;gap:8px"></div>
+    <div style="display:flex; gap:12px">
+      <button class="btn btn-g" style="flex:1" onclick="document.getElementById('verp-confirm-ovl').classList.remove('on')">Abbrechen</button>
+      <button class="btn btn-grn" style="flex:2;justify-content:center" onclick="VerpflegungModule.saveNachtragList()">Speichern ✓</button>
+    </div>
+  </div>
 </div>
 `;
 
@@ -306,6 +321,102 @@ async function render() {
   }
 }
 
-return { init, add, render, timerToggle, timerStop, updatePreview, handleLandSelect };
+// ── KI Nachträgliche Erfassung ────────────────────────────────
+let _pendingNachtragList = [];
+
+function openNachtragSheet() {
+  const txt = document.getElementById('verp-nachtrag-txt');
+  if (txt) txt.value = '';
+  document.getElementById('verp-nachtrag-ovl').classList.add('on');
+}
+
+async function analysiereNachtrag() {
+  const text = document.getElementById('verp-nachtrag-txt').value.trim();
+  if (!text) return BSP.toast('Bitte erkläre, wann und wo du warst.', 'wr');
+
+  BSP.toast('Analysiere Text...', 'info');
+  document.getElementById('verp-nachtrag-ovl').classList.remove('on');
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const prompt = `Du bist ein Buchhaltungs-Assistent. Der heutige Tag ist ${todayStr}.
+Der Nutzer sagt: "${text}"
+
+Extrahiere alle Tage, an denen der Nutzer auf Dienstreise war. Ermittle für JEDEN Tag in diesem Zeitraum separat die Verpflegungspauschale nach BMF 2026.
+Regeln BMF 2026:
+- Deutschland: ab 8h = 16€, 24h (voller Tag) = 32€
+- Österreich: ab 8h = 33€, 24h = 50€
+- Auslandsziele vergleichen: Schweiz Bern/Genf, USA New York, Großbritannien London, Frankreich Paris, Luxemburg. Andere Ziele einfach beim Namen nennen, mit Fallback: ab 8h=42€, 24h=63€.
+- "dauer" MUSS einer dieser exakten Werte sein: "voll" (24h), "ab8" (8-24h), "unter8" (<8h). "unter8" gibt 0€.
+
+Gib NUR EIN KORREKTES JSON-Array zurück:
+[
+  {
+    "date": "YYYY-MM-DD",
+    "dauer": "voll|ab8|unter8",
+    "land": "Deutschland",
+    "ziel": "Kundenbesuch Musterstadt",
+    "pauschale": 16
+  }
+]`;
+
+  try {
+    BSP.showScrim('Erstelle Pauschalen-Vorabrechnung...');
+    const resString = await BSP.callClaude({ prompt, model: 'claude-sonnet-4-5' });
+    let data;
+    try { 
+      const startIdx = resString.indexOf('[');
+      const endIdx = resString.lastIndexOf(']');
+      data = JSON.parse(resString.substring(startIdx, endIdx + 1)); 
+    } catch(e) { throw new Error('Ungültige KI Antwort'); }
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return BSP.toast('Konnte keine Reisen erkennen.', 'wr');
+    }
+
+    _pendingNachtragList = data.filter(d => d.pauschale > 0);
+    if (!_pendingNachtragList.length) {
+      return BSP.toast('Erkannte Reisen lagen unter 8 Stunden (0€).', 'info');
+    }
+
+    _renderConfirmList();
+    document.getElementById('verp-confirm-ovl').classList.add('on');
+  } catch(e) {
+    BSP.toast('Fehler: ' + e.message, 'er');
+  } finally {
+    BSP.hideScrim();
+  }
+}
+
+function _renderConfirmList() {
+  const html = _pendingNachtragList.map(e => `
+    <div style="background:var(--s2);border:1px solid var(--br);padding:10px;border-radius:var(--r8);display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:13px;font-weight:500">${BSP.fd(e.date)} · ${BSP.eh(e.land)}</div>
+        <div style="font-size:11px;color:var(--txt3)">${e.dauer === 'voll' ? 'Voller Tag (24h)' : 'An/Abreise (≥8h)'}</div>
+      </div>
+      <div style="color:var(--gold);font-weight:bold">${e.pauschale} €</div>
+    </div>
+  `).join('');
+  document.getElementById('verp-confirm-list').innerHTML = html;
+}
+
+async function saveNachtragList() {
+  document.getElementById('verp-confirm-ovl').classList.remove('on');
+  let savedCnt = 0;
+  for (const entry of _pendingNachtragList) {
+    if (entry.pauschale > 0) {
+      // _saveEntry already sets savedAt and triggers render + toast
+      await _saveEntry(entry);
+      await new Promise(r => setTimeout(r, 10)); // tiny delay
+      savedCnt++;
+    }
+  }
+  _pendingNachtragList = [];
+  if (savedCnt > 1) {
+     BSP.toast(`${savedCnt} Belege erstellt`, 'ok');
+  }
+}
+
+return { init, add, render, timerToggle, timerStop, updatePreview, handleLandSelect, openNachtragSheet, analysiereNachtrag, saveNachtragList };
 
 })();

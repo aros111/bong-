@@ -12,250 +12,153 @@ const VIEW_HTML = `
 <div id="v-einstellungen" class="view">
   <div class="mod-header">
     <div class="mod-title">Einstellungen</div>
-    <div class="mod-sub">Deine Daten, deine Steuern</div>
+    <div class="mod-sub">Deine Daten & App-Konfiguration</div>
   </div>
 
-  <!-- ═══ PERSÖNLICHE DATEN ════════════════════════════════ -->
-  <div class="sett-section">
-    <div class="stitle">👤 Persönliche Daten (Finanzamt)</div>
-    <div class="sett-grid">
-      <div class="field"><label>Vorname</label>
-        <input class="sett-inp" id="s_vorname" type="text" placeholder="Max"></div>
-      <div class="field"><label>Nachname</label>
-        <input class="sett-inp" id="s_nachname" type="text" placeholder="Mustermann"></div>
+  <!-- 1. PERSÖNLICHE DATEN -->
+  <details class="sett-section" open>
+    <summary>👤 Persönliche Daten</summary>
+    <div class="sett-grid" style="margin-top:12px">
+      <div class="field"><label>Vorname</label><input class="sett-inp" id="s_vorname" type="text" oninput="EinstellungenModule.save()"></div>
+      <div class="field"><label>Nachname</label><input class="sett-inp" id="s_nachname" type="text" oninput="EinstellungenModule.save()"></div>
     </div>
     <div class="sett-grid">
-      <div class="field"><label>Geburtsdatum</label>
-        <input class="sett-inp" id="s_geburtsdatum" type="date"></div>
-      <div class="field"><label>Steuernummer</label>
-        <input class="sett-inp" id="s_steuernr" type="text" placeholder="XXX/XXX/XXXXX" inputmode="numeric"></div>
+      <div class="field"><label>Geburtsdatum</label><input class="sett-inp" id="s_geburtsdatum" type="date" onchange="EinstellungenModule.save()"></div>
+      <div class="field"><label>Steuernummer</label><input class="sett-inp" id="s_steuernr" type="text" oninput="EinstellungenModule.save()"></div>
     </div>
     <div class="sett-grid">
-      <div class="field"><label>USt-IdNr.</label>
-        <input class="sett-inp" id="s_ustidnr" type="text" placeholder="DE123456789"></div>
+      <div class="field"><label>USt-IdNr.</label><input class="sett-inp" id="s_ustidnr" type="text" oninput="EinstellungenModule.save()"></div>
       <div class="field"><label>Familienstand</label>
-        <select class="sett-inp" id="s_familienstand">
+        <select class="sett-inp" id="s_familienstand" onchange="EinstellungenModule.save()">
           <option value="ledig">Ledig</option>
           <option value="verheiratet">Verheiratet</option>
           <option value="geschieden">Geschieden</option>
           <option value="verwitwet">Verwitwet</option>
-        </select></div>
+        </select>
+      </div>
     </div>
     <div class="sett-grid">
       <div class="field"><label>Steuerklasse</label>
-        <select class="sett-inp" id="s_stklasse">
-          <option value="1">Klasse I</option>
-          <option value="2">Klasse II</option>
-          <option value="3">Klasse III</option>
-          <option value="4">Klasse IV</option>
-          <option value="5">Klasse V</option>
-          <option value="6">Klasse VI</option>
-        </select></div>
-      <div class="field"><label>Kinder (Anzahl)</label>
-        <input class="sett-inp" id="s_kinder" type="number" placeholder="0" min="0" max="20" inputmode="numeric"></div>
+        <select class="sett-inp" id="s_stklasse" onchange="EinstellungenModule.save()">
+          <option value="1">I</option><option value="2">II</option><option value="3">III</option><option value="4">IV</option><option value="5">V</option><option value="6">VI</option>
+        </select>
+      </div>
+      <div class="field"><label>Kinder (Anzahl)</label><input class="sett-inp" id="s_kinder" type="number" min="0" onchange="EinstellungenModule.save()"></div>
     </div>
-    <div class="field sett-mt"><label>Unterhalt / Mon. (€)</label>
-      <input class="sett-inp" id="s_unterhalt" type="text" placeholder="0,00" inputmode="decimal"></div>
-  </div>
+    <div class="field sett-mt"><label>Unterhalt / Mon. (€)</label><input class="sett-inp" id="s_unterhalt" type="text" inputmode="decimal" oninput="EinstellungenModule.save()"></div>
+  </details>
 
-  <!-- ═══ UNTERNEHMENSDATEN ══════════════════════════════════ -->
-  <div class="sett-section">
-    <div class="stitle">🏢 Unternehmen</div>
-    <div class="sett-grid">
-      <div class="field"><label>Firmenname</label>
-        <input class="sett-inp" id="s_firmenname" type="text" placeholder="Max Mustermann IT Service"></div>
-      <div class="field"><label>Berufsbezeichnung</label>
-        <input class="sett-inp" id="s_beruf" type="text" placeholder="z.B. UX Designer"></div>
+  <!-- 2. UNTERNEHMEN -->
+  <details class="sett-section">
+    <summary>🏢 Unternehmen</summary>
+    <div class="sett-grid" style="margin-top:12px">
+      <div class="field"><label>Firmenname</label><input class="sett-inp" id="s_firmenname" type="text" oninput="EinstellungenModule.save()"></div>
+      <div class="field"><label>Berufsbezeichnung</label><input class="sett-inp" id="s_beruf" type="text" oninput="EinstellungenModule.save()"></div>
     </div>
-    <div class="field sett-mt"><label>Betriebsstätte / Sitz</label>
-      <input class="sett-inp" id="s_adresse" type="text" placeholder="Musterstraße 1, 12345 Berlin"></div>
-    <div class="field sett-mt"><label>Heimatort (für km-Pauschale)</label>
-      <input class="sett-inp" id="s_heimat" type="text" placeholder="z.B. Berlin-Mitte"></div>
+    <div class="field sett-mt"><label>Betriebsstätte / Sitz</label><input class="sett-inp" id="s_adresse" type="text" oninput="EinstellungenModule.save()"></div>
+    <div class="field sett-mt"><label>Heimatort (für km-Pauschale)</label><input class="sett-inp" id="s_heimat" type="text" oninput="EinstellungenModule.save()"></div>
     <div class="field sett-mt">
       <label>Unternehmens-Logo</label>
       <div style="display:flex;align-items:center;gap:12px">
-        <div id="s_logoPreview" style="width:48px;height:48px;background:var(--br);border-radius:var(--brnd);display:flex;align-items:center;justify-content:center;overflow:hidden">
-          <span style="font-size:10px;color:var(--txt3)">Logo</span>
-        </div>
+        <div id="s_logoPreview" style="width:48px;height:48px;background:var(--br);border-radius:var(--brnd);display:flex;align-items:center;justify-content:center;overflow:hidden"><span style="font-size:10px;color:var(--txt3)">Logo</span></div>
         <button class="btn btn-g" onclick="document.getElementById('s_logoInp').click()">Upload</button>
         <input type="file" id="s_logoInp" hidden accept="image/*" onchange="EinstellungenModule.handleLogo(this)">
       </div>
     </div>
-  </div>
+  </details>
 
-  <!-- ═══ FINANZIELLES ══════════════════════════════════════ -->
-  <div class="sett-section">
-    <div class="stitle">💰 Finanzielles</div>
-    <div class="sett-grid">
-      <div class="field"><label>Eigener Stundensatz (€/h)</label>
-        <input class="sett-inp" id="s_stundensatz" type="text" placeholder="80" inputmode="decimal"></div>
-      <div class="field"><label>Steuerberater (€/h)</label>
-        <input class="sett-inp" id="s_stbSatz" type="text" placeholder="120" inputmode="decimal"></div>
+  <!-- 3. FINANZIELLES -->
+  <details class="sett-section">
+    <summary>💰 Finanzielles</summary>
+    <div class="sett-grid" style="margin-top:12px">
+      <div class="field"><label>Eigener Stundensatz (€/h)</label><input class="sett-inp" id="s_stundensatz" type="text" inputmode="decimal" oninput="EinstellungenModule.save()"></div>
+      <div class="field"><label>Steuerberater (€/h)</label><input class="sett-inp" id="s_stbSatz" type="text" inputmode="decimal" oninput="EinstellungenModule.save()"></div>
     </div>
     <div class="field"><label>Gesparte Minuten pro Scan (Ø)</label>
       <div style="display:flex;align-items:center;gap:12px;margin-top:2px">
-        <input class="sett-inp" id="s_minProScan" type="range" min="1" max="30" step="1" value="4" style="flex:1;accent-color:var(--gold)">
-        <span id="s_minProScanVal" style="font-size:14px;font-weight:300;color:var(--gold);min-width:28px">4</span>
+        <input class="sett-inp" id="s_minProScan" type="range" min="1" max="30" step="1" onchange="EinstellungenModule.save()" oninput="document.getElementById('s_minProScanVal').textContent=this.value" style="flex:1;accent-color:var(--gold)">
+        <span id="s_minProScanVal" style="font-size:14px;color:var(--gold);min-width:28px">4</span>
         <span style="font-size:11px;color:var(--txt3)">Min</span>
       </div>
     </div>
-  </div>
+  </details>
 
-  <!-- ═══ API & SICHERHEIT ══════════════════════════════════ -->
-  <div class="sett-section">
-    <div class="stitle">🔐 API & Sicherheit</div>
-    <div class="field"><label>Anthropic API Key</label>
+  <!-- 4. API & SICHERHEIT -->
+  <details class="sett-section">
+    <summary>🔐 API & Sicherheit</summary>
+    <div class="field" style="margin-top:12px"><label>Anthropic API Key</label>
       <div style="position:relative">
-        <input class="sett-inp" id="s_apikey" type="password" placeholder="sk-ant-…" autocomplete="off">
-        <button onclick="EinstellungenModule.toggleApiKeyVis()" style="position:absolute;right:0;top:0;bottom:0;background:none;border:none;color:var(--txt3);padding:0 10px;cursor:pointer;font-size:13px">👁</button>
+        <input class="sett-inp" id="s_apikey" type="password" autocomplete="off" onchange="EinstellungenModule.save()">
+        <button onclick="EinstellungenModule.toggleApiKeyVis()" style="position:absolute;right:0;top:0;bottom:0;background:none;border:none;color:var(--txt3);padding:0 10px;cursor:pointer;">👁</button>
       </div>
     </div>
-    <div class="field sett-mt"><label>Daten-Verschlüsselung PIN (4-stellig)</label>
-      <input class="sett-inp" id="s_pin" type="password" maxlength="4" placeholder="0000" inputmode="numeric">
-      <div style="font-size:10px;color:var(--txt3);margin-top:5px;line-height:1.5">Wird lokal für die AES-GCM Verschlüsselung sensibler Daten genutzt.</div>
+    <div class="field sett-mt"><label>Daten-Verschlüsselung PIN (4-stellig)</label><input class="sett-inp" id="s_pin" type="password" maxlength="4" inputmode="numeric" onchange="EinstellungenModule.save()"></div>
+    <div class="field sett-mt"><label>Belegnummer-Format</label>
+        <select class="sett-inp" id="s_belegFmt" onchange="EinstellungenModule.save()">
+          <option value="A">ER-YYYY-0001</option><option value="B">YYYY-Q1-ER-0001</option><option value="C">YYYY-ER-0001</option>
+        </select>
     </div>
-  </div>
-  
-  <!-- ═══ BANKKONTO & ABOS ════════════════════════════════════ -->
-  <div class="sett-section">
-    <div class="stitle">💳 Bankkonto & Abos</div>
-    <div style="font-size:11px;color:var(--txt3);line-height:1.4;margin-bottom:12px">
-      Verwalte deine Kontotransaktionen, importiere Auszüge und kontrolliere deine Abonnements und Daueraufträge.
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-gold" onclick="BSP.showView('konto')" style="justify-content:center">
-         🏦 Kontoauszug Scanner öffnen
-      </button>
-      <button class="btn btn-g" onclick="BSP.showView('abos')" style="justify-content:center">
-         🔁 Abo-Manager öffnen
-      </button>
-    </div>
-  </div>
+  </details>
 
-  <!-- ═══ ÜBERGANGS-MODUS (KONTENTRENNUNG) ════════════════════ -->
-  <div class="sett-section" style="border:2px solid var(--orn);background:rgba(255,166,0,0.05)">
-    <div class="stitle" style="color:var(--orn)">🔄 Übergangs-Modus</div>
-    <div style="font-size:11px;color:var(--txt3);line-height:1.4;margin-bottom:12px">
-      Aktiviere diesen Modus, wenn Geschäfts- und Privatkonten noch nicht vollständig getrennt sind. Die App fragt dann bei jeder Buchung nach der exakten Zuordnung.
-    </div>
-    <div class="field" style="display:flex;align-items:center;justify-content:space-between">
-      <label style="margin:0;color:var(--txt)">Übergangs-Modus aktiv</label>
-      <input type="checkbox" id="s_transitionMode" style="width:20px;height:20px;accent-color:var(--orn)">
-    </div>
-    
-    <div id="mismatch-container" style="margin-top:20px;display:none">
-      <div class="stitle" style="color:var(--red)">Mismatch-Dokumentation</div>
-      <div style="font-size:10px;color:var(--txt3);margin-bottom:8px">Buchungen, die der Steuerberater korrigieren muss (Privat kauf über Business-Konto oder umgekehrt).</div>
-      <div style="font-size:14px;font-weight:600;color:var(--red);margin-bottom:12px" id="mismatch-total">Gesamt zu korrigieren: 0,00 €</div>
-      <div id="mismatch-list"></div>
-    </div>
-  </div>
-
-  <!-- ═══ STEUER- & DATEV ════════════════════════════════════ -->
-    <div class="sett-grid sett-mt">
-      <div class="field"><label>Belegnummer-Format</label>
-        <select class="sett-inp" id="s_belegFmt">
-          <option value="A">ER-2026-0001 (empfohlen)</option>
-          <option value="B">2026-Q1-ER-0001</option>
-          <option value="C">2026-ER-0001</option>
-        </select></div>
+  <!-- 5. EXPORT -->
+  <details class="sett-section">
+    <summary>📤 Export</summary>
+    <div class="sett-grid" style="margin-top:12px">
       <div class="field"><label>DATEV-Kontonummern</label>
-        <select class="sett-inp" id="s_datev">
-          <option value="0">Nein (Standard)</option>
-          <option value="1">Ja, in CSV Export</option>
-        </select></div>
+        <select class="sett-inp" id="s_datev" onchange="EinstellungenModule.save()"><option value="0">Aus</option><option value="1">Ein</option></select></div>
+      <div class="field"><label>E-Mail Steuerberater</label><input class="sett-inp" id="s_stbEmail" type="email" onchange="EinstellungenModule.save()"></div>
     </div>
-    <div class="sett-grid sett-mt">
-      <div class="field"><label>Voranmeldungs-Rhythmus</label>
-        <select class="sett-inp" id="s_voranmeldungRhythmus">
-          <option value="monatlich">Monatlich (10. d. Folgemonats)</option>
-          <option value="quartal">Quartalsweise (10. Apr/Jul/Okt/Jan)</option>
-          <option value="halbjahr">Halbjährlich (10. Jul / 10. Jan)</option>
-          <option value="jaehrlich">Jährlich (31. Mai Folgejahr)</option>
-        </select></div>
-      <div class="field"><label>E-Mail Steuerberater (optional)</label>
-        <input class="sett-inp" id="s_stbEmail" type="email" placeholder="steuerberater@kanzlei.de"></div>
+  </details>
+
+  <!-- 6. KONTEN -->
+  <details class="sett-section" ontoggle="if(this.open) { EinstellungenModule.renderAccounts(); }">
+    <summary>💳 Bankkonten</summary>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px" id="s-accounts-list"></div>
+    <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:8px" onclick="if(KontoShell) KontoShell.showAddBank()">+ Bankkonto hinzufügen</button>
+  </details>
+
+  <!-- 7. ÜBERGANGS-MODUS -->
+  <details class="sett-section">
+    <summary style="color:var(--orn)">🔄 Übergangs-Modus</summary>
+    <div style="margin-top:12px;font-size:11px;color:var(--txt3);line-height:1.4">
+      Aktiviere diesen Modus, wenn Geschäfts- und Privatkonten noch nicht vollständig getrennt sind. Die App fragt bei Buchungen detaillierter nach.
     </div>
-  </div>
-
-  <!-- ═══ FIRMENSTEMPEL ═════════════════════════════════════ -->
-  <div class="sett-section">
-    <div class="stitle">🔏 Firmenstempel (für PDF-Export)</div>
-    <div class="field"><label>Firmenname / Dein Name</label>
-      <input class="sett-inp" id="s_stempelName" type="text" placeholder="Max Mustermann – UX Design"></div>
-    <div class="field sett-mt"><label>Freitext (z.B. Adresse, Steuernr.)</label>
-      <textarea class="sett-inp" id="s_stempelText" rows="2" placeholder="Musterstr. 1 · 12345 Berlin · USt-IdNr DE123456789" style="resize:none;line-height:1.5"></textarea></div>
-    <div class="sett-grid sett-mt">
-      <div class="field"><label>Stempelfarbe</label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input type="color" id="s_stempelColor" value="#c8a45a" style="width:40px;height:28px;border:none;background:none;cursor:pointer;padding:0">
-          <span id="s_stempelColorVal" style="font-size:12px;color:var(--txt3);">#c8a45a</span>
-        </div>
-      </div>
-      <div class="field"><label>Vorschau</label>
-        <div id="s_stempelPreview" style="font-size:9px;line-height:1.4;color:#c8a45a;font-weight:300;letter-spacing:.3px">Max Mustermann<br>Musterstr. 1 · 12345 Berlin</div>
-      </div>
+    <div class="field sett-mt" style="display:flex;align-items:center;justify-content:space-between">
+      <label style="margin:0;color:var(--txt)">Übergangs-Modus aktiv</label><input type="checkbox" id="s_transitionMode" style="width:20px;height:20px;accent-color:var(--orn)" onchange="EinstellungenModule.save()">
     </div>
-  </div>
+  </details>
 
-  <!-- ═══ BACKUP ════════════════════════════════════════════ -->
-  <div class="sett-section">
-    <div class="stitle">💾 Backup & Datensicherung</div>
-    <div style="display:flex;flex-direction:column;gap:8px">
-      <button class="btn btn-g" onclick="EinstellungenModule.exportJSON()" style="justify-content:center">
-        ⬇️ Lokaler JSON-Export (Download)
-      </button>
-
-      <!-- Google Drive Backup Section -->
-      <div id="s-drive-section" style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:12px">
+  <!-- 8. BACKUP -->
+  <details class="sett-section">
+    <summary>💾 Backup</summary>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-g" onclick="EinstellungenModule.exportJSON()" style="justify-content:center">⬇️ Lokaler JSON-Export</button>
+      <div style="background:var(--s2);border:1px solid var(--br);border-radius:var(--r8);padding:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <div style="font-size:12px;font-weight:500;color:var(--txt)">☁️ Google Drive Backup</div>
-          <div id="s-drive-status-badge" style="font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(255,166,0,0.15);color:var(--orn);border:1px solid var(--orn)">NICHT VERBUNDEN</div>
-        </div>
-        <div id="s-drive-not-configured" style="font-size:10px;color:var(--txt3);margin-bottom:8px;padding:6px;background:rgba(255,166,0,0.08);border-radius:4px;border-left:2px solid var(--orn);display:none">
-          ⚠️ Google Drive Backup noch nicht konfiguriert. In einstellungen.js muss YOUR_GOOGLE_CLIENT_ID durch eine echte Google Cloud OAuth Client-ID ersetzt werden.
+          <span style="font-size:12px">☁️ Google Drive</span>
+          <span id="s-drive-status-badge" style="font-size:9px;color:var(--orn);border:1px solid var(--orn);padding:2px 4px;border-radius:4px">NICHT VERBUNDEN</span>
         </div>
         <div id="s-drive-last-backup" style="font-size:10px;color:var(--txt3);margin-bottom:8px">Letztes Backup: Noch nie</div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <button class="btn btn-g" id="s-drive-connect-btn" onclick="EinstellungenModule.driveConnect()" style="justify-content:center;display:none">
-            🔑 Mit Google Drive verbinden
-          </button>
-          <button class="btn btn-gold" id="s-drive-backup-btn" onclick="EinstellungenModule.backupDrive()" style="justify-content:center;display:none">
-            ☁️ Jetzt sichern
-          </button>
-          <button class="btn btn-g" id="s-drive-restore-btn" onclick="EinstellungenModule.restoreFromDrive()" style="justify-content:center;display:none">
-            🔄 Aus Google Drive wiederherstellen
-          </button>
-          <button class="btn btn-g" id="s-drive-disconnect-btn" onclick="EinstellungenModule.driveDisconnect()" style="justify-content:center;display:none;color:var(--txt3)">
-            ✕ Verbindung trennen
-          </button>
-        </div>
+        <button class="btn btn-g" id="s-drive-connect-btn" onclick="EinstellungenModule.driveConnect()" style="display:none;width:100%;justify-content:center;margin-bottom:6px">🔑 Verbinden</button>
+        <button class="btn btn-gold" id="s-drive-backup-btn" onclick="EinstellungenModule.backupDrive()" style="display:none;width:100%;justify-content:center;margin-bottom:6px">☁️ Jetzt sichern</button>
+        <button class="btn btn-g" id="s-drive-restore-btn" onclick="EinstellungenModule.restoreFromDrive()" style="display:none;width:100%;justify-content:center;margin-bottom:6px">🔄 Wiederherstellen</button>
+        <button class="btn" id="s-drive-disconnect-btn" onclick="EinstellungenModule.driveDisconnect()" style="display:none;width:100%;justify-content:center;color:var(--red)">✕ Trennen</button>
       </div>
-
-      <button class="btn btn-red" onclick="EinstellungenModule.resetCounters()" style="justify-content:center">
-        🔄 Belegnummer-Zähler zurücksetzen
-      </button>
-      <button class="btn btn-red" onclick="EinstellungenModule.cleanupDatabase()" style="justify-content:center;margin-top:4px" id="s_dbCleanupBtn">
-        🗑️ Datenbank bereinigen – gelöschte Einträge dauerhaft entfernen
-      </button>
     </div>
-  </div>
+  </details>
 
-
-
-
-  <!-- ═══ SPEICHERN ═════════════════════════════════════════ -->
-  <div style="margin-top:20px;margin-bottom:20px">
-    <button class="btn btn-gold" onclick="EinstellungenModule.save()" style="width:100%;justify-content:center;font-size:14px;padding:14px">
-      ✓ Einstellungen speichern
-    </button>
-  </div>
-
-  <!-- ═══ APP-INFO ══════════════════════════════════════════ -->
-  <div style="text-align:center;font-size:10px;color:var(--txt3);padding-bottom:20px;line-height:1.8">
-    BelegScan Pro v2.0 · Modulare Architektur<br>
-    Daten bleiben auf deinem Gerät · DSGVO-konform
-  </div>
+  <!-- 9. APP -->
+  <details class="sett-section">
+    <summary>⚙️ App & System</summary>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+      <button class="btn btn-red" onclick="EinstellungenModule.cleanupDatabase()" style="justify-content:center">🗑️ Datenbank bereinigen (Trim)</button>
+      <button class="btn btn-red" onclick="EinstellungenModule.resetCounters()" style="justify-content:center">🔄 Zähler zurücksetzen</button>
+    </div>
+    <div style="margin-top:20px;text-align:center;font-size:10px;color:var(--txt3);line-height:1.6">
+      BelegScan Pro v4.4.2<br>Offline-First · DSGVO-konform
+    </div>
+  </details>
+  <div style="height:80px"></div>
 </div>
 `;
 
@@ -707,7 +610,6 @@ async function backupDrive() {
     BSP.state.settings = BSP.state.settings || {};
     BSP.state.settings.drive_last_backup = now;
 
-    BSP.hideScrim();
     BSP.toast(`✓ Backup abgeschlossen (${belege.length} Belege, ${imgCount} Bilder)`, 'ok');
     await _updateDriveUI();
 
@@ -715,7 +617,6 @@ async function backupDrive() {
     await _clearDriveSyncQueue();
 
   } catch(e) {
-    BSP.hideScrim();
     console.error('[BSP] Drive Backup Fehler:', e);
     // Bei Token-Abgelauf: neu verbinden
     if (e.message.includes('401') || e.message.includes('403')) {
@@ -727,6 +628,7 @@ async function backupDrive() {
     // Fehlgeschlagenen Sync in Queue einreihen (wird beim nächsten Online-Event nachgeholt)
     await _enqueueDriveSync();
   } finally {
+    BSP.hideScrim();
     if (btn) { btn.disabled = false; btn.textContent = '☁️ Jetzt sichern'; }
   }
 }
@@ -771,12 +673,12 @@ async function restoreFromDrive() {
       try { await BSP.dbPut('belege', b); } catch(e) {}
     }
 
-    BSP.hideScrim();
     BSP.toast(`✓ ${belege.length} Belege wiederhergestellt`, 'ok');
     BSP.emit('beleg:saved', {});
   } catch(e) {
-    BSP.hideScrim();
     BSP.toast('Restore Fehler: ' + e.message, 'er');
+  } finally {
+    BSP.hideScrim();
   }
 }
 

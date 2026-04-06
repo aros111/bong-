@@ -217,30 +217,23 @@ const KontoImport = (() => {
     closeScan();
     BSP.showScrim('Analysiere Kontoauszug...');
 
-    const prompt = `Du bist ein KI-Assistent für Buchhaltung. Analysiere den angehängten Kontoauszug (kann mehrere Seiten umfassen).
-Lies ALLE Buchungen vollständig und präzise aus dem Datensatz.
-Lies zwingend auch den Anfangssaldo (alt) und Endsaldo (neu) des Auszugs aus (falls im Dokument sichtbar).
-
-GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
+    const prompt = `Analysiere diesen Kontoauszug. Antworte NUR mit einem JSON-Objekt in exakt diesem Format, kein anderer Text:
 {
-  "zeitraum": "YYYY-MM",
-  "kontoId": "DE12... (IBAN falls sichtbar, sonst 'unbekannt')",
-  "saldoNeu": 1234.56,
-  "saldoAlt": 1000.00,
   "buchungen": [
     {
-      "datum": "YYYY-MM-DD",
-      "betrag": -50.20,
-      "zweck": "PayPal Europe S.a.r.l.....",
-      "empfaenger": "PayPal",
-      "auftraggeber": "Eigentümer GmbH",
-      "typ": "Lastschrift",
-      "buchungstyp": "Lastschrift",
-      "iban": "DE12...",
-      "referenz": "REF1234..."
+      "datum": "2026-03-01",
+      "betrag": -47.50,
+      "verwendungszweck": "REWE SAGT DANKE",
+      "auftraggeber": "REWE",
+      "typ": "lastschrift"
     }
-  ]
-}`;
+  ],
+  "anfangssaldo": 1234.56,
+  "endsaldo": 987.06,
+  "zeitraum_von": "2026-03-01",
+  "zeitraum_bis": "2026-03-31"
+}
+Negative Beträge sind Ausgaben, positive Beträge sind Eingänge.`;
 
     try {
       const b64Array = await Promise.all(_pages.map(async p => {
@@ -249,30 +242,67 @@ GIB EXAKT DIESES JSON-FORMAT ZURÜCK:
       }));
       
       const res = await BSP.callClaude({ prompt, images: b64Array, model: 'claude-sonnet-4-5' });
-      _revokeAllPages();
 
-      let data = JSON.parse(res);
+      let data;
+      try {
+        const startIdx = res.indexOf('{');
+        const endIdx = res.lastIndexOf('}');
+        const arrayStartIdx = res.indexOf('[');
+        const arrayEndIdx = res.lastIndexOf(']');
+        
+        let extractedJSON = res;
+        if (arrayStartIdx !== -1 && (startIdx === -1 || arrayStartIdx < startIdx)) {
+           extractedJSON = res.substring(arrayStartIdx, arrayEndIdx + 1);
+        } else if (startIdx !== -1) {
+           extractedJSON = res.substring(startIdx, endIdx + 1);
+        }
+        data = JSON.parse(extractedJSON);
+      } catch (e) {
+        throw new Error('Konnte Antwort der KI nicht lesen (ungültiges JSON)');
+      }
+
+      let buchungenArray = Array.isArray(data) ? data : (data.buchungen || data.transactions || data.items || data.entries);
+      if (!buchungenArray || !Array.isArray(buchungenArray)) {
+         for(const v of Object.values(data)) {
+           if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && ('betrag' in v[0])) {
+             buchungenArray = v;
+             break;
+           }
+         }
+      }
+
+      if (!buchungenArray || !Array.isArray(buchungenArray) || buchungenArray.length === 0) {
+         throw new Error('Es konnten keine Buchungen im Dokument gefunden werden.');
+      }
+      data.buchungen = buchungenArray;
       
       let summe = 0;
-      data.buchungen.forEach(b => summe += (b.betrag || 0));
+      data.buchungen.forEach(b => {
+         // Fallback field mapping for legacy schema or slight AI drift
+         b.empfaenger = b.empfaenger || b.auftraggeber || '';
+         b.betrag = b.betrag || 0;
+         summe += b.betrag;
+      });
       
-      const saldoDiff = (data.saldoNeu || 0) - (data.saldoAlt || 0);
+      const saldoAlt = data.saldoAlt !== undefined ? data.saldoAlt : (data.anfangssaldo !== undefined ? data.anfangssaldo : 0);
+      const saldoNeu = data.saldoNeu !== undefined ? data.saldoNeu : (data.endsaldo !== undefined ? data.endsaldo : 0);
+      const saldoDiff = saldoNeu - saldoAlt;
       let missingGapsError = false;
 
-      if (data.saldoNeu !== undefined && data.saldoAlt !== undefined) {
+      if ((data.saldoNeu !== undefined || data.endsaldo !== undefined) && (data.saldoAlt !== undefined || data.anfangssaldo !== undefined)) {
         if (Math.abs(saldoDiff - summe) > 0.05) {
           missingGapsError = true;
           console.warn('[BSP] Saldo-Prüfung FEHLGESCHLAGEN', 'Diff:', saldoDiff, 'Summe:', summe);
         }
       }
 
-      BSP.hideScrim();
       await _presentResults(data, missingGapsError);
 
     } catch(e) {
+      BSP.toast('Fehler bei der Auswertung: ' + e.message, 'er');
+    } finally {
       _revokeAllPages();
       BSP.hideScrim();
-      BSP.toast('Fehler bei der Auswertung: ' + e.message, 'er');
     }
   }
 
