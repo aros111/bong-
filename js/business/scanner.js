@@ -97,7 +97,9 @@ const OVERLAY_HTML = `
       </div>
       <div class="field sett-mt" id="sc-empf-wrap" style="display:none;background:rgba(200,164,90,.05);border-color:rgba(200,164,90,.2)">
         <label style="color:var(--gold)">Rechnungsempfänger *</label>
-        <input id="sc-empfaenger" class="sett-inp" type="text" placeholder="Pflichtfeld für Ausgangsrechnungen (AR)">
+        <input id="sc-empfaenger" class="sett-inp" type="text" placeholder="Name des Kunden für Ausgangsrechnungen (AR)">
+        <label style="color:var(--gold);margin-top:8px;display:block">Adresse Rechnungsempfänger</label>
+        <textarea id="sc-empfaenger-adresse" class="sett-inp" rows="2" placeholder="Straße, PLZ, Ort" style="resize:none;font-size:13px;padding:8px"></textarea>
       </div>
     <div class="g2 sett-mt">
       <div class="field"><label>Brutto (€)</label><input id="sc-brutto" class="sett-inp" type="text" inputmode="decimal" oninput="ScannerModule.calcMwst()"></div>
@@ -138,6 +140,16 @@ const OVERLAY_HTML = `
         <input id="sc-split-pct" class="sett-inp" type="number" value="0" min="0" max="100" oninput="ScannerModule.updateSplit()">
         <div id="sc-split-val" style="font-size:12px;color:var(--txt2);white-space:nowrap">0,00 € Privat</div>
       </div>
+    </div>
+    
+    <!-- AR Rechnungsbild / Manuell Foto -->
+    <div class="field sett-mt" id="sc-manual-foto-wrap" style="display:none;background:rgba(58,175,112,.05);border-color:rgba(58,175,112,.2)">
+      <label style="color:var(--grn)">Rechnungsbild (Optional)</label>
+      <label class="btn btn-g" style="width:100%;justify-content:center;cursor:pointer;margin-bottom:8px">
+        📷 Foto / Datei
+        <input type="file" accept="image/*,application/pdf" style="display:none" onchange="ScannerModule.loadManualFile(this)">
+      </label>
+      <img id="sc-manual-thumb" style="display:none;width:100%;border-radius:var(--r8);border:1px solid var(--br);object-fit:cover;max-height:200px">
     </div>
     
     <!-- Reverse Charge -->
@@ -219,7 +231,19 @@ function open() {
   });
 }
 
-function openManuell() { open(); setType('manual'); }
+function openManuell(typeArg) { 
+  open(); 
+  if (typeArg === 'ar') {
+    setType('ar'); // AR Modus
+    // Bei Aufruf von Manuell AR: Kamera-Wrap verstecken, Formular zeigen!
+    const camWrap = document.getElementById('sc-cam-wrap');
+    if (camWrap) camWrap.style.display = 'none';
+    const resBiz = document.getElementById('sc-res-biz');
+    if (resBiz) resBiz.style.display = 'block';
+  } else {
+    setType('manual');
+  }
+}
 
 function close() {
   stopCam();
@@ -282,16 +306,23 @@ function setType(t) {
     if (stellerEl && !stellerEl.value) stellerEl.value = name;
   }
 
-  // Bei manual: Felder direkt zeigen
+  // Bei manual oder AR-Manual: Foto-Wrap zeigen
+  const fotoWrap = document.getElementById('sc-manual-foto-wrap');
+  if (fotoWrap) {
+    fotoWrap.style.display = (isManual || (t === 'ar' && camWrap && camWrap.style.display === 'none')) ? 'block' : 'none';
+  }
+
   if (isManual) {
     const today = new Date().toISOString().split('T')[0];
     const dateEl = document.getElementById('sc-date');
     if (dateEl && !dateEl.value) dateEl.value = today;
   } else if (isBiz) {
-    // Felder erst nach Scan zeigen
-    if (resBiz) resBiz.style.display = 'none';
-    const ph = document.getElementById('sc-ph');
-    if (ph) ph.style.display = 'flex';
+    if (camWrap && camWrap.style.display !== 'none') {
+      // Felder erst nach Scan zeigen
+      if (resBiz) resBiz.style.display = 'none';
+      const ph = document.getElementById('sc-ph');
+      if (ph) ph.style.display = 'flex';
+    }
   }
 }
 
@@ -498,6 +529,7 @@ ANTWORTE AUSSCHLIESSLICH mit diesem JSON-Objekt, ohne Erklärung, ohne Markdown:
   if (isAR) {
     prompt += `  "shop": "Rechnungssteller (Person oder Firma die die Rechnung ausstellt – steht meist oben)",
   "empfaenger": "Rechnungsempfänger (Person oder Firma an die die Rechnung gerichtet ist – steht in der Adresszeile darunter)",
+  "empfaengerAdresse": "Falls ersichtlich, die vollständige Adresse des Rechnungsempfängers",
 `;
   } else {
     prompt += `  "shop": "Name des Händlers oder Verkäufers",
@@ -614,6 +646,7 @@ function _fillForm(r) {
   }
 
   set('sc-empfaenger', r.empfaenger || '');
+  set('sc-empfaenger-adresse', r.empfaengerAdresse || '');
   set('sc-date', r.date);
   set('sc-brutto', r.brutto != null ? Number(r.brutto).toFixed(2) : '');
   set('sc-net', r.net != null ? Number(r.net).toFixed(2) : '');
@@ -722,6 +755,7 @@ async function save() {
     const rechnungssteller = [s.firmenname || s.vorname, s.nachname].filter(Boolean).join(' ') || 'Mein Unternehmen';
     const shop = _scanMode === 'ar' ? rechnungssteller : shop_er;
     const empfaenger = get('sc-empfaenger');
+    const empfAdresse = _scanMode === 'ar' ? get('sc-empfaenger-adresse') : null;
     const brutto = parseFloat(get('sc-brutto').replace(',', '.')) || 0;
     const date = get('sc-date');
 
@@ -745,6 +779,7 @@ async function save() {
     item = {
       type: _scanMode === 'ar' ? 'ar' : 'er',
       empfaenger: _scanMode === 'ar' ? empfaenger : null,
+      empfaengerAdresse: empfAdresse,
       belegNr: BSP.nextNr(_scanMode === 'ar' ? 'ar' : 'er'),
       belegNrExtern: get('sc-bleg-ext') || null,
       shop,
@@ -907,11 +942,60 @@ function _markError(id) {
   setTimeout(() => { parent.style.borderColor = ''; parent.style.boxShadow = ''; }, 3000);
 }
 
+// ── Vorbefüllung von KI ───────────────────────────────────────
+function prefillFromAI(parsed) {
+  openManuell(parsed.type || 'er'); // Setzt Modus + UI sichtbar
+  
+  const setF = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (val) {
+      el.value = val;
+      el.style.backgroundColor = '';
+    } else {
+      el.value = '';
+      el.style.backgroundColor = 'rgba(255, 200, 0, 0.2)'; // gelb markiert falls leer
+    }
+  };
+  
+  if (parsed.type === 'ar') {
+    setF('sc-empfaenger', parsed.shop);
+    if(parsed.empfAdresse) setF('sc-empfaenger-adresse', parsed.empfAdresse);
+  } else {
+    setF('sc-shop', parsed.shop);
+  }
+  setF('sc-date', parsed.date);
+  setF('sc-brutto', parsed.brutto);
+  
+  if(parsed.mwstRate !== undefined && parsed.mwstRate !== null) {
+    setF('sc-rate', parsed.mwstRate);
+  } else {
+    setF('sc-rate', '');
+  }
+  
+  if(parsed.category) {
+     const catEl = document.getElementById('sc-cat');
+     if(catEl) {
+        const found = [...catEl.options].find(o => o.text.includes(parsed.category) || parsed.category.includes(o.text));
+        if (found) { catEl.value = found.value; catEl.style.backgroundColor = ''; }
+        else catEl.style.backgroundColor = 'rgba(255, 200, 0, 0.2)';
+     }
+  }
+
+  const payEl = document.getElementById('sc-pay');
+  if(payEl && parsed.payment) {
+    const foundP = [...payEl.options].find(o => o.text.toLowerCase().includes(parsed.payment.toLowerCase()));
+    if(foundP) payEl.value = foundP.value;
+  }
+  
+  calcMwst();
+}
+
 // ── Öffentliche API ───────────────────────────────────────────
 return {
   init, open, openManuell, close,
   setType, startCam, stopCam, capture, loadFile, removePage, finishCapture,
-  calcMwst, suggestShops, save, reset, updateSplit
+  calcMwst, suggestShops, save, reset, updateSplit, prefillFromAI
 };
 
 })();

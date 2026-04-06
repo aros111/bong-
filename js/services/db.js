@@ -7,7 +7,7 @@
 
   BSP.initDB = function() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open('bsp_v3', 3);
+      const req = indexedDB.open('bsp_v3', 4); // Upgrade zu Version 4 für Bankverwaltung
 
       req.onupgradeneeded = e => {
         const db = e.target.result;
@@ -37,6 +37,13 @@
         if (!db.objectStoreNames.contains('konto_buchungen')) {
           const s = db.createObjectStore('konto_buchungen', { keyPath: 'id', autoIncrement: true });
           s.createIndex('datum', 'datum');
+          s.createIndex('bankId', 'bankId');
+        }
+        
+        // ═══ Version 4: Bankverwaltung für Konto Modul ═══
+        if (!db.objectStoreNames.contains('konto_banken')) {
+          const banken = db.createObjectStore('konto_banken', { keyPath: 'id' });
+          banken.createIndex('typ', 'typ'); // geschaeftskonto | privatkonto
         }
 
         if (!db.objectStoreNames.contains('privat_belege')) {

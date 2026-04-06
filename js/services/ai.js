@@ -21,9 +21,14 @@
       const allImages = images.length ? images : (imageB64 ? [imageB64] : []);
       
       allImages.forEach(img => {
-        const mediaType = img.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-        const data = img.replace(/^data:[^;]+;base64,/, '');
-        content.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data } });
+        if (img.startsWith('data:application/pdf')) {
+          const data = img.replace(/^data:application\/pdf;base64,/, '');
+          content.push({ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } });
+        } else {
+          const mediaType = img.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+          const data = img.replace(/^data:[^;]+;base64,/, '');
+          content.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data } });
+        }
       });
 
       content.push({ type: 'text', text: prompt });

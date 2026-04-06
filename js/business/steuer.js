@@ -141,7 +141,7 @@ const VIEW_HTML = `
   <div class="stitle">Ausgaben nach Kategorie</div>
   <div id="st-cats" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px"></div>
 
-  <div class="scroll-spacer"></div>
+  <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
 </div>
 `;
 

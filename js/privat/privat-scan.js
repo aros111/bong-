@@ -266,7 +266,41 @@ function reset() {
 function _setLog(m) { document.getElementById('ps-prog-log').textContent = m; }
 function _setP(p) { document.getElementById('ps-prog-fill').style.width = p + '%'; }
 
-return { init, open, close, startCam, stopCam, capture, loadFile, removePage, finishCapture, save, reset };
+// ── Vorbefüllung von KI ───────────────────────────────────────
+function prefillFromAI(parsed) {
+  open(); // Öffnet Privat Scanner Overlay
+  stopCam(); // Kamera stoppen
+  document.getElementById('ps-res').style.display = 'block'; // Formular anzeigen
+  document.getElementById('ps-cam-btns').style.display = 'none';
+  document.getElementById('ps-ph').style.display = 'none';
+  
+  const setF = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (val) {
+      el.value = val;
+      el.style.backgroundColor = '';
+    } else {
+      el.value = '';
+      el.style.backgroundColor = 'rgba(255, 200, 0, 0.2)'; // gelb markiert falls leer
+    }
+  };
+  
+  setF('ps-shop', parsed.shop);
+  setF('ps-date', parsed.date);
+  setF('ps-brutto', parsed.brutto);
+  
+  if(parsed.category) {
+     const catEl = document.getElementById('ps-cat');
+     if(catEl) {
+        const found = [...catEl.options].find(o => o.text.includes(parsed.category) || parsed.category.includes(o.text));
+        if (found) { catEl.value = found.value; catEl.style.backgroundColor = ''; }
+        else catEl.style.backgroundColor = 'rgba(255, 200, 0, 0.2)';
+     }
+  }
+}
+
+return { init, open, close, startCam, stopCam, capture, loadFile, removePage, finishCapture, save, reset, prefillFromAI };
 
 })();
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bong-manager-v4.3.1';
+const CACHE_NAME = 'bong-manager-v4.4.0';
 
 const ASSETS = [
   './',
@@ -28,7 +28,10 @@ const ASSETS = [
   './js/business/verpflegung.js',
   './js/business/export.js',
   './js/business/review-workflow.js',
-  './js/business/konto.js',
+  './js/business/konto-shell.js',
+  './js/business/konto-import.js',
+  './js/business/konto-abgleich.js',
+  './js/business/konto-uebersicht.js',
   './js/business/abo.js',
   './js/business/einstellungen.js',
   './js/business/sprache.js',

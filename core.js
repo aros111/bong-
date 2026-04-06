@@ -532,6 +532,74 @@ const fd = BSP.fd.bind(BSP);
 const eh = BSP.eh.bind(BSP);
 
 // Global Export
+  // ── Zentrale KI-Analyse für Sprache und manuellen Text ──────────────
+  BSP.analysiereEingabeText = async function(text, modus) {
+    if (typeof BSP.showScrim === 'function') BSP.showScrim('🤖 KI analysiert Eingabe...');
+    
+    let prompt = '';
+    if (modus === 'business') {
+      prompt = `Du bist ein Buchhalter-Assistent für deutsche Freiberufler. Der Nutzer hat folgendes eingegeben oder gesprochen:
+"${text}"
+Extrahiere daraus einen strukturierten Beleg mit allen relevanten Feldern.
+Für Ausgaben (ER): Händler/Abo-Name, Datum, Betrag in EUR, Typ (er), MwSt-Satz (19, 7 oder 0), Kategorie aus SKR03.
+Für Einnahmen (AR): Rechnungsempfänger (Kunde), Betrag in EUR, Typ (ar), Zweck (Leistungsbeschreibung), Datum, MwSt-Satz.
+Datum: Heute ist ${new Date().toISOString().split('T')[0]}, falls "heute", "gestern" oder keine Angabe vorliegt, rechne es um bzw. setze null, wenn unklar ist.
+Für Felder, die nicht aus dem Text abgeleitet werden können, nutze leere Strings. Erfinde absolut keine Informationen!
+GIB EXAKT DIESES JSON-FORMAT ZURÜCK (Ohne Markdowns):
+{
+  "shop": "", // bei ER der Händler, bei AR der Rechnungsempfänger
+  "empfaengerAdresse": "", // bei AR: Die vollständige Postadresse des Rechnungsempfängers
+  "date": "YYYY-MM-DD",
+  "brutto": 12.34, // Als Zahl, nicht als String.
+  "mwstRate": 19,
+  "category": "Bürobedarf",
+  "type": "er" // ODER "ar"
+}`;
+    } else {
+      prompt = `Du bist ein persönlicher Assistent für Privatausgaben. Der Nutzer hat folgendes eingegeben oder gesprochen:
+"${text}"
+Extrahiere daraus einen privaten Beleg. 
+Datum ist heute (${new Date().toISOString().split('T')[0]}), wenn nicht anders erwähnt ("gestern" etc. umrechnen).
+Erfinde absolut keine Daten. Gib fehlenden Feldern einen leeren String "".
+GIB EXAKT DIESES JSON-FORMAT ZURÜCK (Ohne Markdowns):
+{
+  "shop": "Händler",
+  "date": "YYYY-MM-DD",
+  "brutto": 12.34, 
+  "category": "Lebensmittel" // Aus Katalog: Lebensmittel, Restaurant, Elektronik, Freizeit, Sonstiges
+}`;
+    }
+
+    try {
+      if(!BSP.callClaude) throw new Error('API nicht geladen (callClaude fehlt).');
+      const raw = await BSP.callClaude({ prompt, model: 'claude-3-5-sonnet-20241022' });
+      let parsed = null;
+      try { parsed = JSON.parse(raw.trim()); } catch(e) {}
+      if (!parsed) {
+        const m = raw.match(/\{[\s\S]*\}/);
+        if (m) parsed = JSON.parse(m[0]);
+      }
+      if (!parsed) throw new Error('Unlesbare KI-Antwort');
+
+      if (typeof BSP.hideScrim === 'function') BSP.hideScrim();
+
+      // Formular basierend auf Modus vorbefüllen
+      if (modus === 'business' && typeof ScannerModule !== 'undefined' && ScannerModule.prefillFromAI) {
+        ScannerModule.prefillFromAI(parsed);
+      } else if (modus === 'privat' && typeof PrivatScanModule !== 'undefined' && PrivatScanModule.prefillFromAI) {
+        PrivatScanModule.prefillFromAI(parsed);
+      } else {
+        BSP.toast('ScannerModule nicht verfügbar (Vorbefüllen gescheitert)', 'er');
+        console.error('Konnte Formular nicht befüllen', parsed);
+      }
+
+    } catch(e) {
+      if (typeof BSP.hideScrim === 'function') BSP.hideScrim();
+      BSP.toast('KI Analyse fehlgeschlagen: ' + e.message, 'er');
+      console.error(e);
+    }
+  };
+
 window.BSP = BSP;
 
 // Transition-Banner direkt nach core:ready synchronisieren

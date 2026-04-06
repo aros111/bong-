@@ -474,24 +474,35 @@ async function _runZIP() {
     // ── 3. Kontoauszüge (kontoauszuege_q1_2026.csv) ─────────
     _log('📊 kontoauszuege_q1_2026.csv wird generiert …');
     if (fk.length > 0) {
-      const kHeader = _headerRow('Datum','Auftraggeber/Empfänger','Betrag (€)','Buchungstyp','Verwendungszweck','Konto-ID','Status','Abgeglichen mit Beleg','Hinweis');
-      const kRows = fk.map(k => {
-        let hinweis = '';
-        if (k.betrag > 0 && k.status !== 'abgeglichen') hinweis = '⚠️ Mögliche fehlende Ausgangsrechnung';
-        if (k.isDuplicateAlert) hinweis = '⚠️ Mögliche Dopplung';
-        return [
-          k.datum||'',
-          k.auftraggeber||k.empfaenger||'',
-          Number(k.betrag||0).toFixed(2).replace('.',','),
-          k.buchungstyp||k.typ||'',
-          k.zweck||'',
-          k.kontoId||k.iban||'',
-          k.status||'offen',
-          k.belegNr||'',
-          hinweis
-        ].map(_esc).join(';');
+      const banken = await BSP.dbGetAll('konto_banken') || [];
+      const kRows = [];
+      const kHeader = _headerRow('Bank / IBAN','Datum','Auftraggeber/Empfänger','Betrag (€)','Buchungstyp','Verwendungszweck','Status','Abgeglichen mit Beleg','Hinweis');
+      kRows.push(kHeader);
+
+      const bankIds = [...new Set(fk.map(k => k.bankId || 'unbekannt'))];
+      bankIds.forEach(bankId => {
+        const bank = banken.find(b => b.id === bankId);
+        const bankName = bank ? `${bank.name} (${bank.iban})` : 'Unbekannte Bank';
+        const bankBuchungen = fk.filter(k => (k.bankId || 'unbekannt') === bankId);
+
+        bankBuchungen.forEach(k => {
+          let hinweis = '';
+          if (k.betrag > 0 && k.status !== 'abgeglichen') hinweis = '⚠️ Mögliche fehlende Ausgangsrechnung';
+          if (k.isDuplicateAlert) hinweis = '⚠️ Mögliche Dopplung';
+          kRows.push([
+            bankName,
+            k.datum||'',
+            k.auftraggeber||k.empfaenger||'',
+            Number(k.betrag||0).toFixed(2).replace('.',','),
+            k.buchungstyp||k.typ||'',
+            k.zweck||'',
+            k.status||'offen',
+            k.belegNr||'',
+            hinweis
+          ].map(_esc).join(';'));
+        });
       });
-      zip.file(`kontoauszuege_${periodLabel.toLowerCase()}_${year}.csv`, '\uFEFF' + [kHeader, ...kRows].join('\r\n'));
+      zip.file(`kontoauszuege_${periodLabel.toLowerCase()}_${year}.csv`, '\uFEFF' + kRows.join('\r\n'));
     }
 
     // ── 4. Belege-Ordner + zuordnung.xml ─────────────────────

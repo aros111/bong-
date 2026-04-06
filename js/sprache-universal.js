@@ -119,7 +119,7 @@ const SpracheUniversal = (() => {
         "summary": "kurze Zusammenfassung für Toast"
       }`;
 
-      const response = await BSP.AI.process({ prompt, model: 'claude-3-5-sonnet-20241022' });
+      const response = await BSP.callClaude({ prompt, model: 'claude-3-5-sonnet-20241022' });
       const res = JSON.parse(response);
 
       await _routeToModule(res);
@@ -133,10 +133,9 @@ const SpracheUniversal = (() => {
 
   async function _routeToModule(res) {
     if (res.intent === 'BUSINESS_BELEG') {
-      await BSP.addBeleg({ type: 'er', ...res.data });
+      await BSP.analysiereEingabeText(_finalText, 'business');
     } else if (res.intent === 'PRIVAT_BELEG') {
-      await BSP.dbAdd('privat_belege', res.data);
-      BSP.emit('privat:saved', res.data);
+      await BSP.analysiereEingabeText(_finalText, 'privat');
     } else if (res.intent === 'BUSINESS_KONTEXT') {
       const entry = { text: _finalText, analysis: res.data, savedAt: Date.now() };
       await BSP.dbAdd('kontext', entry);

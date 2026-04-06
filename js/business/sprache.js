@@ -223,37 +223,10 @@ async function analyze() {
   const analyzeBtn = document.getElementById('spr-analyze-btn');
   if (analyzeBtn) analyzeBtn.disabled = true;
 
-  const prompt = `Du bist ein Buchhalter-Assistent für deutsche Freiberufler. Der Nutzer hat folgenden Text gesprochen:
-
-"${_transcript}"
-
-Interpretiere diesen Text als Beleg-Eintrag. Antworte AUSSCHLIESSLICH mit diesem JSON:
-{
-  "shop": "Händler oder Beschreibung",
-  "date": "YYYY-MM-DD oder null",
-  "brutto": 0.00,
-  "mwstRate": 19,
-  "category": "Bürobedarf",
-  "type": "er"
-}
-type: "er" für Ausgaben/Eingangsbelege, "ar" für Einnahmen/Ausgangsrechnungen.
-Datum: Heute ist ${new Date().toISOString().split('T')[0]}.
-Wenn ein Betrag genannt: Brutto. mwstRate: 19 oder 7 je nach Kontext.`;
-
   try {
-    const raw = await BSP.ask({ prompt, maxTokens: 256 });
-    let parsed = null;
-    try { parsed = JSON.parse(raw.trim()); } catch(_) {}
-    if (!parsed) {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (m) try { parsed = JSON.parse(m[0]); } catch(_) {}
-    }
-    if (!parsed) throw new Error('KI-Antwort nicht lesbar');
-
-    _lastResult = parsed;
-    _fillSpracheForm(parsed);
-    document.getElementById('spr-result').style.display = 'block';
-    _setStatus('✓ Felder befüllt – bitte prüfen und speichern');
+    close();
+    const modus = BSP.state.currentPillar === 'privat' ? 'privat' : 'business';
+    await BSP.analysiereEingabeText(_transcript, modus);
   } catch(e) {
     _setStatus('❌ ' + (e.message || 'Fehler'));
     BSP.toast(e.message, 'er');

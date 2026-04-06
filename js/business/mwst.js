@@ -347,7 +347,7 @@ async function openZahllastSheet() {
       📤 Jetzt ans Steuerbüro senden
     </button>
     <button class="btn btn-g" style="width:100%;justify-content:center" onclick="BSP.closeSheet()">Schließen</button>
-    <div class="scroll-spacer"></div>
+    <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
   `;
   BSP.showSheet(html);
 }

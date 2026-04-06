@@ -219,7 +219,10 @@
 <script src="./js/business/verpflegung.js"></script>
 <script src="./js/business/export.js"></script>
 <script src="./js/business/review-workflow.js"></script>
-<script src="./js/business/konto.js"></script>
+<script src="./js/business/konto-shell.js"></script>
+<script src="./js/business/konto-import.js"></script>
+<script src="./js/business/konto-abgleich.js"></script>
+<script src="./js/business/konto-uebersicht.js"></script>
 <script src="./js/business/abo.js"></script>
 
 <script>
@@ -240,7 +243,7 @@ async function _initPillarModules(p) {
     await BSP.safeInit('VerpflegungModule', typeof VerpflegungModule !== 'undefined' ? VerpflegungModule : null);
     await BSP.safeInit('ExportModule', typeof ExportModule !== 'undefined' ? ExportModule : null);
     await BSP.safeInit('ReviewWorkflowModule', typeof ReviewWorkflowModule !== 'undefined' ? ReviewWorkflowModule : null);
-    await BSP.safeInit('KontoModule', typeof KontoModule !== 'undefined' ? KontoModule : null);
+    await BSP.safeInit('KontoShell', typeof KontoShell !== 'undefined' ? KontoShell : null);
     await BSP.safeInit('AboModule', typeof AboModule !== 'undefined' ? AboModule : null);
     await BSP.safeInit('EinstellungenModule', typeof EinstellungenModule !== 'undefined' ? EinstellungenModule : null);
   } else if (p === 'privat') {

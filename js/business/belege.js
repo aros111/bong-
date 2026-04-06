@@ -108,6 +108,10 @@ const BelegeModule = (() => {
           <span style="font-size:11px;color:var(--gold)">Rechnungsempfänger</span>
           <span style="font-size:12px;color:var(--txt);font-weight:500">${BSP.eh(b.empfaenger||'—')}</span>
         </div>
+        ${b.empfaengerAdresse ? `<div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid var(--br)">
+          <span style="font-size:11px;color:var(--txt3)">Adresse</span>
+          <span style="font-size:11px;color:var(--txt2);text-align:right;white-space:pre-wrap;max-width:60%">${BSP.eh(b.empfaengerAdresse)}</span>
+        </div>` : ''}
       </div>` : b.type !== 'priv' ? `
       <div class="card card-sm">
         <div style="display:flex;justify-content:space-between;padding:4px 0">

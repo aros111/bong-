@@ -336,7 +336,7 @@ function _buildTabNeuHtml(prefill = '') {
     </button>
     <button class="btn btn-g" style="width:100%;justify-content:center"
       onclick="BSP.closeSheet();FeedbackModule._onSheetClose()">Abbrechen</button>
-    <div class="scroll-spacer"></div>
+    <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
   `;
 }
 
@@ -509,7 +509,7 @@ async function _loadFeedbacksIntoList() {
     </button>
     
     <button class="btn btn-g" style="width:100%;justify-content:center;margin-bottom:24px" onclick="BSP.closeSheet();FeedbackModule._onSheetClose()">Schließen</button>
-    <div class="scroll-spacer"></div>
+    <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
   `;
 }
 
