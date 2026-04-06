@@ -48,11 +48,10 @@ const StiftModule = (() => {
   }
 
   function close() {
-    document.getElementById('stift-ovl').classList.remove('on');
-    // Felder leeren
-    ['stift-text', 'stift-shop', 'stift-amount'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
+    const ovl = document.getElementById('stift-ovl');
+    if (ovl) ovl.classList.remove('on');
+    const txt = document.getElementById('stift-text');
+    if (txt) txt.value = '';
   }
 
   async function save() {
