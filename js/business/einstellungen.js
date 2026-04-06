@@ -242,30 +242,7 @@ const VIEW_HTML = `
   </div>
 
 
-  <!-- ═══ ENTWICKLUNG & FEEDBACK ═══════════════════════════════ -->
-  <div style="background:rgba(42,106,219,.06);border:1px solid rgba(42,106,219,.2);border-radius:var(--r16);padding:16px;margin-bottom:12px">
-    <div style="font-size:11px;font-weight:600;color:#2A6ADB;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px;display:flex;align-items:center;gap:6px">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2A6ADB" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-      Entwicklung & Feedback
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:var(--txt)">
-      <span>Autom. Fehler-Feedback blockieren</span>
-      <label class="switch"><input type="checkbox" id="s_disableAutoFeedback"><span class="slider"></span></label>
-    </div>
-    <div id="fb-sett-count" style="font-size:12px;color:var(--txt2);margin-bottom:12px">Lade…</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <button onclick="if(typeof FeedbackModule!=='undefined')FeedbackModule.openUebersicht()"
-        style="padding:12px;border:1px solid rgba(42,106,219,.3);border-radius:var(--r8);
-        background:transparent;color:#2A6ADB;font-size:12px;cursor:pointer">
-        📋 Alle Einträge
-      </button>
-      <button onclick="if(typeof FeedbackModule!=='undefined')FeedbackModule.openUebersicht()"
-        style="padding:12px;border:none;border-radius:var(--r8);
-        background:#2A6ADB;color:#fff;font-size:12px;cursor:pointer;font-weight:500">
-        ⚡ Prompt generieren
-      </button>
-    </div>
-  </div>
+
 
   <!-- ═══ SPEICHERN ═════════════════════════════════════════ -->
   <div style="margin-top:20px;margin-bottom:20px">
@@ -319,17 +296,6 @@ function init() {
   BSP.on('view:changed', async ({ name }) => {
     if (name === 'einstellungen') {
       await _updateDriveUI();
-      // Feedback-Counter aktualisieren
-      const countEl = document.getElementById('fb-sett-count');
-      if (countEl && typeof FeedbackModule !== 'undefined') {
-        try {
-          const all = await BSP.dbGetAll('feedback_eintraege');
-          const offen = (all||[]).filter(e => e.status === 'Offen').length;
-          const total = (all||[]).length;
-          countEl.textContent = `${total} gespeicherte Einträge · ${offen} offen`;
-          countEl.style.color = offen > 0 ? '#2A6ADB' : 'var(--txt3)';
-        } catch(e) { countEl.textContent = '–'; }
-      }
     }
   });
 }
@@ -371,9 +337,6 @@ async function _loadIntoForm() {
   const tsw = document.getElementById('s_transitionMode');
   if (tsw) tsw.checked = s.transitionMode === true;
   
-  const dafb = document.getElementById('s_disableAutoFeedback');
-  if (dafb) dafb.checked = s.disableAutoFeedback === true;
-
   _renderMismatchList();
 
   ids.forEach(id => {
@@ -464,7 +427,6 @@ async function save() {
     voranmeldungRhythmus: get('voranmeldungRhythmus') || 'monatlich',
     pin: get('pin') || '0000',
     transitionMode: document.getElementById('s_transitionMode')?.checked || false,
-    disableAutoFeedback: document.getElementById('s_disableAutoFeedback')?.checked || false,
     stempelName: get('stempelName'),
     stempelText: document.getElementById('s_stempelText')?.value || '',
     stempelColor: get('stempelColor') || '#c8a45a',

@@ -36,6 +36,13 @@ let _tooltipShown = localStorage.getItem('bsp_fb_tooltip') === '1';
 let _sheetTyp = 'Änderungswunsch';
 let _sheetPrio = 'Mittel';
 let _currentScreenshot = null;
+let _activeTab = 'Neu';
+let _currentKontext = null;
+let _currentKontextText = '';
+
+let _swipeStartX = 0;
+let _swipeCurrentX = 0;
+let _swipeEl = null;
 
 // ── Typ- und Prio-Farben ──────────────────────────────────────
 const TYP_COLORS = {
@@ -64,6 +71,31 @@ function init() {
   localStorage.setItem('bsp_sw_version', 'v4.3.0');
   // Pillar-Tracking: wenn _setPillar aufgerufen wird, state.activePillar setzen
   BSP.on('pillar:changed', ({ pillar }) => { BSP.state.activePillar = pillar; });
+  // Badge am Start updaten
+  _updateBadge();
+}
+
+async function _updateBadge() {
+  const all = (await BSP.dbGetAll('feedback_eintraege')) || [];
+  const count = all.filter(e => e.status === 'Offen').length;
+  
+  const btn = document.getElementById('bsp-feedback-btn');
+  if (!btn) return;
+
+  let badge = document.getElementById('bsp-fb-badge');
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'bsp-fb-badge';
+    badge.style.cssText = 'position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;font-size:10px;font-weight:bold;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;border:2px solid #2A6ADB';
+    btn.appendChild(badge);
+  }
+  
+  if (count > 0) {
+    badge.textContent = count;
+    badge.style.display = 'flex';
+  } else {
+    badge.style.display = 'none';
+  }
 }
 
 // ── AUFGABE 3 – Floating Button ───────────────────────────────
@@ -152,12 +184,12 @@ function _setInactive(inactive) {
 
 // ── AUFGABE 4 – Feedback-Sheet ────────────────────────────────
 async function _onBtnClick() {
-  // Mikrofon läuft gerade? → blockieren
   const spracheAktiv = typeof SpracheUniversal !== 'undefined' && SpracheUniversal.isActive && SpracheUniversal.isActive();
   if (spracheAktiv) { BSP.toast('Spracheingabe aktiv – erst beenden', 'wr'); return; }
 
   _sheetTyp = 'Änderungswunsch';
   _sheetPrio = 'Mittel';
+  _activeTab = 'Neu';
 
   if (typeof BSP !== 'undefined') BSP.showScrim('Erfasse Kontext…');
   _currentScreenshot = null;
@@ -169,18 +201,61 @@ async function _onBtnClick() {
   }
   if (typeof BSP !== 'undefined') BSP.hideScrim();
 
-  const kontext = BSP.getAktuellerKontext();
+  _currentKontext = BSP.getAktuellerKontext();
   const pillarLabel = { business: 'Business', privat: 'Privat', archiv: 'Archiv', leben: 'Leben' };
-  const kontextText = `${pillarLabel[kontext.saeuler] || kontext.saeuler} → ${kontext.modul}`;
+  _currentKontextText = `${pillarLabel[_currentKontext.saeuler] || _currentKontext.saeuler} → ${_currentKontext.modul}`;
 
-  const sheet = _buildSheet(kontext, kontextText);
-  BSP.showSheet(sheet);
-
-  // Mikrofon als "belegt" markieren
+  _renderMasterSheet();
   _setInactive(true);
 }
 
-function _buildSheet(kontext, kontextText, prefill = '') {
+function _renderMasterSheet(prefill = '') {
+  const isNeu = _activeTab === 'Neu';
+
+  let rawContent = isNeu ? _buildTabNeuHtml(prefill) : `<div id="fb-list-container" style="min-height:200px;text-align:center;padding-top:40px;color:var(--txt3)">Lade Feedbacks…</div>`;
+
+  const html = `
+    <div class="sh"></div>
+    <div style="font-size:17px;font-weight:200;letter-spacing:-.5px;margin-bottom:12px">Feedback & Ideen</div>
+    
+    <!-- TABS -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;background:var(--bg2);padding:4px;border-radius:100px">
+      <button onclick="FeedbackModule._switchTab('Neu')"
+        style="flex:1;padding:8px;border:none;border-radius:100px;background:${isNeu?'#2A6ADB':'transparent'};
+        color:${isNeu?'#fff':'var(--txt2)'};font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:${isNeu?'0 2px 8px rgba(0,0,0,.1)':'none'}">
+        ✨ Neu
+      </button>
+      <button onclick="FeedbackModule._switchTab('Feedbacks')"
+        style="flex:1;padding:8px;border:none;border-radius:100px;background:${!isNeu?'#2A6ADB':'transparent'};
+        color:${!isNeu?'#fff':'var(--txt2)'};font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;box-shadow:${!isNeu?'0 2px 8px rgba(0,0,0,.1)':'none'}">
+        📋 Meine Feedbacks
+      </button>
+    </div>
+
+    <div id="fb-tab-content">
+      ${rawContent}
+    </div>
+  `;
+
+  const existingSheet = document.getElementById('fb-master-wrapper');
+  if (existingSheet) {
+    existingSheet.innerHTML = html;
+  } else {
+    BSP.showSheet(`<div id="fb-master-wrapper">${html}</div>`);
+  }
+
+  if (!isNeu) {
+    _loadFeedbacksIntoList();
+  }
+}
+
+function _switchTab(tab) {
+  _activeTab = tab;
+  _stopMic();
+  _renderMasterSheet();
+}
+
+function _buildTabNeuHtml(prefill = '') {
   const typen = ['Bug', 'Änderungswunsch', 'Idee', 'Lob'];
   const prios = ['Hoch', 'Mittel', 'Niedrig'];
 
@@ -205,17 +280,14 @@ function _buildSheet(kontext, kontextText, prefill = '') {
   }).join('');
 
   return `
-    <div class="sh"></div>
-    <div style="font-size:17px;font-weight:200;letter-spacing:-.5px;margin-bottom:4px">Feedback & Ideen</div>
-
     <!-- Kontext-Info (nicht editierbar) -->
     <div style="background:rgba(42,106,219,.08);border:1px solid rgba(42,106,219,.2);border-radius:var(--r8);
       padding:10px 12px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
       <span style="font-size:16px">📍</span>
       <div>
         <div style="font-size:10px;color:#2A6ADB;text-transform:uppercase;letter-spacing:.5px;font-weight:600">Aktueller Kontext (automatisch)</div>
-        <div style="font-size:12px;color:var(--txt)">${BSP.eh(kontextText)}</div>
-        <div style="font-size:10px;color:var(--txt3)">${kontext.version} · ${new Date(kontext.zeitstempel).toLocaleTimeString('de-DE')}</div>
+        <div style="font-size:12px;color:var(--txt)">${BSP.eh(_currentKontextText)}</div>
+        <div style="font-size:10px;color:var(--txt3)">${_currentKontext.version} · ${new Date(_currentKontext.zeitstempel).toLocaleTimeString('de-DE')}</div>
       </div>
     </div>
 
@@ -380,8 +452,14 @@ async function _saveEntry() {
   };
 
   await BSP.dbAdd('feedback_eintraege', eintrag);
-  BSP.closeSheet();
-  _onSheetClose();
+  
+  _stopMic();
+  _updateBadge(); // Badge updaten
+
+  // Nach dem Speichern automatisch in Tab "Meine Feedbacks" springen
+  _activeTab = 'Feedbacks';
+  _renderMasterSheet();
+
   BSP.toast('Feedback gespeichert – Danke! 💙', 'ok');
   BSP.emit('feedback:saved');
 }
@@ -391,8 +469,11 @@ function _onSheetClose() {
   _setInactive(false);
 }
 
-// ── AUFGABE 5 – Übersicht + Prompt-Generator ─────────────────
-async function openUebersicht() {
+// ── Tab 2: Listen-Übersicht ──────────────────────────────────
+async function _loadFeedbacksIntoList() {
+  const container = document.getElementById('fb-list-container');
+  if (!container) return;
+
   const all = (await BSP.dbGetAll('feedback_eintraege')) || [];
   all.sort((a, b) => (b.zeitstempel || '').localeCompare(a.zeitstempel || ''));
 
@@ -400,114 +481,127 @@ async function openUebersicht() {
   const offen = all.filter(e => e.status === 'Offen').length;
 
   const listHTML = all.length === 0
-    ? '<div class="empty" style="padding:24px 0">Noch keine Einträge.</div>'
+    ? '<div class="empty" style="padding:24px 0;text-align:center;color:var(--txt3)">Noch keine Einträge.</div>'
     : all.map(e => _renderEintrag(e)).join('');
 
-  const html = `
-    <div class="sh"></div>
-    <div style="font-size:17px;font-weight:200;letter-spacing:-.5px;margin-bottom:4px">Entwicklung & Feedback</div>
-    <div style="font-size:12px;color:var(--txt3);margin-bottom:20px">${count} Einträge · ${offen} offen</div>
-
-    <!-- Einträge-Liste -->
-    <div style="font-size:10px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Alle Einträge</div>
-    <div id="fb-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+  container.innerHTML = `
+    <div style="font-size:12px;color:var(--txt3);margin-bottom:16px">${count} gespeicherte Einträge · ${offen} offen</div>
+    
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px;overflow-x:hidden">
       ${listHTML}
     </div>
 
-    <!-- Prompt-Generator -->
-    <div style="background:rgba(42,106,219,.06);border:1px solid rgba(42,106,219,.2);border-radius:var(--r12);padding:14px;margin-bottom:16px">
-      <div style="font-size:11px;font-weight:600;color:#2A6ADB;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">🤖 Prompt-Generator</div>
-      <div style="font-size:12px;color:var(--txt2);margin-bottom:10px">Analysiert alle offenen Einträge und erstellt einen strukturierten Entwicklungs-Prompt.</div>
-      <button onclick="FeedbackModule._generatePrompt()"
-        style="width:100%;padding:12px;border:none;border-radius:var(--r8);background:#2A6ADB;
-        color:#fff;font-size:13px;font-weight:500;cursor:pointer;margin-bottom:10px">
-        ⚡ Prompt generieren
-      </button>
-      <textarea id="fb-prompt-output" rows="8"
-        style="display:none;width:100%;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r8);
-        padding:10px;color:var(--txt);font-size:11px;font-family:'DM Mono',monospace;
-        resize:vertical;box-sizing:border-box;outline:none;line-height:1.6"></textarea>
-      <button id="fb-copy-btn" onclick="FeedbackModule._copyPrompt()"
-        style="display:none;width:100%;padding:10px;border:1px solid #2A6ADB;border-radius:var(--r8);
-        background:transparent;color:#2A6ADB;font-size:12px;cursor:pointer;margin-top:6px">
-        📋 Prompt kopieren
-      </button>
-    </div>
-
-    <!-- Erledigte löschen -->
-    <button onclick="FeedbackModule._deleteErledigt()"
-      style="width:100%;padding:12px;border:1px solid rgba(192,64,64,.3);border-radius:var(--r8);
-      background:rgba(192,64,64,.06);color:var(--red);font-size:12px;cursor:pointer;margin-bottom:8px">
-      🗑️ Alle erledigten Einträge löschen
+    <!-- Prompt-Generator Bereich -->
+    <button onclick="FeedbackModule._generatePrompt()"
+      style="width:100%;padding:16px;border:none;border-radius:var(--r16);background:#2A6ADB;
+      color:#fff;font-size:15px;font-weight:500;cursor:pointer;letter-spacing:.2px;
+      display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">
+      ⚡ Prompt generieren
     </button>
-    <button class="btn btn-g" style="width:100%;justify-content:center" onclick="BSP.closeSheet()">Schließen</button>
+    <textarea id="fb-prompt-output" rows="8"
+      style="display:none;width:100%;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r8);
+      padding:10px;color:var(--txt);font-size:11px;font-family:'DM Mono',monospace;
+      resize:vertical;box-sizing:border-box;outline:none;line-height:1.6;margin-bottom:8px"></textarea>
+    <button id="fb-copy-btn" onclick="FeedbackModule._copyPrompt()"
+      style="display:none;width:100%;padding:12px;border:1px solid #2A6ADB;border-radius:var(--r8);
+      background:transparent;color:#2A6ADB;font-size:13px;cursor:pointer;margin-bottom:8px">
+      📋 Prompt kopieren
+    </button>
+    
+    <button class="btn btn-g" style="width:100%;justify-content:center;margin-bottom:24px" onclick="BSP.closeSheet();FeedbackModule._onSheetClose()">Schließen</button>
     <div class="scroll-spacer"></div>
   `;
-  BSP.showSheet(html);
 }
 
 function _renderEintrag(e) {
   const c  = TYP_COLORS[e.typ]  || TYP_COLORS['Idee'];
   const pc = PRIO_COLORS[e.prioritaet] || PRIO_COLORS['Mittel'];
   const d  = e.zeitstempel ? new Date(e.zeitstempel).toLocaleString('de-DE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '–';
-  const statusOpts = ['Offen', 'In Prompt aufgenommen', 'Erledigt'].map(s =>
-    `<option value="${s}" ${e.status === s ? 'selected' : ''}>${s}</option>`
-  ).join('');
   const pillarLabel = { business: 'Business', privat: 'Privat', archiv: 'Archiv', leben: 'Leben' };
 
-  const screenshotThumb = e.screenshot_b64 ? `<img src="${e.screenshot_b64}" style="height:60px;border-radius:4px;border:1px solid var(--br);cursor:pointer;margin-top:8px" onclick="window.open('${e.screenshot_b64}')" />` : '';
+  const screenshotThumb = e.screenshot_b64 ? `<img src="${e.screenshot_b64}" style="width:100%;border-radius:4px;border:1px solid var(--br);margin-bottom:8px">` : '';
+  const hasLog = e.konsolen_log && e.konsolen_log.length > 0;
 
   return `
-    <div style="background:var(--bg3);border:1px solid var(--br);border-radius:var(--r12);padding:12px">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
-        <span style="background:${c.bg};border:1px solid ${c.border};color:${c.text};font-size:9px;padding:2px 8px;border-radius:100px;font-weight:600">${BSP.eh(e.typ||'–')}</span>
-        <span style="color:${pc.color};font-size:9px;font-weight:600">${pc.label}</span>
-        <span style="font-size:9px;color:var(--txt3);margin-left:auto">${d}</span>
+    <div class="fb-item-wrap" style="position:relative;margin-bottom:2px;border-radius:var(--r12);overflow:hidden">
+      <!-- Background Delete Icon -->
+      <div style="position:absolute;top:0;right:0;bottom:0;width:100px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:var(--r12)">
+        🗑️
       </div>
-      <div style="font-size:10px;color:#2A6ADB;margin-bottom:6px">
-        📍 ${pillarLabel[e.kontext_saeuler]||e.kontext_saeuler||'?'} → ${BSP.eh(e.kontext_modul||'?')}
+      
+      <!-- Foreground Content -->
+      <div class="fb-item-front" data-id="${e.id}"
+        style="position:relative;background:var(--bg3);border:1px solid var(--br);border-radius:var(--r12);padding:12px;z-index:2;transform:translateX(0)"
+        ontouchstart="FeedbackModule._ts(event)" ontouchmove="FeedbackModule._tm(event)" ontouchend="FeedbackModule._te(event)"
+        onclick="FeedbackModule._toggleDetails(${e.id})">
+        
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
+          <span style="background:${c.bg};border:1px solid ${c.border};color:${c.text};font-size:9px;padding:2px 8px;border-radius:100px;font-weight:600">${BSP.eh(e.typ||'–')}</span>
+          <span style="color:${pc.color};font-size:9px;font-weight:600">${pc.label}</span>
+          <span style="font-size:9px;color:var(--txt3);margin-left:auto">${d}</span>
+        </div>
+        <div style="font-size:10px;color:#2A6ADB;margin-bottom:6px">
+          📍 ${pillarLabel[e.kontext_saeuler]||e.kontext_saeuler||'?'} → ${BSP.eh(e.kontext_modul||'?')}
+        </div>
+        <!-- Summary Text -->
+        <div style="font-size:12px;color:var(--txt);line-height:1.5;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${BSP.eh(e.text||'')}</div>
+        
+        <!-- Details (Hidden Default) -->
+        <div id="fb-det-${e.id}" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--br)">
+          <div style="font-size:12px;color:var(--txt);line-height:1.5;margin-bottom:8px;white-space:pre-wrap">${BSP.eh(e.text||'')}</div>
+          ${e.screenshot_b64 ? `<div style="margin-bottom:8px">${screenshotThumb}</div>` : ''}
+          ${hasLog ? `
+            <div style="font-size:10px;color:var(--txt3);margin-bottom:4px">Konsolen-Log:</div>
+            <div style="background:var(--bg2);color:var(--txt2);font-family:monospace;font-size:9px;padding:8px;border-radius:4px;max-height:120px;overflow-y:auto;white-space:pre-wrap">${e.konsolen_log.map(l => `[${l.lvl}] ${BSP.eh(l.msg)}`).join('\n')}</div>
+          ` : ''}
+          <div style="font-size:10px;color:var(--txt3);text-align:right;margin-top:8px">Wischen zum Löschen ⬅️</div>
+        </div>
       </div>
-      <div style="font-size:12px;color:var(--txt);line-height:1.5;margin-bottom:8px">${BSP.eh(e.text||'')}</div>
-      ${screenshotThumb ? `<div style="margin-bottom:8px">${screenshotThumb}</div>` : ''}
-      <div style="display:flex;align-items:center;gap:8px">
-        <select onchange="FeedbackModule._updateStatus(${e.id}, this.value)"
-          style="flex:1;background:var(--bg2);border:1px solid var(--br);border-radius:var(--r8);
-          padding:5px 8px;color:var(--txt);font-size:11px;outline:none">
-          ${statusOpts}
-        </select>
-        <button onclick="FeedbackModule._deleteOne(${e.id})"
-          style="padding:5px 10px;border:1px solid rgba(192,64,64,.3);border-radius:var(--r8);
-          background:rgba(192,64,64,.06);color:var(--red);font-size:10px;cursor:pointer">
-          🗑️
-        </button>
-      </div>
-    </div>`;
+    </div>
+  `;
 }
 
-// ── Status-Update ────────────────────────────────────────────
-async function _updateStatus(id, newStatus) {
-  const all = await BSP.dbGetAll('feedback_eintraege');
-  const item = all.find(e => e.id === id);
-  if (!item) return;
-  item.status = newStatus;
-  await BSP.dbPut('feedback_eintraege', item);
+function _toggleDetails(id) {
+  const det = document.getElementById('fb-det-' + id);
+  if (det) {
+    det.style.display = det.style.display === 'none' ? 'block' : 'none';
+  }
+}
+
+// ── Swipe to delete Logic ─────────────────────────────────────
+function _ts(e) {
+  _swipeEl = e.currentTarget;
+  _swipeStartX = e.touches[0].clientX;
+  _swipeEl.style.transition = 'none';
+}
+function _tm(e) {
+  if (!_swipeEl) return;
+  _swipeCurrentX = e.touches[0].clientX - _swipeStartX;
+  if (_swipeCurrentX < 0) { // only swipe left
+    _swipeEl.style.transform = `translateX(${_swipeCurrentX}px)`;
+  }
+}
+function _te(e) {
+  if (!_swipeEl) return;
+  _swipeEl.style.transition = 'transform 0.2s ease-out';
+  if (_swipeCurrentX < -80) { // Delete threshold
+    _swipeEl.style.transform = `translateX(-100%)`;
+    const id = parseInt(_swipeEl.dataset.id);
+    setTimeout(() => {
+      _deleteOne(id);
+    }, 200); // Wait for animation
+  } else {
+    _swipeEl.style.transform = `translateX(0)`; // Snap back
+  }
+  _swipeEl = null;
 }
 
 // ── Einzelnen Eintrag löschen ─────────────────────────────────
 async function _deleteOne(id) {
   await BSP.dbDelete('feedback_eintraege', id);
   BSP.toast('Eintrag gelöscht', 'ok');
-  openUebersicht(); // Sheet neu laden
-}
-
-// ── Alle erledigten löschen ───────────────────────────────────
-async function _deleteErledigt() {
-  const all = await BSP.dbGetAll('feedback_eintraege');
-  const erledigt = all.filter(e => e.status === 'Erledigt');
-  if (erledigt.length === 0) { BSP.toast('Keine erledigten Einträge', 'wr'); return; }
-  for (const e of erledigt) await BSP.dbDelete('feedback_eintraege', e.id);
-  BSP.toast(`${erledigt.length} Einträge gelöscht ✓`, 'ok');
-  openUebersicht();
+  _updateBadge();
+  _loadFeedbacksIntoList(); // Refresh list
 }
 
 // ── Prompt-Generator ─────────────────────────────────────────
@@ -619,6 +713,9 @@ async function _generatePrompt() {
     }
   }
 
+  // Nach Generierung Badge anpassen (sind jetzt "In Prompt aufgenommen", nicht "Offen")
+  _updateBadge();
+
   // Im Sheet anzeigen
   const outputEl = document.getElementById('fb-prompt-output');
   const copyBtn  = document.getElementById('fb-copy-btn');
@@ -662,6 +759,7 @@ async function _triggerAutoFeedback(errMessage) {
   
   _sheetTyp = 'Bug';
   _sheetPrio = 'Hoch';
+  _activeTab = 'Neu';
   
   _currentScreenshot = null;
   if (typeof window.html2canvas !== 'undefined') {
@@ -671,23 +769,23 @@ async function _triggerAutoFeedback(errMessage) {
     } catch(e) {}
   }
 
-  const kontext = BSP.getAktuellerKontext();
+  _currentKontext = BSP.getAktuellerKontext();
   const pillarLabel = { business: 'Business', privat: 'Privat', archiv: 'Archiv', leben: 'Leben' };
-  const kontextText = `${pillarLabel[kontext.saeuler] || kontext.saeuler} → ${kontext.modul}`;
+  _currentKontextText = `${pillarLabel[_currentKontext.saeuler] || _currentKontext.saeuler} → ${_currentKontext.modul}`;
 
-  const sheet = _buildSheet(kontext, kontextText, "Automatisch erkannter Fehler – bitte kurz beschreiben was du gerade gemacht hast.");
-  BSP.showSheet(sheet);
+  _renderMasterSheet("Automatisch erkannter Fehler – bitte kurz beschreiben was du gerade gemacht hast.");
   _setInactive(true);
 }
 
 // ── Public API ────────────────────────────────────────────────
 return {
   init,
-  openUebersicht,
+  _switchTab,
   _selectTyp, _selectPrio,
   _toggleMic,
   _saveEntry, _onSheetClose,
-  _updateStatus, _deleteOne, _deleteErledigt,
+  _deleteOne,
+  _ts, _tm, _te, _toggleDetails,
   _generatePrompt, _copyPrompt,
   _setInactive,
   _triggerAutoFeedback,

@@ -243,6 +243,8 @@ function _datevRow(b, skr03, is70 = false, is30 = false) {
   if (is30) { netto*=0.3; brutto*=0.3; mwst*=0.3; text = '30% privat | ' + text; }
 
   let kInfo = skr03[b.cat] || { konto: '' };
+  if (b.type === 'ar') kInfo = { konto: 8400 };
+  
   if (is70) kInfo = skr03['Bewirtung 70% absetzbar'] || { konto: 4650 };
   if (is30) kInfo = skr03['Bewirtung 30% nicht absetzbar'] || { konto: 4654 };
 
@@ -298,6 +300,7 @@ async function validateAndExport() {
 
     let missingSKR03 = 0, missingRC = 0;
     fb.forEach(b => {
+      if (b.type === 'ar') return;
       const isBewirtung = (b.cat || '').includes('Bewirtung');
       if (!isBewirtung && (!b.cat || !BSP.DATEV?.SKR03[b.cat])) missingSKR03++;
       if (b.isReverseCharge && !b.cat?.includes('Reverse')) missingRC++;

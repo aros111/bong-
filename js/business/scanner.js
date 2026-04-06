@@ -91,8 +91,8 @@ const OVERLAY_HTML = `
       <!-- NICHT bei AR: Rechnungssteller / Rechnungsempfänger -->
       <div id="sc-ar-steller-wrap" style="display:none">
         <div class="field" style="background:var(--bg3);border-color:var(--br2)">
-          <label style="color:var(--txt3)">Rechnungssteller (Du)</label>
-          <input id="sc-rechnungssteller" class="sett-inp" type="text" readonly style="opacity:.7;cursor:default" placeholder="Aus Einstellungen">
+          <label style="color:var(--txt3)">Rechnungssteller</label>
+          <input id="sc-rechnungssteller" class="sett-inp" type="text" placeholder="Wird automatisch befüllt">
         </div>
       </div>
       <div class="field sett-mt" id="sc-empf-wrap" style="display:none;background:rgba(200,164,90,.05);border-color:rgba(200,164,90,.2)">
@@ -114,7 +114,7 @@ const OVERLAY_HTML = `
       </div>
     </div>
     <div class="g2 sett-mt">
-      <div class="field"><label>Kategorie</label>
+      <div class="field" id="sc-cat-wrap"><label>Kategorie</label>
         <select id="sc-cat" class="sett-inp">
           <option>Bürobedarf</option><option>Software</option><option>Hardware</option>
           <option>Beratung</option><option>Marketing</option><option>Reisen</option>
@@ -264,18 +264,22 @@ function setType(t) {
   const stellerWrap = document.getElementById('sc-ar-steller-wrap');
   if (stellerWrap) stellerWrap.style.display = (t === 'ar') ? 'block' : 'none';
 
+  // Kategorie-Wrap bei AR ausblenden
+  const catWrap = document.getElementById('sc-cat-wrap');
+  if (catWrap) catWrap.style.display = (t === 'ar') ? 'none' : 'flex';
+
   // Händler-Label: bei AR -> 'Rechnungssteller' (Dein Firmennamen wird in sc-rechnungssteller gezeigt)
   const shopLabel = document.getElementById('sc-shop-label');
   if (shopLabel) shopLabel.textContent = (t === 'ar') ? '' : 'Händler';
   const shopWrap = document.getElementById('sc-shop-wrap');
   if (shopWrap) shopWrap.style.display = (t === 'ar') ? 'none' : 'flex';
 
-  // Auto-Fill Rechnungssteller aus Einstellungen
+  // Initialer Auto-Fill Rechnungssteller (wird später von KI verifiziert)
   if (t === 'ar') {
     const s = BSP.state.settings || {};
     const name = [s.firmenname || s.vorname, s.nachname].filter(Boolean).join(' ') || 'Mein Unternehmen';
     const stellerEl = document.getElementById('sc-rechnungssteller');
-    if (stellerEl) stellerEl.value = name;
+    if (stellerEl && !stellerEl.value) stellerEl.value = name;
   }
 
   // Bei manual: Felder direkt zeigen
@@ -475,7 +479,9 @@ async function _processImage() {
     _setLog('❌ Keine Bilder vorhanden'); return;
   }
 
-  const prompt = `Du bist ein präziser Belegscanner für Deutschland (Freiberufler, volle MwSt-Pflicht).
+  const isAR = _scanMode === 'ar';
+  
+  let prompt = `Du bist ein präziser Belegscanner für Deutschland (Freiberufler, volle MwSt-Pflicht).
 
 AUFGABE: Lies alle sichtbaren Daten von diesem Beleg/dieser Rechnung ab.
 
@@ -487,8 +493,18 @@ Das Bild kann sein:
 
 ANTWORTE AUSSCHLIESSLICH mit diesem JSON-Objekt, ohne Erklärung, ohne Markdown:
 {
-  "shop": "Name des Händlers oder der Plattform",
-  "belegNrExtern": "Rechnungsnummer falls sichtbar, sonst null",
+`;
+
+  if (isAR) {
+    prompt += `  "shop": "Rechnungssteller (Person oder Firma die die Rechnung ausstellt – steht meist oben)",
+  "empfaenger": "Rechnungsempfänger (Person oder Firma an die die Rechnung gerichtet ist – steht in der Adresszeile darunter)",
+`;
+  } else {
+    prompt += `  "shop": "Name des Händlers oder Verkäufers",
+`;
+  }
+
+  prompt += `  "belegNrExtern": "Rechnungsnummer falls sichtbar, sonst null",
   "date": "YYYY-MM-DD",
   "net": 12.34,
   "mwst": 2.34,
@@ -563,7 +579,40 @@ REGELN:
 function _fillForm(r) {
   const set = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.value = v; };
 
-  set('sc-shop', r.shop);
+  // Bei AR: KI-Ergebnis von Rechnungssteller checken
+  if (_scanMode === 'ar' && r.shop) {
+    const s = BSP.state.settings || {};
+    const storedName = [s.firmenname || s.vorname, s.nachname].filter(Boolean).join(' ') || 'Mein Unternehmen';
+    const storedSteller = storedName.toLowerCase().trim();
+    const readSteller = r.shop.toLowerCase().trim();
+    
+    const wrap = document.getElementById('sc-ar-steller-wrap');
+    if (wrap) {
+      let warn = document.getElementById('sc-ar-steller-warn');
+      if (!warn) {
+        warn = document.createElement('div');
+        warn.id = 'sc-ar-steller-warn';
+        warn.style.cssText = 'font-size:10px;margin-top:4px';
+        wrap.appendChild(warn);
+      }
+      
+      const stellerEl = document.getElementById('sc-rechnungssteller');
+      if (stellerEl) stellerEl.value = r.shop;
+
+      if (!readSteller.includes(storedSteller) && !storedSteller.includes(readSteller) && r.shop.length > 3) {
+        warn.innerHTML = '⚠️ Rechnungssteller weicht von Einstellungen ab – bitte prüfen!';
+        warn.style.color = 'var(--orn)';
+        if(stellerEl) stellerEl.style.color = 'var(--orn)';
+      } else {
+        warn.innerHTML = '✅ Verifiziert mit Einstellungen';
+        warn.style.color = 'var(--grn)';
+        if(stellerEl) stellerEl.style.color = 'var(--grn)';
+      }
+    }
+  } else {
+    set('sc-shop', r.shop);
+  }
+
   set('sc-empfaenger', r.empfaenger || '');
   set('sc-date', r.date);
   set('sc-brutto', r.brutto != null ? Number(r.brutto).toFixed(2) : '');
@@ -701,7 +750,7 @@ async function save() {
       shop,
       date,
       brutto, net: netto, mwst, mwstRate: rate,
-      cat: get('sc-cat'),
+      cat: _scanMode === 'ar' ? null : get('sc-cat'),
       payment: get('sc-pay'),
       isReverseCharge: isRC,
       istAbo: _lastResult?.istAbo || false,
@@ -713,7 +762,7 @@ async function save() {
       // Digitaler Stempel wird auf jede Seite angewendet
       images: await Promise.all(_pages.map(async p => await _applyStamp(p.b64, {
         nr: item?.belegNr || 'NEW', // Belegnr erst nach Stempel-Fix verfügbar
-        date, brutto, net: netto, mwst, cat: get('sc-cat')
+        date, brutto, net: netto, mwst, cat: _scanMode === 'ar' ? null : get('sc-cat')
       }))),
       savedAt: Date.now()
     };
@@ -721,7 +770,7 @@ async function save() {
     const finalNr = item.belegNr;
     item.images = await Promise.all(_pages.map(async p => await _applyStamp(p.b64, {
       nr: finalNr,
-      date, brutto, net: netto, mwst, cat: get('sc-cat')
+      date, brutto, net: netto, mwst, cat: _scanMode === 'ar' ? null : get('sc-cat')
     })));
     item.image = item.images[0]; // Erstes Bild als Thumbnail
   }
