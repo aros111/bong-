@@ -349,7 +349,7 @@ body::after {
 /* Views */
 .view {
   display: none;
-  padding: 16px 16px 140px 16px;
+  padding: 16px 16px 16px 16px;
   animation: fi .18s ease;
 }
 .view.on { display: block; }

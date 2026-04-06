@@ -25,7 +25,7 @@ const KontoUebersicht = (() => {
           <button class="btn btn-g btn-sm" onclick="KontoImport.startScan('${bank.id}')">📷 Scan</button>
         </div>
       </div>
-      <input type="file" multiple accept="image/*,application/pdf" id="ko-upload-inp" hidden onchange="KontoImport.handleUpload(this, '${bank.id}')">
+      <input type="file" multiple accept="image/*,application/pdf,.pdf" id="ko-upload-inp" hidden onchange="KontoImport.handleUpload(this, '${bank.id}')">
 
       <!-- Live Statistik / Saldo -->
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">

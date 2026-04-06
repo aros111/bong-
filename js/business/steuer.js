@@ -57,7 +57,13 @@ const VIEW_HTML = `
   </div>
 
   <!-- Zusatz EÜR: Km + Verpfl -->
-  <div id="st-eur-details" style="background:var(--bg3);border:1px solid var(--br);border-radius:var(--r12);padding:12px;margin-bottom:16px"></div>
+  <div id="st-eur-details" style="background:var(--bg3);border:1px solid var(--br);border-radius:var(--r12);padding:12px;margin-bottom:12px"></div>
+
+  <!-- Belege prüfen -->
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-g" style="flex:1;justify-content:center;color:var(--grn);border:1px solid rgba(58,175,112,.3)" onclick="SteuerModule.showBelegeSheet('ar')">📄 Einnahmen prüfen</button>
+    <button class="btn btn-g" style="flex:1;justify-content:center;color:var(--red);border:1px solid rgba(192,64,64,.3)" onclick="SteuerModule.showBelegeSheet('er')">💼 Ausgaben prüfen</button>
+  </div>
 
   <!-- BLOCK 2: MwSt-Zahllast (antippbar) -->
   <div id="st-mwst-card" onclick="SteuerModule.openMwstSheet()"
@@ -423,6 +429,56 @@ function _renderCats(erBelege) {
   }).join('');
 }
 
-return { init, render, setFilter, openMwstSheet };
+// ── Belege Sheet ──────────────────────────────────────────────
+async function showBelegeSheet(type) {
+  const allBelege = await BSP.getBelege();
+  let belege = allBelege.filter(b => b.type === type);
+  
+  if (_filter !== 'jahr') {
+    const qMatch = { 'q1': 1, 'q2': 2, 'q3': 3, 'q4': 4 };
+    belege = belege.filter(b => {
+      const db = new Date(b.date);
+      if (isNaN(db.getTime())) return false;
+      const q = Math.floor(db.getMonth() / 3) + 1;
+      return q === qMatch[_filter];
+    });
+  }
+
+  belege.sort((a,b) => (b.date || '').localeCompare(a.date || '') || (b.savedAt || 0) - (a.savedAt || 0));
+
+  let listHtml = '<div class="empty" style="padding:16px 0">Keine Belege für diesen Zeitraum gefunden.</div>';
+  
+  if (belege.length > 0) {
+    listHtml = belege.map(b => `
+      <div class="ri" onclick="BelegeModule.openDetail(${b.id})">
+        <div class="ri-bar" style="background:${b.type==='er'?'var(--blu)':b.type==='ar'?'var(--ylw)':'var(--silv)'}"></div>
+        <div class="ri-th">${b.image ? `<img src="${b.image}">` : '🧾'}</div>
+        <div class="ri-inf">
+          <div class="ri-sh">${BSP.eh(b.shop)}</div>
+          <div class="ri-me">${BSP.fd(b.date)} ${b.belegNr ? '· ' + b.belegNr : ''}</div>
+        </div>
+        <div class="ri-r"><div class="ri-r-amt">${BSP.fm(b.brutto)} €</div></div>
+      </div>
+    `).join('');
+  }
+
+  const title = type === 'ar' ? 'Einnahmen Belege' : 'Ausgaben Belege';
+  const html = `
+    <div class="sh"></div>
+    <div class="mod-header">
+      <h2 class="mod-title">${title}</h2>
+      <p class="mod-sub">${belege.length} Belege in diesem Zeitraum</p>
+    </div>
+    <div style="margin-top:16px;max-height:60vh;overflow-y:auto;padding-bottom:20px;margin: 16px -16px 0;padding: 0 16px;">
+      ${listHtml}
+    </div>
+    <div style="margin-top:12px">
+      <button class="btn btn-g" style="width:100%;justify-content:center" onclick="BSP.closeSheet()">Schließen</button>
+    </div>
+  `;
+  BSP.showSheet(html);
+}
+
+return { init, render, setFilter, openMwstSheet, showBelegeSheet };
 
 })();

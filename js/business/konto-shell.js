@@ -64,7 +64,14 @@ const KontoShell = (() => {
       return;
     }
 
-    listEl.innerHTML = banken.map(b => `
+    const uploadBtnHtml = `
+      <div style="background:var(--s1);border:1px solid var(--br);border-radius:var(--r16);padding:16px;margin-bottom:20px;text-align:center">
+        <div style="font-weight:500;margin-bottom:12px">Einen neuen Kontoauszug importieren?</div>
+        <button class="btn btn-gold" style="justify-content:center;width:100%" onclick="KontoShell.showGlobalUpload()">📥 Dokument hochladen / scannen</button>
+      </div>
+    `;
+
+    listEl.innerHTML = uploadBtnHtml + banken.map(b => `
       <div class="card" style="padding:16px; cursor:pointer;" onclick="KontoShell.openBank('${b.id}')">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px">
           <div>
@@ -145,6 +152,41 @@ const KontoShell = (() => {
     return _activeBankId;
   }
 
-  return { init, showAddBank, saveBank, openBank, getActiveBankId };
+  async function showGlobalUpload() {
+    const banken = await BSP.dbGetAll('konto_banken') || [];
+    const html = `
+      <div class="sh"></div>
+      <div class="mod-header">
+        <h2 class="mod-title">Kontoauszug hochladen</h2>
+        <p class="mod-sub">Für welche Bank möchtest du Dokumente importieren?</p>
+      </div>
+      <div class="field sett-mt" style="margin-bottom:20px">
+        <label>Bank auswählen</label>
+        <select id="ko-global-bank-select" class="sett-inp">
+          ${banken.map(b => `<option value="${b.id}">${BSP.eh(b.name)} (${BSP.eh(b.bezeichnung)})</option>`).join('')}
+        </select>
+      </div>
+      <input type="file" multiple accept="image/*,application/pdf,.pdf" id="ko-global-upload-inp" hidden>
+      <div style="display:flex; gap:8px">
+        <button class="btn btn-g" style="flex:1; justify-content:center" onclick="BSP.closeSheet()">Abbrechen</button>
+        <button class="btn btn-gold" style="flex:2; justify-content:center" onclick="KontoShell.triggerGlobalUpload()">Dateien auswählen</button>
+      </div>
+    `;
+    BSP.showSheet(html);
+  }
+
+  function triggerGlobalUpload() {
+    const sel = document.getElementById('ko-global-bank-select');
+    if(!sel) return;
+    const bankId = sel.value;
+    const inp = document.getElementById('ko-global-upload-inp');
+    inp.onchange = () => {
+      BSP.closeSheet();
+      KontoImport.handleUpload(inp, bankId);
+    };
+    inp.click();
+  }
+
+  return { init, showAddBank, saveBank, openBank, getActiveBankId, showGlobalUpload, triggerGlobalUpload };
 
 })();

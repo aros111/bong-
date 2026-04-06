@@ -102,9 +102,9 @@ const DashboardModule = (() => {
         return false;
       });
 
-      const top = pillarFiltered.sort((a,b) => (b.savedAt || 0) - (a.savedAt || 0)).slice(0, 5);
+      const top = pillarFiltered.sort((a,b) => (b.savedAt || 0) - (a.savedAt || 0));
       if (!top.length) {
-        recentList.innerHTML = '<div class="empty">Noch keine Belege vorhanden.</div><div style="height:140px;flex-shrink:0;pointer-events:none"></div>';
+        recentList.innerHTML = '<div class="empty">Noch keine Belege vorhanden.</div>';
       } else {
         recentList.innerHTML = top.map(b => `
           <div class="ri" onclick="BelegeModule.openDetail(${b.id})">
@@ -116,7 +116,7 @@ const DashboardModule = (() => {
             </div>
             <div class="ri-r"><div class="ri-r-amt">${BSP.fm(b.brutto)} €</div></div>
           </div>
-        `).join('') + '<div style="height:140px;flex-shrink:0;pointer-events:none"></div>';
+        `).join('');
       }
     }
 
@@ -131,7 +131,6 @@ const DashboardModule = (() => {
         <div class="card" onclick="BSP.showView('archiv-fristen')">
           <div style="display:flex; justify-content:space-between"><span>Fristen</span><span>${fristen.length}</span></div>
         </div>
-        <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
       `;
     }
   }
