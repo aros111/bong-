@@ -309,17 +309,27 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
           totalHeight += img.height * (targetWidth / img.width);
         });
         
+        let finalWidth = targetWidth;
+        let finalHeight = totalHeight;
+        
+        // KI Obergrenze ist physikalisch 8000px. Überlauf-Schutz:
+        if (totalHeight > 7900) {
+           const scaleFactor = 7900 / totalHeight;
+           finalHeight = 7900;
+           finalWidth = Math.floor(targetWidth * scaleFactor);
+        }
+        
         const fCanvas = document.createElement('canvas');
-        fCanvas.width = targetWidth;
-        fCanvas.height = totalHeight;
+        fCanvas.width = finalWidth;
+        fCanvas.height = finalHeight;
         const fctx = fCanvas.getContext('2d');
         fctx.fillStyle = 'white';
-        fctx.fillRect(0,0,targetWidth,totalHeight);
+        fctx.fillRect(0,0,finalWidth,finalHeight);
         
         let cY = 0;
         loadedImages.forEach(img => {
-          const h = img.height * (targetWidth / img.width);
-          fctx.drawImage(img, 0, cY, targetWidth, h);
+          const h = img.height * (finalWidth / img.width);
+          fctx.drawImage(img, 0, cY, finalWidth, h);
           cY += h;
         });
         
@@ -777,17 +787,63 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
      let gesichert = 0;
      try {
        for (let t of transactions) {
-         // Exports logic requirement: "Geldeingänge Geschäftskonto -> immer in Export. Geldeingänge Privatkonto -> nur wenn Business getaggt, mit Hinweis."
-         // This export formatting logic relies on tags and bereich
          t.tags = t.tags || {};
          t.tags.kontoTyp = t.bereich || 'Business';
          
-         await BSP.dbAdd('konto_buchungen', t);
+         // 1. Raw Log ins Konto schreiben
+         const bid = await BSP.dbAdd('konto_buchungen', t);
+         t.id = bid; // Speichere ID für Verknüpfungen
+         
+         // 2. Intelligent Routing (Archiv, Steuern & Privat)
+         if (t.bereich === 'Privat') {
+            await BSP.dbAdd('privat_belege', {
+              date: t.datum,
+              shop: t.empfaenger,
+              brutto: Math.abs(t.betrag),
+              category: 'Sonstiges',
+              type: t.betrag < 0 ? 'ausgabe' : 'einnahme',
+              bankTxId: bid,
+              isBankImport: true
+            });
+         } else {
+            // Business Routing
+            if (t.status === 'pending_review' || t.status !== 'abgeglichen') {
+               const absoluteAmount = Math.abs(t.betrag);
+               const isAusgabe = t.betrag < 0;
+               
+               // Schattenbeleg für das Steuer-Dashboard (Mehrwertsteuer direkt ausweisen)
+               await BSP.dbAdd('belege', {
+                 type: isAusgabe ? 'er' : 'ar',
+                 date: t.datum,
+                 shop: t.empfaenger,
+                 brutto: absoluteAmount,
+                 net: Number((absoluteAmount / 1.19).toFixed(2)),
+                 mwst: Number((absoluteAmount - (absoluteAmount/1.19)).toFixed(2)),
+                 mwstRate: 19,
+                 category: t.skr03 || 'Sonstige',
+                 isDummy: true, // Marker, dass echter Beleg noch fehlt
+                 isPaid: true,
+                 bankTxId: bid
+               });
+               
+               // Task für die "Zu Klären" Glocke anlegen
+               if (BSP.prAdd) {
+                 await BSP.prAdd({
+                    type: 'fehlender_beleg',
+                    status: 'offen',
+                    title: `Beleg fehlt: ${BSP.eh(t.empfaenger)}`,
+                    amount: t.betrag,
+                    date: t.datum,
+                    bankTxId: bid
+                 });
+               }
+            } 
+         }
          gesichert++;
        }
        BSP.emit('konto:imported');
        BSP.closeSheet();
-       BSP.toast(`${gesichert} Transaktionen gesichert`, 'ok');
+       BSP.toast(`${gesichert} Transaktionen gesichert! Fehlende Belege markiert.`, 'ok');
        if (typeof KontoUebersicht !== 'undefined') KontoUebersicht.renderList(_currentBankId);
      } catch(e) {
        BSP.toast('Fehler beim Speichern: ' + e.message, 'er');

@@ -61,7 +61,7 @@ const KontoUebersicht = (() => {
     if (!list) return;
 
     let existingKonto = [];
-    if (BSP.dbGetAll) existingKonto = await BSP.dbGetAll('konto') || [];
+    if (BSP.dbGetAll) existingKonto = await BSP.dbGetAll('konto_buchungen') || [];
     
     // Nach Bank filtern (Fall-Back für alte Buchungen: 'unbekannt')
     let bankBuchungen = existingKonto.filter(k => (k.bankId === bankId) || (!k.bankId && bankId === 'bank_legacy'));
