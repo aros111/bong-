@@ -1,6 +1,6 @@
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // MODUL: KONTO IMPORT (All-In-One Import, Matching & Review Logic)
-// ══════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 'use strict';
 
 const KontoImport = (() => {
@@ -12,7 +12,7 @@ const KontoImport = (() => {
   let _currentBankId = null;
   let _pendingImport = null;
 
-  // Event-Listener für automatisches Resume nach Bank-Neuanlage
+  // Event-Listener fÃ¼r automatisches Resume nach Bank-Neuanlage
   BSP.on("bank:created", (data) => {
     if (_pendingImport) {
       _currentBankId = data.id;
@@ -47,11 +47,11 @@ const KontoImport = (() => {
 
     <!-- Multi-Page Prompt -->
     <div id="ko-multi-prompt" style="display:none;padding:16px;background:var(--bg3);text-align:center;z-index:9002">
-      <div style="font-size:13px;margin-bottom:12px;color:var(--gold)">Seite hinzugefügt! Noch eine Seite scannen/hinzufügen?</div>
+      <div style="font-size:13px;margin-bottom:12px;color:var(--gold)">Seite hinzugefÃ¼gt! Noch eine Seite scannen/hinzufÃ¼gen?</div>
       <div style="display:flex;gap:12px;justify-content:center">
-        <button class="btn btn-g btn-sm" onclick="document.getElementById('ko-upload-inp').click()">📥 Upload</button>
-        <button class="btn btn-g btn-sm" onclick="KontoImport.resumeCam()">📷 Kamera</button>
-        <button class="btn btn-gold btn-sm" onclick="KontoImport.processAllPages()">✨ Analysieren</button>
+        <button class="btn btn-g btn-sm" onclick="document.getElementById('ko-upload-inp').click()">ðŸ“¥ Upload</button>
+        <button class="btn btn-g btn-sm" onclick="KontoImport.resumeCam()">ðŸ“· Kamera</button>
+        <button class="btn btn-gold btn-sm" onclick="KontoImport.processAllPages()">âœ¨ Analysieren</button>
       </div>
     </div>
 
@@ -125,19 +125,46 @@ const KontoImport = (() => {
     
     for (let f of inp.files) {
       if (f.type.includes('pdf')) {
-        await new Promise(resolve => {
-           const reader = new FileReader();
-           reader.onload = e => {
-              _pages.push({ isPdf: true, isRawPdf: true, b64: e.target.result, file: f });
-              resolve();
-           };
-           reader.readAsDataURL(f);
-        });
+        if (typeof pdfjsLib === 'undefined') {
+          BSP.toast('PDF Scanner lädt noch, bitte kurz warten...', 'wr');
+          continue;
+        }
+        try {
+          const arrayBuffer = await f.arrayBuffer();
+          const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+          const numPages = pdfDoc.numPages;
+          const maxP = Math.min(numPages, 15);
+          for (let i = 1; i <= maxP; i++) {
+             BSP.showScrim(`Lese PDF... Seite ${i}/${maxP}`);
+             const page = await pdfDoc.getPage(i);
+             const viewport = page.getViewport({ scale: 1.5 });
+             const canvas = document.createElement('canvas');
+             const ctx = canvas.getContext('2d');
+             canvas.height = viewport.height;
+             canvas.width = viewport.width;
+             
+             await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+             
+             const rawB64 = canvas.toDataURL('image/jpeg', 0.8);
+             const compB64 = await BSP.compressImage(rawB64, 1200, 500); 
+             
+             const mainBlob = BSP.b64toBlob(compB64);
+             const objectUrl = URL.createObjectURL(mainBlob);
+             const thumbB64 = await BSP.compressImage(compB64, 400, 60);
+             const thumbBlob = BSP.b64toBlob(thumbB64);
+             const thumbUrl = URL.createObjectURL(thumbBlob);
+             
+             _pages.push({ blob: mainBlob, objectUrl, thumbUrl, isPdfPage: true });
+          }
+        } catch(e) {
+          BSP.toast('Fehler beim PDF lesen: ' + e.message, 'er');
+          console.error(e);
+        }
       } else {
         await new Promise(resolve => {
           const reader = new FileReader();
           reader.onload = async (e) => {
-            const compB64 = await BSP.compressImage(e.target.result, 1600, 4900);
+            const compB64 = await BSP.compressImage(e.target.result, 1200, 500);
             const mainBlob = BSP.b64toBlob(compB64);
             const objectUrl = URL.createObjectURL(mainBlob);
 
@@ -224,11 +251,11 @@ const KontoImport = (() => {
     });
   }
 
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 1. KI-ANALYSE
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-  const KI_PROMPT = `Analysiere diesen Kontoauszug. Antworte NUR mit reinem JSON, kein anderer Text, kein Markdown, keine Erklärung:
+  const KI_PROMPT = `Analysiere diesen Kontoauszug. Antworte NUR mit reinem JSON, kein anderer Text, kein Markdown, keine ErklÃ¤rung:
 {
   "bankdaten": {
     "bankname": "Name der Bank",
@@ -242,7 +269,7 @@ const KontoImport = (() => {
       "verwendungszweck": "REWE SAGT DANKE",
       "auftraggeber_empfaenger": "REWE",
       "typ": "ausgabe",
-      "skr03_vorschlag": "Bürobedarf"
+      "skr03_vorschlag": "BÃ¼robedarf"
     }
   ],
   "anfangssaldo": 1000.00,
@@ -250,7 +277,7 @@ const KontoImport = (() => {
   "zeitraum_von": "2026-03-01",
   "zeitraum_bis": "2026-03-31"
 }
-Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Felder als null.`;
+Negative BetrÃ¤ge sind Ausgaben. Positive BetrÃ¤ge sind EingÃ¤nge. Fehlende Felder als null.`;
 
   async function processAllPages() {
     if (!_pages.length) return;
@@ -262,53 +289,17 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
       
       let contents = [];
       for (let p of _pages) {
-         if (p.isRawPdf) contents.push(p.b64);
-         else if (p.blob) contents.push(await _blobToB64(p.blob));
+         if (p.blob) contents.push(await _blobToB64(p.blob));
          else if (p.b64) contents.push(p.b64);
       }
 
       BSP.showScrim('Sende an KI, bitte warten...');
-      res = await BSP.callClaude({ prompt: KI_PROMPT, images: contents, model: 'claude-sonnet-4-5', maxTokens: 4096 });
+      res = await BSP.callClaude({ prompt: KI_PROMPT, images: contents, model: 'claude-sonnet-4-5', maxTokens: 10000 });
     } catch(err) {
-      if (err.message.includes('400') && _pages.some(p => p.isRawPdf)) {
-         BSP.showScrim('Native PDF-Analyse fehlgeschlagen. Konvertiere in Einzelbilder...');
-         let fallbackContents = [];
-         for (let p of _pages) {
-            if (p.isRawPdf && typeof pdfjsLib !== 'undefined') {
-                const arrayBuffer = await p.file.arrayBuffer();
-                const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                const maxP = Math.min(pdfDoc.numPages, 10);
-                for (let i = 1; i <= maxP; i++) {
-                   BSP.showScrim(`Konvertiere PDF Seite ${i}/${maxP}`);
-                   const page = await pdfDoc.getPage(i);
-                   const viewport = page.getViewport({ scale: 1.5 });
-                   const canvas = document.createElement('canvas');
-                   canvas.height = viewport.height; canvas.width = viewport.width;
-                   await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
-                   const pageB64 = canvas.toDataURL('image/jpeg', 0.8);
-                   fallbackContents.push(await BSP.compressImage(pageB64, 1600, 4900));
-                }
-            } else if (p.blob) {
-                fallbackContents.push(await _blobToB64(p.blob));
-            } else if (p.b64) {
-                fallbackContents.push(p.b64);
-            }
-         }
-         try {
-             BSP.showScrim('Sende Einzelbilder an KI...');
-             res = await BSP.callClaude({ prompt: KI_PROMPT, images: fallbackContents, model: 'claude-sonnet-4-5', maxTokens: 4096 });
-         } catch(e2) {
-             BSP.toast('Fehler bei der Analyse: ' + e2.message, 'er');
-             _revokeAllPages();
-             BSP.hideScrim();
-             return;
-         }
-      } else {
-        BSP.toast('Fehler bei der Analyse: ' + err.message, 'er');
-        _revokeAllPages();
-        BSP.hideScrim();
-        return;
-      }
+      BSP.toast('Fehler bei der Analyse: ' + err.message, 'er');
+      _revokeAllPages();
+      BSP.hideScrim();
+      return;
     } finally {
       BSP.hideScrim(); 
       _revokeAllPages();
@@ -349,16 +340,16 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
     try {
       data = JSON.parse(response);
     } catch(e) {
-      BSP.showSheet(`<div class="sh"></div><div class="mod-header"><div class="mod-title">KI JSON Parse Fehler</div></div><textarea style="width:100%;height:300px;font-family:monospace;font-size:11px" disabled>${BSP.eh(response)}</textarea><br><button class="btn btn-g" onclick="BSP.closeSheet()">Schlie�en</button>`);
+      BSP.showSheet(`<div class="sh"></div><div class="mod-header"><div class="mod-title">KI JSON Parse Fehler</div></div><textarea style="width:100%;height:300px;font-family:monospace;font-size:11px" disabled>${BSP.eh(response)}</textarea><br><button class="btn btn-g" onclick="BSP.closeSheet()">Schließen</button>`);
       BSP.toast('Ergebnis konnte nicht verarbeitet werden.', 'wr');
       return null;
     }
     
-    // Schritt 3: Buchungen finden egal wie sie hei�en
+    // Schritt 3: Buchungen finden egal wie sie heißen
     const buchungen = data.buchungen || data.transactions || data.items || data.entries || Object.values(data).find(v => Array.isArray(v));
     
-    if (!buchungen || buchungen.length === 0) {
-      BSP.toast('Keine Buchungen erkannt', 'wr');
+    if (!buchungen || !Array.isArray(buchungen) || buchungen.length === 0) {
+      BSP.showSheet(`<div class="sh"></div><div class="mod-header"><div class="mod-title">Analyse fehlgeschlagen</div></div><div style="padding:15px;color:var(--text);font-size:14px;line-height:1.5;">Die KI konnte keine eindeutigen Transaktionen auf den hochgeladenen Dokumenten erkennen. Bitte überprüfe die Bildqualität oder versuche es mit einem anderen Beleg.</div><br><button class="btn btn-g" onclick="BSP.closeSheet()">Schließen</button>`);
       return null;
     }
     
@@ -428,9 +419,9 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
     });
   }
 
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 2. AUTOMATISCHER ABGLEICH MIT BELEGEN
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async function _performMatching(parsedData) {
     BSP.showScrim('Gleiche Transaktionen mit Belegen ab...');
@@ -449,7 +440,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
 
       const tShop = (txn.empfaenger || '').toLowerCase();
       
-      // Eingänge (Rechnungen die wir gestellt haben = ar)
+      // EingÃ¤nge (Rechnungen die wir gestellt haben = ar)
       if (txn.betrag > 0) {
         const arBelege = alleBelege.filter(b => b.type === 'ar');
         const possibleAR = arBelege.filter(b => {
@@ -474,7 +465,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
           txn.status = 'abgeglichen';
           txn.belegId = bestMatch.id;
         } else {
-          txn.hasAlert = 'Mögliche fehlende Ausgangsrechnung';
+          txn.hasAlert = 'MÃ¶gliche fehlende Ausgangsrechnung';
         }
 
       // Ausgaben (Rechnungen die wir bekommen haben = er/bar)
@@ -507,9 +498,9 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
     _showReviewDashboard(parsedData, transactions);
   }
 
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 3. ERGEBNIS ANZEIGEN (Dashboard)
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   function _showReviewDashboard(parsedData, transactions) {
     let sumIn = 0; let countIn = 0;
@@ -521,15 +512,15 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
        else { sumOut += Math.abs(b); countOut++; }
     });
 
-    const saldoNeu = parsedData.endsaldo !== null && parsedData.endsaldo !== undefined ? `${parsedData.endsaldo.toFixed(2)} €` : '?';
-    const saldoAlt = parsedData.anfangssaldo !== null && parsedData.anfangssaldo !== undefined ? `${parsedData.anfangssaldo.toFixed(2)} €` : '?';
+    const saldoNeu = parsedData.endsaldo !== null && parsedData.endsaldo !== undefined ? `${parsedData.endsaldo.toFixed(2)} â‚¬` : '?';
+    const saldoAlt = parsedData.anfangssaldo !== null && parsedData.anfangssaldo !== undefined ? `${parsedData.anfangssaldo.toFixed(2)} â‚¬` : '?';
     const zVon = parsedData.zeitraum_von || '?';
     const zBis = parsedData.zeitraum_bis || '?';
 
     let ht = `
       <div class="sh"></div>
       <div class="mod-header" style="margin-bottom:12px;">
-        <h2 class="mod-title">Übersicht Kontoauszug</h2>
+        <h2 class="mod-title">Ãœbersicht Kontoauszug</h2>
         <p class="mod-sub">Zeitraum: ${BSP.eh(zVon)} bis ${BSP.eh(zBis)}</p>
       </div>
       
@@ -546,11 +537,11 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
 
       <div style="display:flex; gap:12px; margin-bottom:16px;">
         <div style="flex:1; background:rgba(0,180,100,0.1); border:1px solid rgba(0,180,100,0.2); padding:8px; border-radius:var(--r8); text-align:center;">
-           <div style="font-size:12px; color:var(--grn)">${countIn} Eingänge</div>
+           <div style="font-size:12px; color:var(--grn)">${countIn} EingÃ¤nge</div>
            <div style="font-weight:600; color:var(--grn)">+${sumIn.toFixed(2)}</div>
         </div>
         <div style="flex:1; background:rgba(255,80,80,0.1); border:1px solid rgba(255,80,80,0.2); padding:8px; border-radius:var(--r8); text-align:center;">
-           <div style="font-size:12px; color:var(--red)">${countOut} Ausgänge</div>
+           <div style="font-size:12px; color:var(--red)">${countOut} AusgÃ¤nge</div>
            <div style="font-weight:600; color:var(--red)">-${sumOut.toFixed(2)}</div>
         </div>
       </div>
@@ -563,15 +554,15 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
       const bColor = isPos ? 'var(--grn)' : 'var(--red)';
       
       let badgeHtml = '';
-      if (t.status === 'abgeglichen') badgeHtml = `<div class="badge" style="background:var(--grn);color:#fff">✓ Beleg erkannt</div>`;
-      else if (t.hasAlert) badgeHtml = `<div class="badge" style="background:var(--red);color:#fff">⚠️ ${BSP.eh(t.hasAlert)}</div>`;
+      if (t.status === 'abgeglichen') badgeHtml = `<div class="badge" style="background:var(--grn);color:#fff">âœ“ Beleg erkannt</div>`;
+      else if (t.hasAlert) badgeHtml = `<div class="badge" style="background:var(--red);color:#fff">âš ï¸ ${BSP.eh(t.hasAlert)}</div>`;
       else badgeHtml = `<div class="badge" style="background:var(--orn);color:#fff">Offen</div>`;
 
       ht += `
         <div style="background:var(--s2); padding:12px; border-radius:var(--r8); margin-bottom:8px; border:1px solid var(--br)">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
             <div style="font-size:13px; color:var(--txt2);">${t.datum || ''}</div>
-            <div style="font-weight:600; color:${bColor};">${t.betrag.toFixed(2)} €</div>
+            <div style="font-weight:600; color:${bColor};">${t.betrag.toFixed(2)} â‚¬</div>
           </div>
           <div style="font-weight:500; font-size:14px; margin-bottom:2px">${BSP.eh(t.empfaenger)}</div>
           <div style="font-size:12px; color:var(--txt3); margin-bottom:8px;">${BSP.eh(t.verwendungszweck)}</div>
@@ -587,7 +578,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
       <div style="display:flex;gap:8px">
         <button class="btn btn-g" style="flex:1;justify-content:center" onclick="BSP.closeSheet()">Verwerfen</button>
         ${unmatchedCount > 0 
-          ? `<button class="btn btn-gold" style="flex:2;justify-content:center" id="ki-review-start">${unmatchedCount} offene Positionen klären</button>` 
+          ? `<button class="btn btn-gold" style="flex:2;justify-content:center" id="ki-review-start">${unmatchedCount} offene Positionen klÃ¤ren</button>` 
           : `<button class="btn btn-gold" style="flex:2;justify-content:center" id="ki-review-save">Alles Speichern</button>` }
       </div>
       <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
@@ -604,15 +595,15 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
     }, 100);
   }
 
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 4. INTERAKTIVE DURCHARBEITUNG
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   function _getSKR03Liste() {
     return [
-      "Bürobedarf", "Reisekosten", "Werbekosten", "Wareneingang", "Fremdleistungen",
-      "Lizenzgebühren", "Porto", "Telefon/Internet", "Miete", "Softwareabonnements",
-      "Geringwertige Wirtschaftsgüter", "Bewirtungskosten", "Sonstige"
+      "BÃ¼robedarf", "Reisekosten", "Werbekosten", "Wareneingang", "Fremdleistungen",
+      "LizenzgebÃ¼hren", "Porto", "Telefon/Internet", "Miete", "Softwareabonnements",
+      "Geringwertige WirtschaftsgÃ¼ter", "Bewirtungskosten", "Sonstige"
     ];
   }
 
@@ -643,23 +634,23 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
        const privBusHtml = transitionActive ? `
          <div style="font-weight:600;margin-bottom:8px">1. Bereich zuordnen:</div>
          <div style="display:flex;gap:10px;margin-bottom:20px;">
-           <button class="btn btn-g" style="flex:1;justify-content:center;background:var(--bg3)" id="btn-bus">🏢 Business</button>
-           <button class="btn btn-g" style="flex:1;justify-content:center;background:var(--bg3)" id="btn-priv">🏡 Privat</button>
+           <button class="btn btn-g" style="flex:1;justify-content:center;background:var(--bg3)" id="btn-bus">ðŸ¢ Business</button>
+           <button class="btn btn-g" style="flex:1;justify-content:center;background:var(--bg3)" id="btn-priv">ðŸ¡ Privat</button>
          </div>
        ` : `<input type="hidden" id="force-business" value="1">`; // Fallback to business
 
        let ht = `
          <div class="sh"></div>
          <div class="mod-header" style="margin-bottom:12px;">
-            <div class="mod-title">Details klären</div>
+            <div class="mod-title">Details klÃ¤ren</div>
             <div class="mod-sub">Position ${currentIndex + 1} von ${unmatched.length}</div>
          </div>
          
          <div style="background:var(--s2); padding:16px; border-radius:var(--r12); margin-bottom:20px; text-align:center; border:1px solid var(--br)">
-            <div style="font-size:24px; font-weight:700; color:${bColor}; margin-bottom:8px;">${t.betrag.toFixed(2)} €</div>
+            <div style="font-size:24px; font-weight:700; color:${bColor}; margin-bottom:8px;">${t.betrag.toFixed(2)} â‚¬</div>
             <div style="font-weight:500; font-size:15px; margin-bottom:4px;">${BSP.eh(t.empfaenger)}</div>
-            <div style="font-size:13px; color:var(--txt3); margin-bottom:12px;">${BSP.eh(t.datum)} • ${BSP.eh(t.verwendungszweck)}</div>
-            ${t.hasAlert ? `<div class="badge" style="background:var(--red);color:#fff;margin:auto">⚠️ ${BSP.eh(t.hasAlert)}</div>` : ''}
+            <div style="font-size:13px; color:var(--txt3); margin-bottom:12px;">${BSP.eh(t.datum)} â€¢ ${BSP.eh(t.verwendungszweck)}</div>
+            ${t.hasAlert ? `<div class="badge" style="background:var(--red);color:#fff;margin:auto">âš ï¸ ${BSP.eh(t.hasAlert)}</div>` : ''}
          </div>
 
          ${privBusHtml}
@@ -669,12 +660,12 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
             <select id="skr-select" class="sett-inp">
               ${skrOptions}
             </select>
-            <div style="font-size:12px;color:var(--txt3);margin-top:6px;">KI-Kategorie Vorschlag automatisch vorausgewählt.</div>
+            <div style="font-size:12px;color:var(--txt3);margin-top:6px;">KI-Kategorie Vorschlag automatisch vorausgewÃ¤hlt.</div>
          </div>
 
          <div style="display:flex;gap:8px">
-           <button class="btn btn-g" style="flex:1;justify-content:center" id="ki-rev-skip">Später klären</button>
-           <button class="btn btn-gold" style="flex:1;justify-content:center" id="ki-rev-next">Bestätigen</button>
+           <button class="btn btn-g" style="flex:1;justify-content:center" id="ki-rev-skip">SpÃ¤ter klÃ¤ren</button>
+           <button class="btn btn-gold" style="flex:1;justify-content:center" id="ki-rev-next">BestÃ¤tigen</button>
          </div>
          <div style="height:140px;flex-shrink:0;pointer-events:none"></div>
        `;
@@ -694,12 +685,12 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
           }
 
           document.getElementById('ki-rev-next').onclick = () => {
-             if (!chosenArea) return BSP.toast('Bitte Bereich wählen (Business/Privat)', 'wr');
+             if (!chosenArea) return BSP.toast('Bitte Bereich wÃ¤hlen (Business/Privat)', 'wr');
              t.bereich = chosenArea;
              if (chosenArea === 'Business') {
                 t.skr03 = document.getElementById('skr-select').value;
              }
-             t.status = 'geklärt'; // or some valid final state
+             t.status = 'geklÃ¤rt'; // or some valid final state
              currentIndex++;
              showNext();
           };
@@ -715,9 +706,9 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
     showNext();
   }
 
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
   // 5. BATCH SPEICHERN
-  // ════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
   async function _saveAllTransactions(transactions) {
      BSP.showScrim('Speichere Buchungen...');
@@ -729,7 +720,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
          
          // 1. Raw Log ins Konto schreiben
          const bid = await BSP.dbAdd('konto_buchungen', t);
-         t.id = bid; // Speichere ID für Verknüpfungen
+         t.id = bid; // Speichere ID fÃ¼r VerknÃ¼pfungen
          
          // 2. Intelligent Routing (Archiv, Steuern & Privat)
          if (t.bereich === 'Privat') {
@@ -748,7 +739,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
                const absoluteAmount = Math.abs(t.betrag);
                const isAusgabe = t.betrag < 0;
                
-               // Schattenbeleg für das Steuer-Dashboard (Mehrwertsteuer direkt ausweisen)
+               // Schattenbeleg fÃ¼r das Steuer-Dashboard (Mehrwertsteuer direkt ausweisen)
                await BSP.dbAdd('belege', {
                  type: isAusgabe ? 'er' : 'ar',
                  date: t.datum,
@@ -763,7 +754,7 @@ Negative Beträge sind Ausgaben. Positive Beträge sind Eingänge. Fehlende Feld
                  bankTxId: bid
                });
                
-               // Task für die "Zu Klären" Glocke anlegen
+               // Task fÃ¼r die "Zu KlÃ¤ren" Glocke anlegen
                if (BSP.prAdd) {
                  await BSP.prAdd({
                     type: 'fehlender_beleg',
